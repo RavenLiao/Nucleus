@@ -124,6 +124,7 @@ static void notifyMenuBarOffsetChanged(NSWindow *window, float offset) {
 
     removeDragView(w);
     removeExistingConstraints(w);
+    w.toolbar = nil;
     [w setTitlebarAppearsTransparent:NO];
     [w setTitleVisibility:NSWindowTitleVisible];
     [w setMovable:YES];
@@ -138,6 +139,15 @@ static void notifyMenuBarOffsetChanged(NSWindow *window, float offset) {
     float height = storedHeight ? [storedHeight floatValue] : kMinHeightForFullSize;
 
     installFullScreenButtons(w, height);
+
+    // Reinstall the invisible toolbar (removed in willEnterFullScreen to avoid
+    // a white band glitch during the enter-fullscreen animation).
+    if (!w.toolbar) {
+        NSToolbar *toolbar = [[NSToolbar alloc] initWithIdentifier:@"NucleusToolbar"];
+        toolbar.showsBaselineSeparator = NO;
+        toolbar.visible = NO;
+        w.toolbar = toolbar;
+    }
 
     // Install menu bar monitor if newFullscreenControls is enabled.
     BOOL newControls = [objc_getAssociatedObject(w, &kNewFullscreenControlsKey) boolValue];
@@ -834,6 +844,15 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
                 return;
             }
 
+            // Attach an invisible toolbar to trigger the 26pt corner radius.
+            // The toolbar is hidden (visible=NO) — purely cosmetic, no UI impact.
+            if (!window.toolbar) {
+                NSToolbar *toolbar = [[NSToolbar alloc] initWithIdentifier:@"NucleusToolbar"];
+                toolbar.showsBaselineSeparator = NO;
+                toolbar.visible = NO;
+                window.toolbar = toolbar;
+            }
+
             [window setTitlebarAppearsTransparent:YES];
             [window setTitleVisibility:NSWindowTitleHidden];
             [window setMovable:NO];
@@ -865,6 +884,7 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(window, &kMenuBarOffsetKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            window.toolbar = nil;
             [window setTitlebarAppearsTransparent:NO];
             [window setTitleVisibility:NSWindowTitleVisible];
             [window setMovable:YES];
