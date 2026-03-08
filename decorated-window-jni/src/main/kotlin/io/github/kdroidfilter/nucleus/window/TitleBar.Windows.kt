@@ -71,7 +71,7 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
 
     // ── Fullscreen: store title bar content for the overlay, skip layout ──
     if (isNativeFullscreen) {
-        LaunchedEffect(Unit) {
+        LaunchedEffect(window) {
             val hwnd = JniWindowsWindowUtil.getHwnd(window)
             if (hwnd != 0L) JniWindowsDecorationBridge.nativeSetTitleBarHeight(hwnd, 0)
         }

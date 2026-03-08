@@ -216,23 +216,23 @@ private fun FullscreenTitleBarOverlay(
 
 /**
  * Watches [state].placement and enters/exits native Win32 fullscreen accordingly.
+ * A local [isNativeFullscreen] flag guards against redundant JNI calls if
+ * [snapshotFlow] emits the same placement multiple times in quick succession.
  */
 @Composable
 private fun FrameWindowScope.NativeFullscreenEffect(state: WindowState) {
     LaunchedEffect(state, window) {
+        var isNativeFullscreen = false
         snapshotFlow { state.placement }.collect { placement ->
             val hwnd = JniWindowsWindowUtil.getHwnd(window)
             if (hwnd == 0L) return@collect
 
-            when {
-                placement == WindowPlacement.Fullscreen -> {
-                    if (!JniWindowsDecorationBridge.nativeIsFullscreen(hwnd)) {
-                        JniWindowsDecorationBridge.nativeSetFullscreen(hwnd, true)
-                    }
-                }
-                JniWindowsDecorationBridge.nativeIsFullscreen(hwnd) -> {
-                    JniWindowsDecorationBridge.nativeSetFullscreen(hwnd, false)
-                }
+            if (placement == WindowPlacement.Fullscreen && !isNativeFullscreen) {
+                JniWindowsDecorationBridge.nativeSetFullscreen(hwnd, true)
+                isNativeFullscreen = true
+            } else if (placement != WindowPlacement.Fullscreen && isNativeFullscreen) {
+                JniWindowsDecorationBridge.nativeSetFullscreen(hwnd, false)
+                isNativeFullscreen = false
             }
         }
     }

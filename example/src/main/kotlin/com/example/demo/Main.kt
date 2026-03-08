@@ -199,16 +199,16 @@ fun main(args: Array<String>) {
                             },
                         )
                         val isFullscreen = state.placement == WindowPlacement.Fullscreen
-                        var placementBeforeFullscreen by remember { mutableStateOf(WindowPlacement.Floating) }
                         TitleBarIconButton(
                             imageVector = if (isFullscreen) RadixExitFullScreen else RadixEnterFullScreen,
                             contentDescription = if (isFullscreen) "Exit fullscreen" else "Enter fullscreen",
                             modifier = Modifier.align(titleBarAlignment),
                             onClick = {
                                 if (isFullscreen) {
-                                    state.placement = placementBeforeFullscreen
+                                    // NativeFullscreenWindowState restores the previous placement internally.
+                                    // Setting any non-Fullscreen value on the delegate triggers the exit.
+                                    state.placement = WindowPlacement.Floating
                                 } else {
-                                    placementBeforeFullscreen = state.placement
                                     state.placement = WindowPlacement.Fullscreen
                                 }
                             },
