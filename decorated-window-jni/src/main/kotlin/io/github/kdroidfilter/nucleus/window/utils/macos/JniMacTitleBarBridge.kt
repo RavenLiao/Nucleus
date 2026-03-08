@@ -74,7 +74,10 @@ internal object JniMacTitleBarBridge {
     // Called from native (macOS main thread) when the menu bar offset
     // changes. MutableStateFlow.value is thread-safe.
     @JvmStatic
-    fun onMenuBarOffsetChanged(nsWindowPtr: Long, offset: Float) {
+    fun onMenuBarOffsetChanged(
+        nsWindowPtr: Long,
+        offset: Float,
+    ) {
         menuBarOffsetFlows.getOrPut(nsWindowPtr) { MutableStateFlow(0f) }.value = offset
     }
 
@@ -117,7 +120,10 @@ internal object JniMacTitleBarBridge {
     // When enabled, the title bar and traffic-light buttons are pushed down
     // by the menu bar height when the auto-hidden menu bar appears in fullscreen.
     @JvmStatic
-    external fun nativeSetNewFullscreenControls(nsWindowPtr: Long, enabled: Boolean)
+    external fun nativeSetNewFullscreenControls(
+        nsWindowPtr: Long,
+        enabled: Boolean,
+    )
 
     // Returns the current menu bar offset in points (reads the stored value).
     @JvmStatic
@@ -126,7 +132,10 @@ internal object JniMacTitleBarBridge {
     // Stores the current menu bar offset (in points) and repositions
     // the native traffic-light buttons to match the Compose title bar.
     @JvmStatic
-    external fun nativeSetMenuBarOffset(nsWindowPtr: Long, offsetPt: Float)
+    external fun nativeSetMenuBarOffset(
+        nsWindowPtr: Long,
+        offsetPt: Float,
+    )
 
     // Installs a native NSEvent local monitor that detects menu bar
     // visibility changes and calls onMenuBarOffsetChanged via JNI.
@@ -136,4 +145,12 @@ internal object JniMacTitleBarBridge {
     // Removes the native event monitor installed by nativeInstallMenuBarMonitor.
     @JvmStatic
     external fun nativeRemoveMenuBarMonitor(nsWindowPtr: Long)
+
+    // Installs or removes an invisible NSToolbar to trigger the macOS 26pt
+    // corner radius. When disabled, the window uses the standard ~10pt radius.
+    @JvmStatic
+    external fun nativeSetLargeCornerRadius(
+        nsWindowPtr: Long,
+        enabled: Boolean,
+    )
 }

@@ -44,6 +44,7 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
     val useNewFullscreenControls = modifier.hasNewFullscreenControls()
+    val useLargeCornerRadius = modifier.hasMacOSLargeCornerRadius()
 
     // Notify native side about the newFullscreenControls preference
     DisposableEffect(window, useNewFullscreenControls) {
@@ -58,6 +59,22 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                 val ptr = JniMacWindowUtil.getWindowPtr(window)
                 if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
                     JniMacTitleBarBridge.nativeSetNewFullscreenControls(ptr, false)
+                }
+            }
+        }
+    }
+
+    // Install/remove invisible NSToolbar for 26pt corner radius
+    DisposableEffect(window, useLargeCornerRadius) {
+        val ptr = JniMacWindowUtil.getWindowPtr(window)
+        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
+            JniMacTitleBarBridge.nativeSetLargeCornerRadius(ptr, useLargeCornerRadius)
+        }
+        onDispose {
+            if (useLargeCornerRadius) {
+                val ptr2 = JniMacWindowUtil.getWindowPtr(window)
+                if (ptr2 != 0L && JniMacTitleBarBridge.isLoaded) {
+                    JniMacTitleBarBridge.nativeSetLargeCornerRadius(ptr2, false)
                 }
             }
         }

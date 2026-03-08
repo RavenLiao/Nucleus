@@ -68,3 +68,45 @@ internal fun Modifier.hasNewFullscreenControls(): Boolean =
     foldOut(false) { e, r ->
         if (e is NewFullscreenControlsElement) e.newControls else r
     }
+
+fun Modifier.macOSLargeCornerRadius(enabled: Boolean = true): Modifier =
+    this then
+        MacOSLargeCornerRadiusElement(
+            enabled,
+            debugInspectorInfo {
+                name = "macOSLargeCornerRadius"
+                value = enabled
+            },
+        )
+
+internal class MacOSLargeCornerRadiusElement(
+    val enabled: Boolean,
+    val inspectorInfo: InspectorInfo.() -> Unit,
+) : ModifierNodeElement<MacOSLargeCornerRadiusNode>() {
+    override fun create(): MacOSLargeCornerRadiusNode = MacOSLargeCornerRadiusNode(enabled)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherModifier = other as? MacOSLargeCornerRadiusElement ?: return false
+        return enabled == otherModifier.enabled
+    }
+
+    override fun hashCode(): Int = enabled.hashCode()
+
+    override fun InspectorInfo.inspectableProperties() {
+        inspectorInfo()
+    }
+
+    override fun update(node: MacOSLargeCornerRadiusNode) {
+        node.enabled = enabled
+    }
+}
+
+internal class MacOSLargeCornerRadiusNode(
+    var enabled: Boolean,
+) : Modifier.Node()
+
+internal fun Modifier.hasMacOSLargeCornerRadius(): Boolean =
+    foldOut(false) { e, r ->
+        if (e is MacOSLargeCornerRadiusElement) e.enabled else r
+    }

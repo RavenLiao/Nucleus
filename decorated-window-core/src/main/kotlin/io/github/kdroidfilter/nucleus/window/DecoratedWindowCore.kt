@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
@@ -15,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
@@ -32,6 +34,7 @@ import androidx.compose.ui.window.WindowPlacement
 import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.internal.insideBorder
 import io.github.kdroidfilter.nucleus.window.styling.LocalDecoratedWindowStyle
+import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import java.awt.ComponentOrientation
 import java.awt.Frame
 import java.awt.event.ComponentEvent
@@ -314,6 +317,13 @@ fun FrameWindowScope.DecoratedWindowBody(
                 LayoutDirection.Rtl
             }
         }
+
+    // Sync the AWT window background with the title bar color so that the
+    // native window surface matches during resize (avoids white flash).
+    val titleBarBackground = LocalTitleBarStyle.current.colors.background
+    LaunchedEffect(window, titleBarBackground) {
+        window.background = java.awt.Color(titleBarBackground.toArgb(), true)
+    }
 
     CompositionLocalProvider(
         LocalTitleBarInfo provides TitleBarInfo(title, icon),

@@ -217,7 +217,11 @@ private fun FullscreenTitleBarOverlay(
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Main)
-                                val y = event.changes.firstOrNull()?.position?.y ?: continue
+                                val y =
+                                    event.changes
+                                        .firstOrNull()
+                                        ?.position
+                                        ?.y ?: continue
                                 visible = y < titleBarHeightPx
                             }
                         }

@@ -41,6 +41,9 @@ Entirely implemented by Nucleus using JNI native libraries on all platforms. Non
 
 This module does not depend on JBR, making it compatible with **any JVM** (OpenJDK, GraalVM Native Image, etc.). It was specifically designed for use cases where JBR is not available, such as GraalVM native-image builds. On Linux, pair it with [`linux-hidpi`](linux-hidpi.md) for correct HiDPI support.
 
+!!! warning "macOS: requires a JDK compiled with Xcode 26"
+    The macOS native library (`libnucleus_macos_jni.dylib`) must be compiled with **Xcode 26** or later. This means the JDK you use to run your application must also have been built with Xcode 26. JDKs built with older Xcode versions will fail to load the native library at runtime, and the module will fall back to AWT client properties (no custom title bar positioning, no traffic light control).
+
 !!! warning "Less battle-tested"
     While the JNI module has no known bugs, it has not been as widely tested as the JBR implementation. Use it with appropriate caution in production, and report any issues you encounter.
 
@@ -315,7 +318,9 @@ TitleBar(
 
 When `gradientStartColor` is `Color.Unspecified` (the default), the background is a solid color.
 
-## macOS Fullscreen Controls
+## macOS Title Bar Modifiers
+
+### Fullscreen Controls
 
 On macOS, use the `newFullscreenControls()` modifier on `TitleBar` to enable the new-style fullscreen controls (traffic lights stay visible in fullscreen mode with a colored background):
 
@@ -328,6 +333,26 @@ TitleBar(modifier = Modifier.newFullscreenControls()) { state ->
 With `decorated-window-jbr`, this sets the `apple.awt.newFullScreenControls` system property and uses `fullscreenControlButtonsBackground` from your `TitleBarStyle`.
 
 With `decorated-window-jni`, fullscreen button management is handled natively — the modifier is a no-op but safe to call.
+
+### Large Corner Radius
+
+On macOS, use the `macOSLargeCornerRadius()` modifier on `TitleBar` to enable the 26pt window corner radius — the same radius used by Apple apps with a toolbar (Finder, Safari, etc.). Without this modifier, the window uses the standard ~10pt radius.
+
+```kotlin
+TitleBar(
+    modifier = Modifier
+        .newFullscreenControls()
+        .macOSLargeCornerRadius()
+) { state ->
+    // ...
+}
+```
+
+When enabled, an invisible `NSToolbar` is attached to the window, which triggers AppKit's larger corner radius. The traffic light buttons are automatically repositioned to match Apple's native inset (+6pt horizontally and vertically), consistent with Finder and Safari.
+
+The toolbar is transparently managed around fullscreen transitions — removed before entering fullscreen to avoid visual glitches, and reinstalled after the animation completes.
+
+This modifier only has an effect with `decorated-window-jni` on macOS. It is safe to call on other platforms (no-op).
 
 ## ProGuard
 

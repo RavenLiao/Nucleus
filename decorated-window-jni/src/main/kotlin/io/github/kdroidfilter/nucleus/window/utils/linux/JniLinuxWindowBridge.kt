@@ -70,7 +70,10 @@ internal object JniLinuxWindowBridge {
 
     // Toggles native fullscreen via _NET_WM_STATE_FULLSCREEN.
     @JvmStatic
-    external fun nativeSetFullscreen(awtWindow: java.awt.Window, fullscreen: Boolean): Boolean
+    external fun nativeSetFullscreen(
+        awtWindow: java.awt.Window,
+        fullscreen: Boolean,
+    ): Boolean
 
     // Checks if the window currently has _NET_WM_STATE_FULLSCREEN set.
     @JvmStatic
