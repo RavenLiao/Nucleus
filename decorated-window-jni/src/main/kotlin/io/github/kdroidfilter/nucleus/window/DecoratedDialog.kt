@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.window.DialogState
@@ -39,6 +40,14 @@ fun DecoratedDialog(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
     ) {
+        // Centre the dialog on its parent window automatically.
+        // ComposeDialog.owner is set by Compose Desktop to the nearest parent
+        // Window in the composition tree (the DecoratedWindow). When used
+        // outside a Window (no parent), setLocationRelativeTo(null) centres
+        // on the screen instead.
+        LaunchedEffect(window) {
+            window.setLocationRelativeTo(window.owner)
+        }
         DecoratedDialogBody(
             title = title,
             icon = icon,
