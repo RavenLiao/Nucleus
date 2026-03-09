@@ -1013,7 +1013,8 @@ private fun JvmApplicationContext.configureGraalvmElectronBuilderPackaging(
                         val mac = app.nativeDistributions.macOS
                         nonValidatedMacSigningSettings = mac.signing
                         nonValidatedMacBundleID.set(mac.bundleID)
-                        macAppStore.set(mac.appStore)
+                        // PKG is always treated as App Store — ignore the deprecated user setting.
+                        macAppStore.set(targetFormat.isStoreFormat)
                         macEntitlementsFile.set(
                             mac.entitlementsFile.orElse(
                                 unpackDefaultResources.flatMap { it.resources.defaultEntitlements },

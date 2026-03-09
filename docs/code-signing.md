@@ -183,7 +183,7 @@ Nucleus provides a `setup-macos-signing` composite action (`.github/actions/setu
 | `MAC_CERTIFICATES_P12` | Base64-encoded `.p12` containing all signing certificates |
 | `MAC_CERTIFICATES_PASSWORD` | Password for the `.p12` file |
 | `MAC_DEVELOPER_ID_APPLICATION` | Developer ID Application identity (e.g. `"Developer ID Application: Company (TEAMID)"`) |
-| `MAC_DEVELOPER_ID_INSTALLER` | Developer ID Installer identity (for direct-distribution PKG, if needed) |
+| `MAC_DEVELOPER_ID_INSTALLER` | Developer ID Installer identity (unused — PKG is always App Store) |
 | `MAC_APP_STORE_APPLICATION` | App Store application identity (e.g. `"3rd Party Mac Developer Application: Company (TEAMID)"`) |
 | `MAC_APP_STORE_INSTALLER` | App Store installer identity (e.g. `"3rd Party Mac Developer Installer: Company (TEAMID)"`) |
 | `MAC_PROVISIONING_PROFILE` | Base64-encoded `embedded.provisionprofile` for sandboxed app |

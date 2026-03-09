@@ -230,15 +230,18 @@ macOS {
 }
 ```
 
-For Mac App Store builds, add a provisioning profile:
+For Mac App Store builds (PKG), add provisioning profiles:
 
 ```kotlin
 macOS {
-    appStore = true
     provisioningProfile.set(project.file("packaging/MyApp.provisionprofile"))
     runtimeProvisioningProfile.set(project.file("packaging/MyApp_Runtime.provisionprofile"))
 }
 ```
+
+!!! note
+    PKG is always treated as an App Store format. Sandbox entitlements, "3rd Party Mac Developer"
+    certificates, and `productsign` signing are applied automatically — no `appStore` flag needed.
 
 See [Sandboxing](../sandboxing.md#macos-app-sandbox) for full details.
 
@@ -293,7 +296,7 @@ macOS {
 | `dockName` | `String?` | `null` | Name displayed in the Dock |
 | `setDockNameSameAsPackageName` | `Boolean` | `true` | Use `packageName` as dock name |
 | `appCategory` | `String?` | `null` | App Store / Finder category |
-| `appStore` | `Boolean` | `false` | Build for Mac App Store |
+| `appStore` | `Boolean` | `false` | **Deprecated** — PKG is always built for the App Store. This property is ignored. |
 | `minimumSystemVersion` | `String?` | `null` | Minimum macOS version |
 | `layeredIconDir` | `DirectoryProperty` | — | `.icon` directory for macOS 26+ |
 | `packageName` | `String?` | `null` | Override package name |

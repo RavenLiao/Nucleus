@@ -141,11 +141,14 @@ Mac App Store builds require provisioning profiles:
 
 ```kotlin
 macOS {
-    appStore = true
     provisioningProfile.set(project.file("packaging/MyApp.provisionprofile"))
     runtimeProvisioningProfile.set(project.file("packaging/MyApp_Runtime.provisionprofile"))
 }
 ```
+
+!!! note
+    The `appStore` property is deprecated. PKG is always treated as an App Store format —
+    sandbox entitlements and "3rd Party Mac Developer" certificates are applied automatically.
 
 ### AOT Cache and Sandboxing
 
