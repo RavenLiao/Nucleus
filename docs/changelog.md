@@ -9,18 +9,37 @@
 - **Native fullscreen with sliding title bar** — Platform-native fullscreen experience: Safari-like on macOS, Edge-like on Windows, Firefox-like on Linux. When the window enters fullscreen, the title bar becomes a floating overlay that slides down on hover near the top edge and slides back up when the pointer moves away. Enable with `Modifier.newFullscreenControls()` on `TitleBar` / `MaterialTitleBar`.
 - **macOS large corner radius** — New `Modifier.macOSLargeCornerRadius()` modifier applies the 26pt window corner radius used by Finder and Safari. Installs an invisible `NSToolbar` and repositions traffic light buttons to match Apple's native inset.
 - **System Color module** (`nucleus.system-color`) — Reactive detection of OS accent color and high contrast mode via JNI. Supports macOS (`NSColor.controlAccentColor`), Windows (DWM registry), and Linux (XDG Desktop Portal D-Bus). Composable APIs: `systemAccentColor()`, `isSystemInHighContrast()`.
-- **Energy Manager module** (`nucleus.energy-manager`) — Process-level and thread-level energy efficiency mode (EcoQoS on Windows, `PRIO_DARWIN_BG` on macOS, nice/ioprio on Linux) and screen-awake (caffeine) API to prevent display sleep.
+- **Energy Manager module** (`nucleus.energy-manager`) — Comprehensive energy management with three tiers: full efficiency mode (EcoQoS + IDLE_PRIORITY_CLASS on Windows, `PRIO_DARWIN_BG` + task_policy_set on macOS, nice +19/ioprio/timerslack on Linux), light efficiency mode (CPU deprioritization only, no I/O throttling), and thread-level efficiency mode. Includes screen-awake (caffeine) API to prevent display sleep (IOPMAssertion on macOS, SetThreadExecutionState on Windows, D-Bus/X11 on Linux). Coroutine helpers: `withEfficiencyMode()`, `withLightEfficiencyMode()`.
+- **Auto-center `DecoratedDialog` on parent window** — Dialogs are now automatically centered on their parent with reliable positioning via `windowOpened` event.
+- **macOS live resize sync and RTL traffic-light support** — Smooth live resize synchronization and correct traffic light button positioning in right-to-left layouts.
+- **Centralized native library loading** — New `NativeLibraryLoader` with persistent cache replaces per-module loading logic.
+- **Fullscreen-aware window controls** — Maximize button shows exit-fullscreen icon when in fullscreen mode on Linux and Windows, with new SVG icon variants (active/inactive/dark).
 - **AWT window background sync on macOS** — Idempotent property application prevents redundant `PropertyChangeEvent` firings, reducing visual jitter during layout passes.
+- **Sample CMP module** (`sample-cmp`) — New Kotlin Multiplatform Compose sample with Android and Desktop targets.
+- **Example app gallery** — Material 3 component showcase with actions, communication, containment, selection, text inputs, typography, elevation, and color screens.
 
 ### Bug Fixes
 
 - **Fix Windows fullscreen** — Compose for Desktop does not handle fullscreen correctly on Windows (window does not cover the taskbar). Now uses native Win32 APIs for true fullscreen, matching Edge and other native Windows applications.
+- **Eliminate white resize flash on Windows** — Adjust Skiko's clear color to transparent for dark themes and synchronize DWM caption/border colors for consistent Windows 11 window chrome styling.
+- **Don't push title bar on notched macOS screens** — Title bar no longer incorrectly shifts on MacBooks with a notch.
+- **Apply 26pt corner radius in all window states on macOS** — Large corner radius now persists across window state changes.
+- **Pre-compute `DecoratedDialog` position** — Avoids visible repositioning glitch when dialogs open.
+- **Propagate `CompositionLocalContext` to fullscreen overlays** — Ensures composition locals (including RTL layout direction) are correctly inherited in fullscreen mode.
+- **Skip Android configurations in `CleanNativeLibsTransform`** — Fixes build issues when Android targets are present.
+- **Skip ZIP stapling to preserve blockmap** — Prevents breaking auto-update blockmap integrity during notarization.
+- **Detect target arch from JDK release file for cross-building** — Fixes architecture detection when cross-compiling.
 - Reattach invisible toolbar to resolve macOS fullscreen glitches
 - Improve macOS fullscreen handling and JNI thread safety
 - Fix animate traffic light buttons in sync with title bar in fullscreen
 - Fill title bar background when sliding down in macOS fullscreen
+- **Fix RTL title bar inset calculation** — Use logical `Ltr` direction for insets to avoid double-mirroring with `placeRelative`.
 - Correct D-Bus `ReadOne` variant parsing for Linux accent color
 - Move Windows dark mode monitoring to native thread for reliability
+
+### Deprecations
+
+- **`appStore` property deprecated** — PKG distributions are now always treated as App Store builds. The `appStore` property is no longer needed.
 
 ### Refactoring
 
@@ -28,12 +47,14 @@
 - Replace polling with event-driven menu bar offset handling in macOS fullscreen
 - Simplify tab drag-and-drop using Reorderable library
 - Split energy-manager into platform sub-packages
+- Centralize native library loading with persistent cache
 
 ### Documentation
 
 - Rewrite energy-manager docs for full platform coverage
 - Add system-color module documentation
 - Update decorated window docs with fullscreen title bar and large corner radius sections
+- Document Windows resize white flash fix in decorated-window-jni
 - Simplify single-instance and deep-links code examples
 
 ### CI/CD
