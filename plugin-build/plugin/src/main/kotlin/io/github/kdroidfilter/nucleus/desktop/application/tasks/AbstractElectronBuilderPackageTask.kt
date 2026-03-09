@@ -578,7 +578,7 @@ abstract class AbstractElectronBuilderPackageTask
         }
 
         /**
-         * Re-signs the .app bundle for PKG (App Store) builds.
+         * Re-signs the .app bundle for PKG builds (always App Store).
          * Delegates to [resignApp] for the core signing, then augments entitlements
          * with application-identifier and team-identifier for App Store submissions.
          */
@@ -643,9 +643,9 @@ abstract class AbstractElectronBuilderPackageTask
         /**
          * Signs the PKG installer for App Store distribution using `productsign`.
          *
-         * electron-builder creates an unsigned PKG (because we return null for the installer
-         * identity in App Store mode), and this method re-signs it with the correct
-         * "3rd Party Mac Developer Installer" certificate.
+         * PKG is always treated as an App Store format. electron-builder creates an
+         * unsigned PKG (installer identity is always null), and this method re-signs
+         * it with the correct "3rd Party Mac Developer Installer" certificate.
          */
         private fun signPkgInstaller(outputDir: File) {
             if (currentOS != OS.MacOS) return

@@ -713,7 +713,8 @@ private fun JvmApplicationContext.configureElectronBuilderPackageTask(
         val mac = app.nativeDistributions.macOS
         packageTask.nonValidatedMacSigningSettings = mac.signing
         packageTask.nonValidatedMacBundleID.set(mac.bundleID)
-        packageTask.macAppStore.set(mac.appStore)
+        // PKG is always treated as App Store — ignore the deprecated user setting for store formats.
+        packageTask.macAppStore.set(packageTask.targetFormat.isStoreFormat)
         val sandboxed = packageTask.targetFormat.isStoreFormat
         val defaultAppEntitlements =
             if (sandboxed) {
@@ -793,7 +794,8 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                         }
                     },
                 )
-                packageTask.macAppStore.set(mac.appStore)
+                // PKG is always treated as App Store — ignore the deprecated user setting.
+                packageTask.macAppStore.set(packageTask.targetFormat.isStoreFormat)
                 packageTask.macAppCategory.set(mac.appCategory)
                 packageTask.macMinimumSystemVersion.set(mac.minimumSystemVersion)
                 val defaultAppEntitlements =

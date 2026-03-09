@@ -76,6 +76,19 @@ abstract class NativeApplicationMacOSPlatformSettings : AbstractMacOSPlatformSet
 abstract class JvmMacOSPlatformSettings : AbstractMacOSPlatformSettings() {
     var dockName: String? = null
     var setDockNameSameAsPackageName: Boolean = true
+
+    /**
+     * Previously used to enable App Store signing for PKG builds.
+     *
+     * This property is now ignored — PKG is always treated as an App Store format.
+     * Store-specific signing (sandbox entitlements, "3rd Party Mac Developer" certificates,
+     * provisioning profiles, `productsign`) is applied automatically when the target format
+     * is [TargetFormat.Pkg].
+     */
+    @Deprecated(
+        "PKG is always built for the App Store. This property is ignored and will be removed in a future release.",
+        level = DeprecationLevel.WARNING,
+    )
     var appStore: Boolean = false
     val entitlementsFile: RegularFileProperty = objects.fileProperty()
     val runtimeEntitlementsFile: RegularFileProperty = objects.fileProperty()
