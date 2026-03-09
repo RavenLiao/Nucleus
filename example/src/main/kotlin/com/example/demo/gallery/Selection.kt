@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
@@ -46,7 +47,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +57,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.material.icons.outlined.Event
 
 @Composable
 internal fun Selection() {
@@ -76,16 +75,20 @@ internal fun Selection() {
 private fun CheckboxesDemo() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             val state1 = remember { mutableStateOf(true) }
             Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-                    .clickable { state1.value = !state1.value }
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clickable { state1.value = !state1.value }
+                        .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -95,9 +98,12 @@ private fun CheckboxesDemo() {
 
             val state2 = remember { mutableStateOf(ToggleableState.Indeterminate) }
             Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-                    .clickable { state2.value = state2.value.nextState() }
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clickable { state2.value = state2.value.nextState() }
+                        .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -106,9 +112,12 @@ private fun CheckboxesDemo() {
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-                    .clickable(enabled = false) {}
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clickable(enabled = false) {}
+                        .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -130,18 +139,27 @@ private fun ChipsDemo() {
                 enabled = enabled,
                 onClick = {},
                 label = { Text("Assist") },
-                leadingIcon = { Icon(Icons.Outlined.Event, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.Event, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize))
+                },
             )
             FilterChip(
                 enabled = enabled,
                 onClick = { filterChipSelected = !filterChipSelected },
                 label = { Text("Filter") },
                 selected = filterChipSelected,
-                leadingIcon = if (filterChipSelected) {
-                    { Icon(imageVector = Icons.Filled.Done, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
-                } else {
-                    null
-                },
+                leadingIcon =
+                    if (filterChipSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Done,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        }
+                    } else {
+                        null
+                    },
             )
             InputChip(
                 onClick = {},
@@ -149,7 +167,9 @@ private fun ChipsDemo() {
                 selected = true,
                 enabled = enabled,
                 avatar = null,
-                trailingIcon = { Icon(Icons.Default.Close, contentDescription = null, Modifier.size(InputChipDefaults.IconSize)) },
+                trailingIcon = {
+                    Icon(Icons.Default.Close, contentDescription = null, Modifier.size(InputChipDefaults.IconSize))
+                },
             )
             SuggestionChip(
                 enabled = enabled,
@@ -161,10 +181,11 @@ private fun ChipsDemo() {
 
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             ChipsRow(enabled = true)
             ChipsRow(enabled = false)
@@ -179,10 +200,11 @@ private fun DatePickerDemo() {
 
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.Center,
         ) {
             TextButton(onClick = { openDialog = true }) { Text("Show date picker") }
@@ -208,11 +230,12 @@ private fun RadioButtonsDemo() {
 
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .selectableGroup()
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .selectableGroup()
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             radioOptions.forEachIndexed { ix, text ->
                 Row(
@@ -224,8 +247,7 @@ private fun RadioButtonsDemo() {
                             selected = text == selectedOption,
                             onClick = { onOptionSelected(text) },
                             role = Role.RadioButton,
-                        )
-                        .padding(horizontal = 16.dp),
+                        ).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(enabled = ix < 2, selected = text == selectedOption, onClick = null)
@@ -245,20 +267,31 @@ private fun RadioButtonsDemo() {
 private fun SlidersDemo() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .selectableGroup()
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(32.dp),
+            modifier =
+                Modifier
+                    .selectableGroup()
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(32.dp),
         ) {
             var sliderPosition by remember { mutableFloatStateOf(0f) }
             Slider(value = sliderPosition, onValueChange = { sliderPosition = it })
             Spacer(modifier = Modifier.height(32.dp))
             var sliderPosition2 by remember { mutableFloatStateOf(0f) }
-            Slider(value = sliderPosition2, onValueChange = { sliderPosition2 = it }, steps = 5, valueRange = 0f..100f)
+            Slider(
+                value = sliderPosition2,
+                onValueChange = { sliderPosition2 = it },
+                steps = 5,
+                valueRange = 0f..100f,
+            )
             Spacer(modifier = Modifier.height(32.dp))
             var sliderPosition3 by remember { mutableStateOf(0f..100f) }
-            RangeSlider(value = sliderPosition3, steps = 5, onValueChange = { sliderPosition3 = it }, valueRange = 0f..100f)
+            RangeSlider(
+                value = sliderPosition3,
+                steps = 5,
+                onValueChange = { sliderPosition3 = it },
+                valueRange = 0f..100f,
+            )
         }
     }
 }
@@ -267,11 +300,12 @@ private fun SlidersDemo() {
 private fun SwitchesDemo() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .selectableGroup()
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(32.dp),
+            modifier =
+                Modifier
+                    .selectableGroup()
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(32.dp),
         ) {
             Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                 var checked by remember { mutableStateOf(true) }
@@ -281,11 +315,24 @@ private fun SwitchesDemo() {
                 Switch(
                     checked = checked2,
                     onCheckedChange = { checked2 = it },
-                    thumbContent = if (checked2) {
-                        { Icon(imageVector = Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize)) }
-                    } else {
-                        { Icon(imageVector = Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize)) }
-                    },
+                    thumbContent =
+                        if (checked2) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                )
+                            }
+                        } else {
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                )
+                            }
+                        },
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -295,7 +342,13 @@ private fun SwitchesDemo() {
                     enabled = false,
                     checked = true,
                     onCheckedChange = null,
-                    thumbContent = { Icon(imageVector = Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize)) },
+                    thumbContent = {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize),
+                        )
+                    },
                 )
             }
         }
@@ -309,11 +362,12 @@ private fun TimePickerDemo() {
 
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .selectableGroup()
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(32.dp),
+            modifier =
+                Modifier
+                    .selectableGroup()
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(32.dp),
             horizontalArrangement = Arrangement.Center,
         ) {
             TextButton(onClick = { openDialog = true }) { Text("Show time picker") }
@@ -325,7 +379,11 @@ private fun TimePickerDemo() {
         Dialog(onDismissRequest = { openDialog = false }) {
             Card(shape = MaterialTheme.shapes.extraLarge) {
                 Column(Modifier.padding(16.dp)) {
-                    TimePicker(state, layoutType = TimePickerLayoutType.Vertical, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    TimePicker(
+                        state,
+                        layoutType = TimePickerLayoutType.Vertical,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
                     Row(modifier = Modifier.align(Alignment.End), horizontalArrangement = Arrangement.End) {
                         TextButton(onClick = { openDialog = false }) { Text("Cancel") }
                         Spacer(modifier = Modifier.width(32.dp))
@@ -337,8 +395,9 @@ private fun TimePickerDemo() {
     }
 }
 
-private fun ToggleableState.nextState(): ToggleableState = when (this) {
-    ToggleableState.Indeterminate -> ToggleableState.Off
-    ToggleableState.On -> ToggleableState.Indeterminate
-    ToggleableState.Off -> ToggleableState.On
-}
+private fun ToggleableState.nextState(): ToggleableState =
+    when (this) {
+        ToggleableState.Indeterminate -> ToggleableState.Off
+        ToggleableState.On -> ToggleableState.Indeterminate
+        ToggleableState.Off -> ToggleableState.On
+    }

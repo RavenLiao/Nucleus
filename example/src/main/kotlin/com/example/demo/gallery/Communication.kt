@@ -54,10 +54,11 @@ internal fun Communication(snackbarHostState: SnackbarHostState) {
 private fun Badges() {
     OutlinedCard {
         Box(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             var selected by remember { mutableStateOf(0) }
             NavigationBar {
@@ -80,7 +81,8 @@ private fun Badges() {
                     icon = {
                         BadgedBox(badge = { Badge { Text("10") } }) {
                             Icon(
-                                imageVector = if (selected == 1) Icons.Default.ChatBubble else Icons.Default.ChatBubbleOutline,
+                                imageVector =
+                                    if (selected == 1) Icons.Default.ChatBubble else Icons.Default.ChatBubbleOutline,
                                 contentDescription = null,
                             )
                         }
@@ -122,10 +124,11 @@ private fun Badges() {
 private fun ProgressIndicators() {
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             var isProgress by remember { mutableStateOf(false) }
@@ -153,10 +156,11 @@ private fun ProgressIndicators() {
 private fun SnackbarButton(snackbarHostState: SnackbarHostState) {
     OutlinedCard {
         Box(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
             val coroutineScope = rememberCoroutineScope()

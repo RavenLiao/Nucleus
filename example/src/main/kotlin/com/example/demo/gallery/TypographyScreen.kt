@@ -13,15 +13,20 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun TypographyScreen() {
     Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp),
     ) {
         Text(modifier = Modifier.padding(8.dp), text = "Display Large", style = MaterialTheme.typography.displayLarge)
         Text(modifier = Modifier.padding(8.dp), text = "Display Medium", style = MaterialTheme.typography.displayMedium)
         Text(modifier = Modifier.padding(8.dp), text = "Display Small", style = MaterialTheme.typography.displaySmall)
         Text(modifier = Modifier.padding(8.dp), text = "Headline Large", style = MaterialTheme.typography.headlineLarge)
-        Text(modifier = Modifier.padding(8.dp), text = "Headline Medium", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            modifier = Modifier.padding(8.dp),
+            text = "Headline Medium",
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Text(modifier = Modifier.padding(8.dp), text = "Headline Small", style = MaterialTheme.typography.headlineSmall)
         Text(modifier = Modifier.padding(8.dp), text = "Title Large", style = MaterialTheme.typography.titleLarge)
         Text(modifier = Modifier.padding(8.dp), text = "Title Medium", style = MaterialTheme.typography.titleMedium)

@@ -30,12 +30,13 @@ private data class GalleryTab(
     val icon: ImageVector,
 )
 
-private val galleryTabs = listOf(
-    GalleryTab("Components", Icons.Filled.Widgets),
-    GalleryTab("Color", Icons.Filled.FormatPaint),
-    GalleryTab("Typography", Icons.AutoMirrored.Filled.TextSnippet),
-    GalleryTab("Elevation", Icons.Filled.Opacity),
-)
+private val galleryTabs =
+    listOf(
+        GalleryTab("Components", Icons.Filled.Widgets),
+        GalleryTab("Color", Icons.Filled.FormatPaint),
+        GalleryTab("Typography", Icons.AutoMirrored.Filled.TextSnippet),
+        GalleryTab("Elevation", Icons.Filled.Opacity),
+    )
 
 @Composable
 internal fun GalleryScreen(seedColor: Color) {

@@ -35,10 +35,11 @@ internal fun TextInputs() {
 private fun TextFields() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             var txt by remember { mutableStateOf("") }
             TextField(

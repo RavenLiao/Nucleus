@@ -44,10 +44,11 @@ internal fun Actions() {
 private fun CommonButtons() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .widthIn(400.dp, 600.dp)
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .widthIn(400.dp, 600.dp)
+                    .padding(8.dp),
         ) {
             Row {
                 ElevatedButton(
@@ -167,10 +168,11 @@ private fun CommonButtons() {
 private fun FloatingActionButtons() {
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
@@ -197,10 +199,11 @@ private fun FloatingActionButtons() {
 private fun IconButtons() {
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {

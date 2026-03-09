@@ -14,9 +14,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun ComponentScreen(snackbarHostState: SnackbarHostState) {
     Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .fillMaxWidth(),
+        modifier =
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .fillMaxWidth(),
     ) {
         Actions()
         Spacer(Modifier.size(16.dp))

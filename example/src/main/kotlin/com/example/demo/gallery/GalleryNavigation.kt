@@ -88,10 +88,11 @@ internal fun GalleryNavigationSection() {
 private fun GalleryBottomAppBar() {
     OutlinedCard {
         Box(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             BottomAppBar(
                 actions = {
@@ -113,10 +114,11 @@ private fun GalleryBottomAppBar() {
 private fun GalleryNavigationBar() {
     OutlinedCard {
         Box(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             var selected by remember { mutableStateOf(0) }
             NavigationBar {
@@ -162,10 +164,11 @@ private fun GalleryNavigationBar() {
 private fun GalleryNavigationDrawer() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Surface(
@@ -190,25 +193,59 @@ private fun NavigationDrawerContent() {
         NavigationDrawerItem(
             selected = selected == 0,
             onClick = { selected = 0 },
-            icon = { Icon(imageVector = if (selected == 0) Icons.Default.Inbox else Icons.Outlined.Inbox, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector = if (selected == 0) Icons.Default.Inbox else Icons.Outlined.Inbox,
+                    contentDescription = null,
+                )
+            },
             label = { Text("Inbox") },
         )
         NavigationDrawerItem(
             selected = selected == 1,
             onClick = { selected = 1 },
-            icon = { Icon(imageVector = if (selected == 1) Icons.AutoMirrored.Default.Send else Icons.AutoMirrored.Outlined.Send, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector =
+                        if (selected ==
+                            1
+                        ) {
+                            Icons.AutoMirrored.Default.Send
+                        } else {
+                            Icons.AutoMirrored.Outlined.Send
+                        },
+                    contentDescription = null,
+                )
+            },
             label = { Text("Outbox") },
         )
         NavigationDrawerItem(
             selected = selected == 2,
             onClick = { selected = 2 },
-            icon = { Icon(imageVector = if (selected == 2) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector =
+                        if (selected ==
+                            2
+                        ) {
+                            Icons.Default.Favorite
+                        } else {
+                            Icons.Default.FavoriteBorder
+                        },
+                    contentDescription = null,
+                )
+            },
             label = { Text("Favorite") },
         )
         NavigationDrawerItem(
             selected = selected == 3,
             onClick = { selected = 3 },
-            icon = { Icon(imageVector = if (selected == 3) Icons.Default.Delete else Icons.Outlined.Delete, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector = if (selected == 3) Icons.Default.Delete else Icons.Outlined.Delete,
+                    contentDescription = null,
+                )
+            },
             label = { Text("Trash") },
         )
         HorizontalDivider(Modifier.padding(8.dp))
@@ -216,13 +253,37 @@ private fun NavigationDrawerContent() {
         NavigationDrawerItem(
             selected = selected == 4,
             onClick = { selected = 4 },
-            icon = { Icon(imageVector = if (selected == 4) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector =
+                        if (selected ==
+                            4
+                        ) {
+                            Icons.Default.Bookmark
+                        } else {
+                            Icons.Default.BookmarkBorder
+                        },
+                    contentDescription = null,
+                )
+            },
             label = { Text("Family") },
         )
         NavigationDrawerItem(
             selected = selected == 5,
             onClick = { selected = 5 },
-            icon = { Icon(imageVector = if (selected == 5) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector =
+                        if (selected ==
+                            5
+                        ) {
+                            Icons.Default.Bookmark
+                        } else {
+                            Icons.Default.BookmarkBorder
+                        },
+                    contentDescription = null,
+                )
+            },
             label = { Text("School") },
         )
     }
@@ -232,10 +293,11 @@ private fun NavigationDrawerContent() {
 private fun GalleryNavigationRail() {
     OutlinedCard {
         Box(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
             Surface(shadowElevation = 8.dp) {
@@ -252,25 +314,73 @@ private fun GalleryNavigationRail() {
                     NavigationRailItem(
                         selected = selected == 0,
                         onClick = { selected = 0 },
-                        icon = { Icon(imageVector = if (selected == 0) Icons.Default.Inbox else Icons.Outlined.Inbox, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                imageVector =
+                                    if (selected ==
+                                        0
+                                    ) {
+                                        Icons.Default.Inbox
+                                    } else {
+                                        Icons.Outlined.Inbox
+                                    },
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Inbox") },
                     )
                     NavigationRailItem(
                         selected = selected == 1,
                         onClick = { selected = 1 },
-                        icon = { Icon(imageVector = if (selected == 1) Icons.AutoMirrored.Filled.Send else Icons.AutoMirrored.Outlined.Send, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                imageVector =
+                                    if (selected ==
+                                        1
+                                    ) {
+                                        Icons.AutoMirrored.Filled.Send
+                                    } else {
+                                        Icons.AutoMirrored.Outlined.Send
+                                    },
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Outbox") },
                     )
                     NavigationRailItem(
                         selected = selected == 2,
                         onClick = { selected = 2 },
-                        icon = { Icon(imageVector = if (selected == 2) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                imageVector =
+                                    if (selected ==
+                                        2
+                                    ) {
+                                        Icons.Default.Favorite
+                                    } else {
+                                        Icons.Default.FavoriteBorder
+                                    },
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Favorite") },
                     )
                     NavigationRailItem(
                         selected = selected == 3,
                         onClick = { selected = 3 },
-                        icon = { Icon(imageVector = if (selected == 3) Icons.Default.Delete else Icons.Outlined.Delete, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                imageVector =
+                                    if (selected ==
+                                        3
+                                    ) {
+                                        Icons.Default.Delete
+                                    } else {
+                                        Icons.Outlined.Delete
+                                    },
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Trash") },
                     )
                     Spacer(Modifier.size(40.dp))
@@ -284,10 +394,11 @@ private fun GalleryNavigationRail() {
 private fun GalleryTabs() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             var selected by remember { mutableStateOf(0) }
             TabRow(selectedTabIndex = selected) {
@@ -332,10 +443,11 @@ private fun GalleryTabs() {
 private fun GalleryTopAppBars() {
     OutlinedCard {
         Column(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             @Composable
             fun RowScope.Actions() {
@@ -345,29 +457,76 @@ private fun GalleryTopAppBars() {
             }
 
             CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                navigationIcon = { IconButton(onClick = {}) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                navigationIcon = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                        )
+                    }
+                },
                 title = { Text("CenterAligned") },
-                actions = { IconButton(onClick = {}) { Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null) } },
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                        )
+                    }
+                },
             )
             Spacer(Modifier.size(16.dp))
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                navigationIcon = { IconButton(onClick = {}) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                navigationIcon = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                        )
+                    }
+                },
                 title = { Text("Small") },
                 actions = { Actions() },
             )
             Spacer(Modifier.size(16.dp))
             MediumTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                navigationIcon = { IconButton(onClick = {}) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                navigationIcon = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                        )
+                    }
+                },
                 title = { Text("Medium") },
                 actions = { Actions() },
             )
             Spacer(Modifier.size(16.dp))
             LargeTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                navigationIcon = { IconButton(onClick = {}) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                navigationIcon = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                        )
+                    }
+                },
                 title = { Text("Large") },
                 actions = { Actions() },
             )

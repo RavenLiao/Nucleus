@@ -13,12 +13,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun ParentSection(title: String, content: @Composable () -> Unit) {
+internal fun ParentSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 16.dp),
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -30,7 +34,10 @@ internal fun ParentSection(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-internal fun ChildSection(title: String, content: @Composable () -> Unit) {
+internal fun ChildSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     Text(
         text = title,
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),

@@ -28,50 +28,155 @@ private data class ColorInfo(
 
 @Composable
 internal fun ColorScreen(seedColor: Color) {
-    val items = listOf(
+    val items =
         listOf(
-            ColorInfo("primary", { MaterialTheme.colorScheme.primary }, { MaterialTheme.colorScheme.onPrimary }),
-            ColorInfo("onPrimary", { MaterialTheme.colorScheme.onPrimary }, { MaterialTheme.colorScheme.primary }),
-            ColorInfo("primaryContainer", { MaterialTheme.colorScheme.primaryContainer }, { MaterialTheme.colorScheme.onPrimaryContainer }),
-            ColorInfo("onPrimaryContainer", { MaterialTheme.colorScheme.onPrimaryContainer }, { MaterialTheme.colorScheme.primaryContainer }),
-        ),
-        listOf(
-            ColorInfo("secondary", { MaterialTheme.colorScheme.secondary }, { MaterialTheme.colorScheme.onSecondary }),
-            ColorInfo("onSecondary", { MaterialTheme.colorScheme.onSecondary }, { MaterialTheme.colorScheme.secondary }),
-            ColorInfo("secondaryContainer", { MaterialTheme.colorScheme.secondaryContainer }, { MaterialTheme.colorScheme.onSecondaryContainer }),
-            ColorInfo("onSecondaryContainer", { MaterialTheme.colorScheme.onSecondaryContainer }, { MaterialTheme.colorScheme.secondaryContainer }),
-        ),
-        listOf(
-            ColorInfo("tertiary", { MaterialTheme.colorScheme.tertiary }, { MaterialTheme.colorScheme.onTertiary }),
-            ColorInfo("onTertiary", { MaterialTheme.colorScheme.onTertiary }, { MaterialTheme.colorScheme.tertiary }),
-            ColorInfo("tertiaryContainer", { MaterialTheme.colorScheme.tertiaryContainer }, { MaterialTheme.colorScheme.onTertiaryContainer }),
-            ColorInfo("onTertiaryContainer", { MaterialTheme.colorScheme.onTertiaryContainer }, { MaterialTheme.colorScheme.tertiaryContainer }),
-        ),
-        listOf(
-            ColorInfo("error", { MaterialTheme.colorScheme.error }, { MaterialTheme.colorScheme.onError }),
-            ColorInfo("onError", { MaterialTheme.colorScheme.onError }, { MaterialTheme.colorScheme.error }),
-            ColorInfo("errorContainer", { MaterialTheme.colorScheme.errorContainer }, { MaterialTheme.colorScheme.onErrorContainer }),
-            ColorInfo("onErrorContainer", { MaterialTheme.colorScheme.onErrorContainer }, { MaterialTheme.colorScheme.errorContainer }),
-        ),
-        listOf(
-            ColorInfo("background", { MaterialTheme.colorScheme.background }, { MaterialTheme.colorScheme.onBackground }),
-            ColorInfo("onBackground", { MaterialTheme.colorScheme.onBackground }, { MaterialTheme.colorScheme.background }),
-        ),
-        listOf(
-            ColorInfo("surface", { MaterialTheme.colorScheme.surface }, { MaterialTheme.colorScheme.onSurface }),
-            ColorInfo("onSurface", { MaterialTheme.colorScheme.onSurface }, { MaterialTheme.colorScheme.surface }),
-            ColorInfo("surfaceVariant", { MaterialTheme.colorScheme.surfaceVariant }, { MaterialTheme.colorScheme.onSurfaceVariant }),
-            ColorInfo("onSurfaceVariant", { MaterialTheme.colorScheme.onSurfaceVariant }, { MaterialTheme.colorScheme.surfaceVariant }),
-        ),
-        listOf(
-            ColorInfo("outline", { MaterialTheme.colorScheme.outline }, { Color.White }),
-            ColorInfo("inverseSurface", { MaterialTheme.colorScheme.inverseSurface }, { MaterialTheme.colorScheme.surface }),
-            ColorInfo("inverseOnSurface", { MaterialTheme.colorScheme.inverseOnSurface }, { MaterialTheme.colorScheme.onSurface }),
-            ColorInfo("inversePrimary", { MaterialTheme.colorScheme.inversePrimary }, { MaterialTheme.colorScheme.primary }),
-            ColorInfo("scrim", { MaterialTheme.colorScheme.scrim }, { Color.White }),
-            ColorInfo("surfaceTint", { MaterialTheme.colorScheme.surfaceTint }, { MaterialTheme.colorScheme.inversePrimary }),
-        ),
-    )
+            listOf(
+                ColorInfo("primary", { MaterialTheme.colorScheme.primary }, { MaterialTheme.colorScheme.onPrimary }),
+                ColorInfo("onPrimary", { MaterialTheme.colorScheme.onPrimary }, { MaterialTheme.colorScheme.primary }),
+                ColorInfo(
+                    "primaryContainer",
+                    { MaterialTheme.colorScheme.primaryContainer },
+                    { MaterialTheme.colorScheme.onPrimaryContainer },
+                ),
+                ColorInfo(
+                    "onPrimaryContainer",
+                    { MaterialTheme.colorScheme.onPrimaryContainer },
+                    { MaterialTheme.colorScheme.primaryContainer },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "secondary",
+                    { MaterialTheme.colorScheme.secondary },
+                    { MaterialTheme.colorScheme.onSecondary },
+                ),
+                ColorInfo(
+                    "onSecondary",
+                    { MaterialTheme.colorScheme.onSecondary },
+                    { MaterialTheme.colorScheme.secondary },
+                ),
+                ColorInfo(
+                    "secondaryContainer",
+                    { MaterialTheme.colorScheme.secondaryContainer },
+                    { MaterialTheme.colorScheme.onSecondaryContainer },
+                ),
+                ColorInfo(
+                    "onSecondaryContainer",
+                    { MaterialTheme.colorScheme.onSecondaryContainer },
+                    { MaterialTheme.colorScheme.secondaryContainer },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "tertiary",
+                    { MaterialTheme.colorScheme.tertiary },
+                    { MaterialTheme.colorScheme.onTertiary },
+                ),
+                ColorInfo(
+                    "onTertiary",
+                    { MaterialTheme.colorScheme.onTertiary },
+                    { MaterialTheme.colorScheme.tertiary },
+                ),
+                ColorInfo(
+                    "tertiaryContainer",
+                    { MaterialTheme.colorScheme.tertiaryContainer },
+                    { MaterialTheme.colorScheme.onTertiaryContainer },
+                ),
+                ColorInfo(
+                    "onTertiaryContainer",
+                    { MaterialTheme.colorScheme.onTertiaryContainer },
+                    { MaterialTheme.colorScheme.tertiaryContainer },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "error",
+                    { MaterialTheme.colorScheme.error },
+                    { MaterialTheme.colorScheme.onError },
+                ),
+                ColorInfo(
+                    "onError",
+                    { MaterialTheme.colorScheme.onError },
+                    { MaterialTheme.colorScheme.error },
+                ),
+                ColorInfo(
+                    "errorContainer",
+                    { MaterialTheme.colorScheme.errorContainer },
+                    { MaterialTheme.colorScheme.onErrorContainer },
+                ),
+                ColorInfo(
+                    "onErrorContainer",
+                    { MaterialTheme.colorScheme.onErrorContainer },
+                    { MaterialTheme.colorScheme.errorContainer },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "background",
+                    { MaterialTheme.colorScheme.background },
+                    { MaterialTheme.colorScheme.onBackground },
+                ),
+                ColorInfo(
+                    "onBackground",
+                    { MaterialTheme.colorScheme.onBackground },
+                    { MaterialTheme.colorScheme.background },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "surface",
+                    { MaterialTheme.colorScheme.surface },
+                    { MaterialTheme.colorScheme.onSurface },
+                ),
+                ColorInfo(
+                    "onSurface",
+                    { MaterialTheme.colorScheme.onSurface },
+                    { MaterialTheme.colorScheme.surface },
+                ),
+                ColorInfo(
+                    "surfaceVariant",
+                    { MaterialTheme.colorScheme.surfaceVariant },
+                    { MaterialTheme.colorScheme.onSurfaceVariant },
+                ),
+                ColorInfo(
+                    "onSurfaceVariant",
+                    { MaterialTheme.colorScheme.onSurfaceVariant },
+                    { MaterialTheme.colorScheme.surfaceVariant },
+                ),
+            ),
+            listOf(
+                ColorInfo(
+                    "outline",
+                    { MaterialTheme.colorScheme.outline },
+                    { Color.White },
+                ),
+                ColorInfo(
+                    "inverseSurface",
+                    { MaterialTheme.colorScheme.inverseSurface },
+                    { MaterialTheme.colorScheme.surface },
+                ),
+                ColorInfo(
+                    "inverseOnSurface",
+                    { MaterialTheme.colorScheme.inverseOnSurface },
+                    { MaterialTheme.colorScheme.onSurface },
+                ),
+                ColorInfo(
+                    "inversePrimary",
+                    { MaterialTheme.colorScheme.inversePrimary },
+                    { MaterialTheme.colorScheme.primary },
+                ),
+                ColorInfo(
+                    "scrim",
+                    { MaterialTheme.colorScheme.scrim },
+                    { Color.White },
+                ),
+                ColorInfo(
+                    "surfaceTint",
+                    { MaterialTheme.colorScheme.surfaceTint },
+                    { MaterialTheme.colorScheme.inversePrimary },
+                ),
+            ),
+        )
 
     LazyColumn {
         item {
@@ -121,10 +226,11 @@ private fun PaletteCard(
         Column {
             list.forEach { colorInfo ->
                 Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colorInfo.color())
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(colorInfo.color())
+                            .padding(16.dp),
                     text = colorInfo.title,
                     style = MaterialTheme.typography.labelLarge,
                     color = colorInfo.textColor(),

@@ -26,9 +26,10 @@ internal fun <T> NonlazyGrid(
                 for (columnId in 0 until columns) {
                     val index = firstIndex + columnId
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
                     ) {
                         if (index < itemCount) {
                             content(items[index])

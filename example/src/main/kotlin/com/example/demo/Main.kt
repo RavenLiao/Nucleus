@@ -41,8 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -51,6 +51,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.example.demo.gallery.GalleryScreen
 import com.example.demo.icons.MaterialIconsDark_mode
 import com.example.demo.icons.MaterialIconsInfo
 import com.example.demo.icons.MaterialIconsLight_mode
@@ -61,6 +62,8 @@ import com.example.demo.icons.TablerCoffeeOff
 import com.example.demo.icons.TablerTextDirectionLtr
 import com.example.demo.icons.TablerTextDirectionRtl
 import com.example.demo.icons.VscodeCodiconsColorMode
+import com.materialkolor.DynamicMaterialTheme
+import com.materialkolor.PaletteStyle
 import io.github.kdroidfilter.nucleus.aot.runtime.AotRuntime
 import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
@@ -69,9 +72,6 @@ import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
-import com.example.demo.gallery.GalleryScreen
-import com.materialkolor.DynamicMaterialTheme
-import com.materialkolor.PaletteStyle
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
@@ -283,10 +283,11 @@ fun main(args: Array<String>) {
                             "Gallery" -> {
                                 val currentDensity = LocalDensity.current
                                 CompositionLocalProvider(
-                                    LocalDensity provides Density(
-                                        density = currentDensity.density * 0.75f,
-                                        fontScale = currentDensity.fontScale,
-                                    ),
+                                    LocalDensity provides
+                                        Density(
+                                            density = currentDensity.density * 0.75f,
+                                            fontScale = currentDensity.fontScale,
+                                        ),
                                 ) {
                                     GalleryScreen(seedColor = seedColor)
                                 }

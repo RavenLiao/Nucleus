@@ -30,19 +30,21 @@ private data class ElevationItem(
 
 @Composable
 internal fun ElevationScreen() {
-    val items = listOf(
-        ElevationItem(0, 0, 0f),
-        ElevationItem(1, 1, 0.05f),
-        ElevationItem(2, 3, 0.08f),
-        ElevationItem(3, 6, 0.11f),
-        ElevationItem(4, 8, 0.12f),
-        ElevationItem(5, 12, 0.14f),
-    )
+    val items =
+        listOf(
+            ElevationItem(0, 0, 0f),
+            ElevationItem(1, 1, 0.05f),
+            ElevationItem(2, 3, 0.08f),
+            ElevationItem(3, 6, 0.11f),
+            ElevationItem(4, 8, 0.12f),
+            ElevationItem(5, 12, 0.14f),
+        )
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp),
     ) {
         Text(
             modifier = Modifier.padding(8.dp),
@@ -80,9 +82,10 @@ internal fun ElevationScreen() {
 @Composable
 private fun ElevationCard(item: ElevationItem) {
     Surface(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .aspectRatio(1f)
+                .padding(8.dp),
         tonalElevation = item.surfaceElevation.dp,
         shadowElevation = item.shadowElevation.dp,
         shape = RoundedCornerShape(4.dp),

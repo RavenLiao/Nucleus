@@ -3,7 +3,6 @@ package com.example.demo.gallery
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,10 +42,11 @@ internal fun Containment() {
 private fun DividersDemo() {
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp, 32.dp, 16.dp, 32.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp, 32.dp, 16.dp, 32.dp),
         ) {
             HorizontalDivider()
         }
@@ -59,10 +59,11 @@ private fun DialogsDemo() {
 
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
         ) {
             TextButton(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).weight(1f),
@@ -75,7 +76,13 @@ private fun DialogsDemo() {
     if (openAlertDialog.value) {
         AlertDialog(
             title = { Text(text = "What is a dialog?") },
-            text = { Text(text = "A dialog is a type of modal window that appears in front of app content to provide critical information, or prompt for a decision to be made.") },
+            text = {
+                Text(
+                    text =
+                        "A dialog is a type of modal window that appears in front of app content " +
+                            "to provide critical information, or prompt for a decision to be made.",
+                )
+            },
             onDismissRequest = { openAlertDialog.value = false },
             confirmButton = {
                 TextButton(onClick = { openAlertDialog.value = false }) { Text("Okay") }
@@ -117,10 +124,11 @@ private fun CardsDemo() {
 
     OutlinedCard {
         Row(
-            modifier = Modifier
-                .requiredWidthIn(400.dp)
-                .width(600.dp)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .requiredWidthIn(400.dp)
+                    .width(600.dp)
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.Center,
         ) {
             CardTemplate(
@@ -128,13 +136,15 @@ private fun CardsDemo() {
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
                 colors = CardDefaults.elevatedCardColors(),
             )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(16.dp))
+            androidx.compose.foundation.layout
+                .Spacer(modifier = Modifier.width(16.dp))
             CardTemplate(
                 title = "Filled",
                 elevation = CardDefaults.cardElevation(),
                 colors = CardDefaults.cardColors(),
             )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(16.dp))
+            androidx.compose.foundation.layout
+                .Spacer(modifier = Modifier.width(16.dp))
             CardTemplate(
                 title = "Outlined",
                 elevation = CardDefaults.outlinedCardElevation(),
