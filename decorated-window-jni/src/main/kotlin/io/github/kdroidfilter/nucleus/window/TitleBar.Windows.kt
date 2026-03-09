@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -39,7 +40,7 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-@Suppress("FunctionNaming")
+@Suppress("FunctionNaming", "LongMethod")
 @Composable
 private fun DecoratedWindowScope.NativeWindowsTitleBar(
     modifier: Modifier,
@@ -66,6 +67,16 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
             }
         } else {
             onDispose { }
+        }
+    }
+
+    // Sync native background fill color with the title bar color so that
+    // WM_ERASEBKGND fills with the correct color during resize (avoids white flash).
+    val titleBarBackground = style.colors.background
+    LaunchedEffect(window, titleBarBackground) {
+        val hwnd = JniWindowsWindowUtil.getHwnd(window)
+        if (hwnd != 0L) {
+            JniWindowsDecorationBridge.nativeSetBackgroundColor(hwnd, titleBarBackground.toArgb())
         }
     }
 

@@ -320,9 +320,52 @@ fun FrameWindowScope.DecoratedWindowBody(
 
     // Sync the AWT window background with the title bar color so that the
     // native window surface matches during resize (avoids white flash).
+    // On macOS, setting window.background is enough (sets NSWindow.backgroundColor
+    // at the compositor level). On Windows, each AWT component has its own HWND
+    // with its own WM_ERASEBKGND handler, so we must set the background on every
+    // component in the hierarchy to prevent any child from erasing with white.
+    // On Windows, Skiko's ContextHandler.draw() clears to Color.WHITE when
+    // SkiaLayer.transparency == false (the default). For dark themes we call
+    // setTransparency(true) so it clears to TRANSPARENT instead, which renders
+    // as opaque black on the DirectX surface (DXGI_ALPHA_MODE_IGNORE) and avoids
+    // the white resize flash.
+    // Restricted to Windows: on macOS the clear is always transparent (no issue),
+    // and on Linux enabling transparency composites with the desktop compositor,
+    // which would cause visual artifacts in dark themes.
+    val isWindows = remember { System.getProperty("os.name").startsWith("Windows", ignoreCase = true) }
     val titleBarBackground = LocalTitleBarStyle.current.colors.background
     LaunchedEffect(window, titleBarBackground) {
-        window.background = java.awt.Color(titleBarBackground.toArgb(), true)
+        val awtColor = java.awt.Color(titleBarBackground.toArgb(), true)
+        val isDark =
+            titleBarBackground.red * 0.299f +
+                titleBarBackground.green * 0.587f +
+                titleBarBackground.blue * 0.114f < 0.5f
+
+        fun applyRecursive(c: java.awt.Component) {
+            c.background = awtColor
+            // Windows only: set SkiaLayer transparency to match the theme so
+            // Skiko clears to TRANSPARENT (opaque black) instead of WHITE.
+            // NoSuchMethodException just means this component is not SkiaLayer.
+            if (isWindows) {
+                try {
+                    c.javaClass
+                        .getMethod("setTransparency", Boolean::class.javaPrimitiveType)
+                        .invoke(c, isDark)
+                } catch (_: NoSuchMethodException) {
+                    // Not SkiaLayer
+                } catch (_: Exception) {
+                    // Ignore other reflection errors
+                }
+            }
+            if (c is java.awt.Container) {
+                c.components.forEach { applyRecursive(it) }
+            }
+        }
+        // Apply immediately (LaunchedEffect runs on the EDT in Compose Desktop)
+        // and also defer once to catch SkiaLayer if it was not yet added during
+        // the first composition frame.
+        applyRecursive(window)
+        javax.swing.SwingUtilities.invokeLater { applyRecursive(window) }
     }
 
     CompositionLocalProvider(

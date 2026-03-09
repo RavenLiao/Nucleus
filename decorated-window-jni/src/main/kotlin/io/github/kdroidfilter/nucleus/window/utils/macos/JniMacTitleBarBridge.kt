@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
+@Suppress("TooManyFunctions")
 internal object JniMacTitleBarBridge {
     private val logger = Logger.getLogger(JniMacTitleBarBridge::class.java.simpleName)
 

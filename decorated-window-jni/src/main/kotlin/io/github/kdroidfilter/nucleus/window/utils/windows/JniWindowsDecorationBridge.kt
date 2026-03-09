@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.util.logging.Level
 import java.util.logging.Logger
 
+@Suppress("TooManyFunctions")
 internal object JniWindowsDecorationBridge {
     private val logger = Logger.getLogger(JniWindowsDecorationBridge::class.java.simpleName)
 
@@ -106,6 +107,14 @@ internal object JniWindowsDecorationBridge {
     // Returns true if the window is currently in native fullscreen mode.
     @JvmStatic
     external fun nativeIsFullscreen(hwnd: Long): Boolean
+
+    // Sets the background fill color for WM_ERASEBKGND (avoids white flash on resize).
+    // Pass the ARGB int from Compose Color.toArgb(); alpha is ignored (opaque fill).
+    @JvmStatic
+    external fun nativeSetBackgroundColor(
+        hwnd: Long,
+        argb: Int,
+    )
 
     // Returns debug counters as a string (temporary).
     @JvmStatic

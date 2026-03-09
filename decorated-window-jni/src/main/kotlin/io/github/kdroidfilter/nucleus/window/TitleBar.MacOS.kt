@@ -35,7 +35,7 @@ import kotlin.coroutines.coroutineContext
 private const val MENU_BAR_ANIMATION_MS = 200
 
 @OptIn(ExperimentalComposeUiApi::class)
-@Suppress("FunctionNaming")
+@Suppress("FunctionNaming", "LongMethod", "CyclomaticComplexMethod")
 @Composable
 internal fun DecoratedWindowScope.MacOSTitleBar(
     modifier: Modifier = Modifier,
@@ -154,7 +154,9 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                                     this.currentEvent.changes.any { !it.isConsumed }
                                 ) {
                                     val now = System.currentTimeMillis()
-                                    if (now - lastPress in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
+                                    if (now - lastPress in
+                                        viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis
+                                    ) {
                                         if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
                                             JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(ptr)
                                         }

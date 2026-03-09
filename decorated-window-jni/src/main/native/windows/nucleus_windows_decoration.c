@@ -86,6 +86,8 @@ typedef struct {
     int     titleBarHeightPx;
     BOOL    forceHitTestClient;
     HWND    childHwnd;
+    /* Background color (COLORREF = 0x00BBGGRR) for WM_ERASEBKGND */
+    COLORREF bgColor;
     /* Fullscreen state */
     BOOL    isFullscreen;
     LONG    savedStyle;
@@ -160,6 +162,20 @@ static LRESULT CALLBACK childWndProc(
     ChildState *cs = getChildState(hwnd);
     if (!cs) return DefWindowProcW(hwnd, msg, wParam, lParam);
 
+    /* Fill background with parent's bgColor to avoid white flash on resize */
+    if (msg == WM_ERASEBKGND) {
+        DecoState *parentState = getState(cs->parentHwnd);
+        if (parentState) {
+            HDC hdc = (HDC)wParam;
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            HBRUSH brush = CreateSolidBrush(parentState->bgColor);
+            FillRect(hdc, &rc, brush);
+            DeleteObject(brush);
+            return 1;
+        }
+    }
+
     if (msg == WM_NCHITTEST) {
         /* Only return HTTRANSPARENT for the top resize border so the
          * parent frame can handle HTTOP/HTTOPLEFT/HTTOPRIGHT.
@@ -205,6 +221,33 @@ static LRESULT CALLBACK decorationWndProc(
     state->anyMsgCount++;
 
     switch (msg) {
+
+    /* -------------------------------------------------------------- */
+    /*  WM_ERASEBKGND: fill with bgColor to avoid white flash on       */
+    /*  resize. Without this, the default handler erases to the        */
+    /*  window class brush (white) before Compose/Skiko renders.       */
+    /* -------------------------------------------------------------- */
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        HBRUSH brush = CreateSolidBrush(state->bgColor);
+        FillRect(hdc, &rc, brush);
+        DeleteObject(brush);
+        return 1;
+    }
+
+    /* -------------------------------------------------------------- */
+    /*  WM_WINDOWPOSCHANGING: prevent BitBlt during resize.            */
+    /*  Without SWP_NOCOPYBITS, Windows copies old content and fills   */
+    /*  the newly exposed strip with the class brush (white) before    */
+    /*  WM_ERASEBKGND fires.                                           */
+    /* -------------------------------------------------------------- */
+    case WM_WINDOWPOSCHANGING: {
+        WINDOWPOS *wp = (WINDOWPOS *)lParam;
+        wp->flags |= SWP_NOCOPYBITS;
+        break;
+    }
 
     /* -------------------------------------------------------------- */
     /*  WM_NCCALCSIZE: extend client area into title bar               */
@@ -458,7 +501,18 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
         }
     }
 
-    /* Extend frame into client area for DWM shadow */
+    /* Extend DWM frame into the entire client area ("sheet of glass").
+     * This makes the DWM background (opaque black) fill newly exposed
+     * areas during resize instead of the window-class brush (white).
+     * On macOS the equivalent is NSWindow.setBackgroundColor — both work
+     * at the compositor level, below the GPU rendering surface.
+     * DWM shadow is preserved regardless of margin values. */
+    /* Extend just the bottom by 1px to keep DWM shadow without enabling
+     * glass compositing over the client area. With glass ({-1,-1,-1,-1}),
+     * transparent DirectX pixels would show the DWM glass backdrop (white by
+     * default), making the flash worse. With {0,0,0,1} DWM treats the
+     * client area as opaque: transparent pixels (from setTransparency=true)
+     * render as black, which is invisible on dark-themed windows. */
     MARGINS margins = {0, 0, 0, 1};
     DwmExtendFrameIntoClientArea(hwnd, &margins);
 
@@ -760,6 +814,47 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
     if (!state) return JNI_FALSE;
 
     return state->isFullscreen ? JNI_TRUE : JNI_FALSE;
+}
+
+/* -------------------------------------------------------------- */
+/*  nativeSetBackgroundColor(long hwnd, int argb)                  */
+/*  Syncs DWM caption/border color and dark-mode flag with the     */
+/*  window's title bar theme color.                                */
+/*  Windows 11 22000+ for attrs 34/35; attr 20 back-ported to     */
+/*  Windows 10 build 17763+. Silently ignored on older versions.   */
+/* -------------------------------------------------------------- */
+JNIEXPORT void JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBridge_nativeSetBackgroundColor(
+    JNIEnv *env, jclass clazz, jlong hwndLong, jint argb)
+{
+    HWND hwnd = (HWND)(uintptr_t)hwndLong;
+    if (!hwnd) return;
+
+    int r = (argb >> 16) & 0xFF;
+    int g = (argb >>  8) & 0xFF;
+    int b =  argb        & 0xFF;
+    COLORREF color = RGB(r, g, b);
+
+    DecoState *state = getState(hwnd);
+    if (state) {
+        state->bgColor = color;
+    }
+
+    /* Set DWM caption color (attr 35) and border color (attr 34).
+     * Windows 11 22000+; silently ignored on older versions. */
+    DwmSetWindowAttribute(hwnd, 35 /* DWMWA_CAPTION_COLOR */,
+                          &color, sizeof(color));
+    DwmSetWindowAttribute(hwnd, 34 /* DWMWA_BORDER_COLOR */,
+                          &color, sizeof(color));
+
+    /* Switch DWM glass between light/dark based on luminance so that the
+     * "sheet of glass" background that DWM composites during resize
+     * matches the window theme.  DWMWA_USE_IMMERSIVE_DARK_MODE = 20.
+     * Windows 11 22000+ / Windows 10 build 17763+; silently ignored on older. */
+    int luminance = (r * 299 + g * 587 + b * 114) / 1000;
+    BOOL isDark = (luminance < 128) ? TRUE : FALSE;
+    DwmSetWindowAttribute(hwnd, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */,
+                          &isDark, sizeof(isDark));
 }
 
 /* -------------------------------------------------------------- */

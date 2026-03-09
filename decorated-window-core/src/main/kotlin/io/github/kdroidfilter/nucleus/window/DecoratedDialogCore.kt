@@ -237,7 +237,15 @@ fun DialogWindowScope.DecoratedDialogBody(
     // native window surface matches during resize (avoids white flash).
     val titleBarBackground = LocalTitleBarStyle.current.colors.background
     LaunchedEffect(window, titleBarBackground) {
-        window.background = java.awt.Color(titleBarBackground.toArgb(), true)
+        val awtColor = java.awt.Color(titleBarBackground.toArgb(), true)
+
+        fun applyRecursive(c: java.awt.Component) {
+            c.background = awtColor
+            if (c is java.awt.Container) {
+                c.components.forEach { applyRecursive(it) }
+            }
+        }
+        applyRecursive(window)
     }
 
     CompositionLocalProvider(LocalDialogTitleBarInfo provides DialogTitleBarInfo(title, icon)) {
