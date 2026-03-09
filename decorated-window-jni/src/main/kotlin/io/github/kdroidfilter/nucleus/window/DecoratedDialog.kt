@@ -1,16 +1,15 @@
 package io.github.kdroidfilter.nucleus.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberDialogState
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
-import javax.swing.SwingUtilities
 
 @Suppress("FunctionNaming", "LongParameterList")
 @Composable
@@ -29,6 +28,28 @@ fun DecoratedDialog(
 ) {
     val undecorated = Platform.Linux == Platform.Current || Platform.Windows == Platform.Current
 
+    // Centre the dialog on its parent window by computing the position
+    // before DialogWindow is composed.  This avoids any visible jump because
+    // DialogWindow reads state.position and applies it immediately.
+    val density = LocalDensity.current
+    remember(state) {
+        val parent =
+            java.awt.KeyboardFocusManager
+                .getCurrentKeyboardFocusManager()
+                .focusedWindow
+        if (parent != null && state.position == WindowPosition.PlatformDefault) {
+            val dialogWidthPx = with(density) { state.size.width.toPx() }
+            val dialogHeightPx = with(density) { state.size.height.toPx() }
+            val x = parent.x + (parent.width - dialogWidthPx) / 2
+            val y = parent.y + (parent.height - dialogHeightPx) / 2
+            state.position =
+                WindowPosition(
+                    x = with(density) { x.toDp() },
+                    y = with(density) { y.toDp() },
+                )
+        }
+    }
+
     DialogWindow(
         onCloseRequest = onCloseRequest,
         state = state,
@@ -43,28 +64,6 @@ fun DecoratedDialog(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
     ) {
-        // Centre the dialog on its parent window automatically.
-        // ComposeDialog.owner is set by Compose Desktop to the nearest parent
-        // Window in the composition tree (the DecoratedWindow). When used
-        // outside a Window (no parent), setLocationRelativeTo(null) centres
-        // on the screen instead.
-        // We use windowOpened (fires when the native window is first shown)
-        // so that Compose Desktop has already applied the DialogState position
-        // before we override it with relative placement.
-        DisposableEffect(window) {
-            val listener =
-                object : WindowAdapter() {
-                    override fun windowOpened(e: WindowEvent?) {
-                        // Defer by one EDT cycle so macOS finishes its own
-                        // window positioning before we override it.
-                        SwingUtilities.invokeLater {
-                            window.setLocationRelativeTo(window.owner)
-                        }
-                    }
-                }
-            window.addWindowListener(listener)
-            onDispose { window.removeWindowListener(listener) }
-        }
         DecoratedDialogBody(
             title = title,
             icon = icon,
