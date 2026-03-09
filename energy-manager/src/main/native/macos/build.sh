@@ -13,9 +13,12 @@ RESOURCE_DIR="$SCRIPT_DIR/../../resources/nucleus/native"
 OUT_DIR_X64="$RESOURCE_DIR/darwin-x64"
 OUT_DIR_ARM64="$RESOURCE_DIR/darwin-aarch64"
 
-# Check JAVA_HOME
+# Detect JAVA_HOME for JNI headers
 if [ -z "${JAVA_HOME:-}" ]; then
-    echo "ERROR: JAVA_HOME is not set." >&2
+    JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null || true)
+fi
+if [ -z "${JAVA_HOME:-}" ]; then
+    echo "ERROR: JAVA_HOME not set and /usr/libexec/java_home failed." >&2
     exit 1
 fi
 if [ ! -f "$JAVA_HOME/include/jni.h" ]; then

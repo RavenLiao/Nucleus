@@ -101,7 +101,7 @@ nucleus.application {
         // --- Native libs handling ---
         cleanupNativeLibs = true // Auto cleanup native libraries
         enableAotCache = true // Enable AOT compilation cache
-        splashImage = "splash.png" // Splash screen image file
+//        splashImage = "splash.png" // Splash screen image file
         homepage = "https://github.com/KdroidFilter/NucleusDemo"
 
         // --- Compression ---

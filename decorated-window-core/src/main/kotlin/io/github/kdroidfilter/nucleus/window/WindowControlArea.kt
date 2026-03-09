@@ -33,6 +33,8 @@ fun TitleBarScope.WindowControlArea(
     window: java.awt.Window,
     state: DecoratedWindowState,
     style: TitleBarStyle,
+    isFullscreen: Boolean = false,
+    onExitFullscreen: (() -> Unit)? = null,
 ) {
     val icons = linuxTitleBarIcons()
 
@@ -50,29 +52,42 @@ fun TitleBarScope.WindowControlArea(
         style = style,
     )
 
-    // Maximize/Restore button (only if resizable)
-    val frame = window as? Frame
-    if (frame != null && frame.isResizable) {
-        if (state.isMaximized) {
-            ControlButton(
-                onClick = { frame.extendedState = Frame.NORMAL },
-                state = state,
-                icon = icons.restore,
-                iconHover = icons.restoreHover,
-                iconPressed = icons.restorePressed,
-                contentDescription = "Restore",
-                style = style,
-            )
-        } else {
-            ControlButton(
-                onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
-                state = state,
-                icon = icons.maximize,
-                iconHover = icons.maximizeHover,
-                iconPressed = icons.maximizePressed,
-                contentDescription = "Maximize",
-                style = style,
-            )
+    // In fullscreen: show maximize icon but click exits fullscreen
+    if (isFullscreen && onExitFullscreen != null) {
+        ControlButton(
+            onClick = onExitFullscreen,
+            state = state,
+            icon = icons.maximize,
+            iconHover = icons.maximizeHover,
+            iconPressed = icons.maximizePressed,
+            contentDescription = "Exit fullscreen",
+            style = style,
+        )
+    } else {
+        // Maximize/Restore button (only if resizable)
+        val frame = window as? Frame
+        if (frame != null && frame.isResizable) {
+            if (state.isMaximized) {
+                ControlButton(
+                    onClick = { frame.extendedState = Frame.NORMAL },
+                    state = state,
+                    icon = icons.restore,
+                    iconHover = icons.restoreHover,
+                    iconPressed = icons.restorePressed,
+                    contentDescription = "Restore",
+                    style = style,
+                )
+            } else {
+                ControlButton(
+                    onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
+                    state = state,
+                    icon = icons.maximize,
+                    iconHover = icons.maximizeHover,
+                    iconPressed = icons.maximizePressed,
+                    contentDescription = "Maximize",
+                    style = style,
+                )
+            }
         }
     }
 

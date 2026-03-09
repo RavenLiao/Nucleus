@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.offset
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
@@ -190,8 +191,10 @@ class TitleBarMeasurePolicy(
 
         val contentPadding = applyTitleBar(boxHeight.toDp(), state)
 
-        val leftInset = contentPadding.calculateLeftPadding(layoutDirection).roundToPx()
-        val rightInset = contentPadding.calculateRightPadding(layoutDirection).roundToPx()
+        // Use Ltr to get the logical start/end insets without resolving
+        // to absolute left/right — placeRelative already handles RTL mirroring.
+        val leftInset = contentPadding.calculateLeftPadding(LayoutDirection.Ltr).roundToPx()
+        val rightInset = contentPadding.calculateRightPadding(LayoutDirection.Ltr).roundToPx()
 
         val occupiedSpaceHorizontally = endOccupied + otherOccupied + leftInset + rightInset
         val boxWidth = maxOf(constraints.minWidth, occupiedSpaceHorizontally)

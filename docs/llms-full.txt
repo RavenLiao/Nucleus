@@ -1478,7 +1478,7 @@ val isSingle = SingleInstanceManager.isSingleInstance(
 
 ## Decorated Window
 
-Custom title bar with native window controls. Requires JetBrains Runtime (JBR).
+Custom title bar with native window controls. Two modules: `decorated-window-jbr` (JetBrains Runtime) and `decorated-window-jni` (any JVM, including GraalVM).
 
 ```kotlin
 import io.github.kdroidfilter.nucleus.window.*
@@ -1489,7 +1489,11 @@ fun main() = application {
             onCloseRequest = ::exitApplication,
             title = "My App",
         ) {
-            TitleBar { state ->
+            TitleBar(
+                modifier = Modifier
+                    .newFullscreenControls()   // sliding overlay title bar in fullscreen
+                    .macOSLargeCornerRadius()   // 26pt corner radius (Finder/Safari style)
+            ) { state ->
                 Text(title, modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             MyContent()
@@ -1500,14 +1504,22 @@ fun main() = application {
 
 | | macOS | Windows | Linux |
 |---|-------|---------|-------|
-| Decoration | JBR `CustomTitleBar` | JBR `CustomTitleBar` | Fully undecorated |
-| Window controls | Native traffic lights | Native min/max/close | Compose `WindowControlArea` |
-| Drag | JBR hit-test | JBR `forceHitTest` | JBR `startMovingTogetherWithMouse()` |
+| Decoration | JBR `CustomTitleBar` or JNI | JBR `CustomTitleBar` or JNI DLL | Fully undecorated |
+| Window controls | Native traffic lights | Native (JBR) or Compose SVG (JNI) | Compose `WindowControlArea` |
+| Drag | JBR hit-test or JNI | JBR `forceHitTest` or JNI | `_NET_WM_MOVERESIZE` or Compose |
 | Window shape | Native | Native | Rounded top corners (GNOME 12dp, KDE 5dp) |
 
 Components: `DecoratedWindow`, `DecoratedDialog`, `TitleBar`, `DialogTitleBar`, `NucleusDecoratedWindowTheme`
 
 Styling: `DecoratedWindowStyle` (border), `TitleBarStyle` (colors, metrics, icons). Map any design system.
+
+### Fullscreen Title Bar (`newFullscreenControls()`)
+
+Native-style sliding overlay in fullscreen (Safari-like on macOS, Edge-like on Windows, Firefox-like on Linux). Title bar hides and slides down (200ms animation) when pointer moves near the top edge. Works on all platforms with `decorated-window-jni`. On macOS, syncs with the system menu bar and traffic light buttons via native NSEvent monitor. On Windows/Linux, window controls move to the overlay.
+
+### Large Corner Radius (`macOSLargeCornerRadius()`)
+
+Applies 26pt window corner radius on macOS by installing an invisible NSToolbar. Traffic lights are repositioned (+6pt inset). Toolbar is removed before fullscreen and reinstalled after. macOS + `decorated-window-jni` only, no-op on other platforms.
 
 ## Decorated Window — Material 3
 
@@ -1561,6 +1573,44 @@ fun App() {
 | Linux | D-Bus `org.freedesktop.portal.Settings` | Yes — `SettingChanged` signal |
 
 Native libraries shipped: macOS `libnucleus_darkmode.dylib`, Windows `nucleus_windows_theme.dll`, Linux `libnucleus_linux_theme.so` (all architectures).
+
+## System Color
+
+Reactive OS accent color and high contrast detection via JNI.
+
+```kotlin
+@Composable
+fun App() {
+    val accentColor = systemAccentColor()         // Color? — recomposes on change
+    val highContrast = isSystemInHighContrast()    // Boolean — recomposes on change
+}
+```
+
+`isSystemAccentColorSupported()` — non-composable check for feature gating.
+
+| Platform | Accent Color | High Contrast | Reactive |
+|----------|-------------|---------------|----------|
+| macOS | `NSColor.controlAccentColor` | `accessibilityDisplayShouldIncreaseContrast` | Yes — NSNotification |
+| Windows | DWM `AccentColor` registry (AABBGGRR) | `SPI_GETHIGHCONTRAST` | Yes — `RegNotifyChangeKeyValue` |
+| Linux | XDG Desktop Portal `accent-color` (D-Bus) | XDG Portal `contrast` | Yes — `SettingChanged` signal |
+
+## Energy Manager
+
+Process/thread energy efficiency mode and screen-awake (caffeine) API.
+
+```kotlin
+EnergyManager.enableEfficiencyMode()   // process-level low power
+EnergyManager.disableEfficiencyMode()  // restore normal priority
+EnergyManager.withEfficiencyMode { }   // thread-level, suspend block
+EnergyManager.keepScreenAwake()        // prevent display sleep
+EnergyManager.releaseScreenAwake()     // allow sleep again
+```
+
+| Feature | Windows | macOS | Linux |
+|---------|---------|-------|-------|
+| Process efficiency | EcoQoS + IDLE_PRIORITY_CLASS | PRIO_DARWIN_BG + QoS TIER_5 | nice +19, ioprio IDLE, timerslack 100ms |
+| Thread efficiency | EcoQoS + THREAD_PRIORITY_IDLE | QOS_CLASS_BACKGROUND | nice +19, ioprio IDLE, timerslack 100ms |
+| Screen-awake | SetThreadExecutionState | IOPMAssertion | DBus (GNOME/logind) or X11 XScreenSaverSuspend |
 
 ## Native SSL
 

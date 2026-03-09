@@ -1,5 +1,48 @@
 # Changelog
 
+## v1.4.0
+
+**Released: 2026-03-09**
+
+### New Features
+
+- **Native fullscreen with sliding title bar** — Platform-native fullscreen experience: Safari-like on macOS, Edge-like on Windows, Firefox-like on Linux. When the window enters fullscreen, the title bar becomes a floating overlay that slides down on hover near the top edge and slides back up when the pointer moves away. Enable with `Modifier.newFullscreenControls()` on `TitleBar` / `MaterialTitleBar`.
+- **macOS large corner radius** — New `Modifier.macOSLargeCornerRadius()` modifier applies the 26pt window corner radius used by Finder and Safari. Installs an invisible `NSToolbar` and repositions traffic light buttons to match Apple's native inset.
+- **System Color module** (`nucleus.system-color`) — Reactive detection of OS accent color and high contrast mode via JNI. Supports macOS (`NSColor.controlAccentColor`), Windows (DWM registry), and Linux (XDG Desktop Portal D-Bus). Composable APIs: `systemAccentColor()`, `isSystemInHighContrast()`.
+- **Energy Manager module** (`nucleus.energy-manager`) — Process-level and thread-level energy efficiency mode (EcoQoS on Windows, `PRIO_DARWIN_BG` on macOS, nice/ioprio on Linux) and screen-awake (caffeine) API to prevent display sleep.
+- **AWT window background sync on macOS** — Idempotent property application prevents redundant `PropertyChangeEvent` firings, reducing visual jitter during layout passes.
+
+### Bug Fixes
+
+- **Fix Windows fullscreen** — Compose for Desktop does not handle fullscreen correctly on Windows (window does not cover the taskbar). Now uses native Win32 APIs for true fullscreen, matching Edge and other native Windows applications.
+- Reattach invisible toolbar to resolve macOS fullscreen glitches
+- Improve macOS fullscreen handling and JNI thread safety
+- Fix animate traffic light buttons in sync with title bar in fullscreen
+- Fill title bar background when sliding down in macOS fullscreen
+- Correct D-Bus `ReadOne` variant parsing for Linux accent color
+- Move Windows dark mode monitoring to native thread for reliability
+
+### Refactoring
+
+- Use dictionary for macOS menu bar monitors and improve cleanup logic
+- Replace polling with event-driven menu bar offset handling in macOS fullscreen
+- Simplify tab drag-and-drop using Reorderable library
+- Split energy-manager into platform sub-packages
+
+### Documentation
+
+- Rewrite energy-manager docs for full platform coverage
+- Add system-color module documentation
+- Update decorated window docs with fullscreen title bar and large corner radius sections
+- Simplify single-instance and deep-links code examples
+
+### CI/CD
+
+- Add energy-manager native build and pre-merge verification for all platforms
+- Add system-color native build workflows
+
+---
+
 ## v1.3.6
 
 **Released: 2026-03-02**

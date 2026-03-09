@@ -3,6 +3,9 @@ package io.github.kdroidfilter.nucleus.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.debugInspectorInfo
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
@@ -24,7 +27,86 @@ fun DecoratedWindowScope.TitleBar(
     }
 }
 
-// In the JNI module fullscreen controls are always enabled — replacement buttons
-// are installed in the content view automatically by the native observer.
-@Suppress("UnusedParameter")
-fun Modifier.newFullscreenControls(newControls: Boolean = true): Modifier = this
+fun Modifier.newFullscreenControls(newControls: Boolean = true): Modifier =
+    this then
+        NewFullscreenControlsElement(
+            newControls,
+            debugInspectorInfo {
+                name = "newFullscreenControls"
+                value = newControls
+            },
+        )
+
+internal class NewFullscreenControlsElement(
+    val newControls: Boolean,
+    val inspectorInfo: InspectorInfo.() -> Unit,
+) : ModifierNodeElement<NewFullscreenControlsNode>() {
+    override fun create(): NewFullscreenControlsNode = NewFullscreenControlsNode(newControls)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherModifier = other as? NewFullscreenControlsElement ?: return false
+        return newControls == otherModifier.newControls
+    }
+
+    override fun hashCode(): Int = newControls.hashCode()
+
+    override fun InspectorInfo.inspectableProperties() {
+        inspectorInfo()
+    }
+
+    override fun update(node: NewFullscreenControlsNode) {
+        node.newControls = newControls
+    }
+}
+
+internal class NewFullscreenControlsNode(
+    var newControls: Boolean,
+) : Modifier.Node()
+
+internal fun Modifier.hasNewFullscreenControls(): Boolean =
+    foldOut(false) { e, r ->
+        if (e is NewFullscreenControlsElement) e.newControls else r
+    }
+
+fun Modifier.macOSLargeCornerRadius(enabled: Boolean = true): Modifier =
+    this then
+        MacOSLargeCornerRadiusElement(
+            enabled,
+            debugInspectorInfo {
+                name = "macOSLargeCornerRadius"
+                value = enabled
+            },
+        )
+
+internal class MacOSLargeCornerRadiusElement(
+    val enabled: Boolean,
+    val inspectorInfo: InspectorInfo.() -> Unit,
+) : ModifierNodeElement<MacOSLargeCornerRadiusNode>() {
+    override fun create(): MacOSLargeCornerRadiusNode = MacOSLargeCornerRadiusNode(enabled)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherModifier = other as? MacOSLargeCornerRadiusElement ?: return false
+        return enabled == otherModifier.enabled
+    }
+
+    override fun hashCode(): Int = enabled.hashCode()
+
+    override fun InspectorInfo.inspectableProperties() {
+        inspectorInfo()
+    }
+
+    override fun update(node: MacOSLargeCornerRadiusNode) {
+        node.enabled = enabled
+    }
+}
+
+internal class MacOSLargeCornerRadiusNode(
+    var enabled: Boolean,
+) : Modifier.Node()
+
+internal fun Modifier.hasMacOSLargeCornerRadius(): Boolean =
+    foldOut(false) { e, r ->
+        if (e is MacOSLargeCornerRadiusElement) e.enabled else r
+    }

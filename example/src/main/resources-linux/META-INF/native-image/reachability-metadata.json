@@ -2752,6 +2752,32 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.darkmodedetector.linux.NativeLinuxBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onThemeChanged",
+                    "parameterTypes": [
+                        "boolean"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.systemcolor.linux.NativeLinuxSystemColorBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onAccentColorChanged",
+                    "parameterTypes": [
+                        "float",
+                        "float",
+                        "float"
+                    ]
+                }
+            ]
         }
     ],
     "resources": [
@@ -2992,6 +3018,12 @@
         },
         {
             "glob": "nucleus/window/icons/linux/kde/restore_dark.svg"
+        },
+        {
+            "glob": "nucleus/native/linux-x64/libnucleus_energy_manager.so"
+        },
+        {
+            "glob": "nucleus/native/linux-x64/libnucleus_systemcolor.so"
         }
     ]
 }

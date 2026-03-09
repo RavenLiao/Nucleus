@@ -83,12 +83,16 @@ Material-styled title bars. They read `MaterialTheme.colorScheme` and build a `T
 
 ```kotlin
 MaterialTitleBar(
-    modifier = Modifier.newFullscreenControls(), // optional, macOS fullscreen
-    gradientStartColor = Color.Unspecified,       // optional gradient
+    modifier = Modifier
+        .newFullscreenControls()   // sliding overlay title bar in fullscreen (all platforms)
+        .macOSLargeCornerRadius(), // 26pt corner radius on macOS (Finder/Safari style)
+    gradientStartColor = Color.Unspecified, // optional gradient
 ) { state ->
     // TitleBarScope content
 }
 ```
+
+See [Decorated Window — Fullscreen Title Bar](decorated-window.md#fullscreen-title-bar) for details on the sliding overlay behavior and the large corner radius modifier.
 
 ## Color Mapping
 

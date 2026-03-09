@@ -3145,7 +3145,15 @@
             "type": "org.jetbrains.skiko.HardwareLayer"
         },
         {
-            "type": "org.jetbrains.skiko.SkiaLayer"
+            "type": "org.jetbrains.skiko.SkiaLayer",
+            "methods": [
+                {
+                    "name": "setTransparency",
+                    "parameterTypes": [
+                        "boolean"
+                    ]
+                }
+            ]
         },
         {
             "type": "org.jetbrains.skiko.SkiaLayer$1"
@@ -4759,6 +4767,15 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "javax.swing.JLayeredPane"
+        },
+        {
+            "type": "javax.swing.JPanel"
+        },
+        {
+            "type": "javax.swing.JRootPane"
         }
     ],
     "resources": [
@@ -4870,6 +4887,18 @@
         },
         {
             "glob": "nucleus/native/win32-x64/nucleus_systemcolor.dll"
+        },
+        {
+            "glob": "nucleus/window/icons/windows/close_fullscreen.svg"
+        },
+        {
+            "glob": "nucleus/window/icons/windows/close_fullscreenInactive.svg"
+        },
+        {
+            "glob": "nucleus/window/icons/windows/close_fullscreenInactive_dark.svg"
+        },
+        {
+            "glob": "nucleus/window/icons/windows/close_fullscreen_dark.svg"
         }
     ]
 }

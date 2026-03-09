@@ -34,9 +34,11 @@ internal object LinuxEnergyManager : PlatformEnergyManager {
     override fun disableThreadEfficiencyMode(): EnergyManager.Result =
         callNative { NativeLinuxEnergyBridge.nativeDisableThreadEfficiencyMode() }
 
+    @Suppress("MaxLineLength")
     @Synchronized
     override fun keepScreenAwake(): EnergyManager.Result = callNative { NativeLinuxEnergyBridge.nativeKeepScreenAwake() }
 
+    @Suppress("MaxLineLength")
     @Synchronized
     override fun releaseScreenAwake(): EnergyManager.Result = callNative { NativeLinuxEnergyBridge.nativeReleaseScreenAwake() }
 

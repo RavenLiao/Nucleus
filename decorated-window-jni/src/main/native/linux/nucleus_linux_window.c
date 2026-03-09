@@ -246,6 +246,98 @@ Java_io_github_kdroidfilter_nucleus_window_utils_linux_JniLinuxWindowBridge_nati
 }
 
 /* ------------------------------------------------------------------ */
+/*  nativeSetFullscreen                                                 */
+/*  Toggles _NET_WM_STATE_FULLSCREEN on the window via a               */
+/*  _NET_WM_STATE ClientMessage to the root window.                    */
+/* ------------------------------------------------------------------ */
+JNIEXPORT jboolean JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_linux_JniLinuxWindowBridge_nativeSetFullscreen(
+    JNIEnv *env, jclass clazz, jobject awtWindow, jboolean fullscreen)
+{
+    Display *display = getAwtDisplay(env);
+    if (!display) return JNI_FALSE;
+
+    Window xWindow = getAwtX11Window(env, awtWindow);
+    if (!xWindow) return JNI_FALSE;
+
+    if (!awtLock(env)) return JNI_FALSE;
+
+    Window rootWindow = XDefaultRootWindow(display);
+    Atom wmState = XInternAtom(display, "_NET_WM_STATE", False);
+    Atom wmStateFullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
+
+    XEvent event;
+    memset(&event, 0, sizeof(event));
+    event.xclient.type = ClientMessage;
+    event.xclient.window = xWindow;
+    event.xclient.message_type = wmState;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = fullscreen ? 1 : 0;  /* _NET_WM_STATE_ADD or _REMOVE */
+    event.xclient.data.l[1] = (long)wmStateFullscreen;
+    event.xclient.data.l[2] = 0;
+    event.xclient.data.l[3] = 1;  /* source indication: application */
+    event.xclient.data.l[4] = 0;
+
+    XSendEvent(display, rootWindow, False,
+               SubstructureRedirectMask | SubstructureNotifyMask,
+               &event);
+
+    XFlush(display);
+
+    awtUnlock(env);
+
+    return JNI_TRUE;
+}
+
+/* ------------------------------------------------------------------ */
+/*  nativeIsFullscreen                                                  */
+/*  Checks if _NET_WM_STATE_FULLSCREEN is set on the window.          */
+/* ------------------------------------------------------------------ */
+JNIEXPORT jboolean JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_linux_JniLinuxWindowBridge_nativeIsFullscreen(
+    JNIEnv *env, jclass clazz, jobject awtWindow)
+{
+    Display *display = getAwtDisplay(env);
+    if (!display) return JNI_FALSE;
+
+    Window xWindow = getAwtX11Window(env, awtWindow);
+    if (!xWindow) return JNI_FALSE;
+
+    if (!awtLock(env)) return JNI_FALSE;
+
+    Atom wmState = XInternAtom(display, "_NET_WM_STATE", False);
+    Atom wmStateFullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
+
+    Atom actualType;
+    int actualFormat;
+    unsigned long nItems, bytesAfter;
+    unsigned char *data = NULL;
+
+    jboolean isFullscreen = JNI_FALSE;
+
+    int result = XGetWindowProperty(display, xWindow, wmState,
+                                    0, 1024, False, XA_ATOM,
+                                    &actualType, &actualFormat,
+                                    &nItems, &bytesAfter, &data);
+
+    if (result == Success && data && actualType == XA_ATOM && actualFormat == 32) {
+        Atom *atoms = (Atom *)data;
+        for (unsigned long i = 0; i < nItems; i++) {
+            if (atoms[i] == wmStateFullscreen) {
+                isFullscreen = JNI_TRUE;
+                break;
+            }
+        }
+    }
+
+    if (data) XFree(data);
+
+    awtUnlock(env);
+
+    return isFullscreen;
+}
+
+/* ------------------------------------------------------------------ */
 /*  nativeIsWmMoveResizeSupported                                      */
 /*  Checks if the WM advertises _NET_WM_MOVERESIZE in _NET_SUPPORTED. */
 /* ------------------------------------------------------------------ */

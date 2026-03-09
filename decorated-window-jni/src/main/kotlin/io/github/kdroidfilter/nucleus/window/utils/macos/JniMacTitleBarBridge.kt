@@ -1,56 +1,45 @@
 package io.github.kdroidfilter.nucleus.window.utils.macos
 
-import java.nio.file.Files
-import java.util.logging.Level
-import java.util.logging.Logger
+import io.github.kdroidfilter.nucleus.core.runtime.NativeLibraryLoader
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.ConcurrentHashMap
 
+private const val LIBRARY_NAME = "nucleus_macos_jni"
+
+@Suppress("TooManyFunctions")
 internal object JniMacTitleBarBridge {
-    private val logger = Logger.getLogger(JniMacTitleBarBridge::class.java.simpleName)
-
-    @Volatile
-    private var loaded = false
-
-    init {
-        loadNativeLibrary()
-    }
-
-    private fun loadNativeLibrary() {
-        if (loaded) return
-
-        // Try system library path first (packaged app)
-        try {
-            System.loadLibrary("nucleus_macos_jni")
-            loaded = true
-            return
-        } catch (_: UnsatisfiedLinkError) {
-            // Fall through to JAR extraction
-        }
-
-        // Fallback: extract from JAR resources
-        @Suppress("TooGenericExceptionCaught")
-        try {
-            val arch =
-                System.getProperty("os.arch").let {
-                    if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
-                }
-            val resourcePath = "/nucleus/native/darwin-$arch/libnucleus_macos_jni.dylib"
-            val stream =
-                JniMacTitleBarBridge::class.java
-                    .getResourceAsStream(resourcePath)
-                    ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
-            val tempDir = Files.createTempDirectory("nucleus-jni-native")
-            val tempLib = tempDir.resolve("libnucleus_macos_jni.dylib")
-            stream.use { Files.copy(it, tempLib) }
-            tempLib.toFile().deleteOnExit()
-            tempDir.toFile().deleteOnExit()
-            System.load(tempLib.toAbsolutePath().toString())
-            loaded = true
-        } catch (e: Exception) {
-            logger.log(Level.WARNING, "Failed to load nucleus_macos_jni native library", e)
-        }
-    }
+    private val loaded = NativeLibraryLoader.load(LIBRARY_NAME, JniMacTitleBarBridge::class.java)
 
     val isLoaded: Boolean get() = loaded
+
+    // ── Menu bar offset (event-driven via native NSEvent monitor) ──
+
+    private val menuBarOffsetFlows = ConcurrentHashMap<Long, MutableStateFlow<Float>>()
+    private val emptyFlow = MutableStateFlow(0f)
+
+    // Returns a StateFlow that emits the current menu bar offset for
+    // the given window. Updated by the native event monitor callback.
+    fun menuBarOffsetFlow(nsWindowPtr: Long): StateFlow<Float> {
+        if (nsWindowPtr == 0L) return emptyFlow
+        return menuBarOffsetFlows.getOrPut(nsWindowPtr) { MutableStateFlow(0f) }
+    }
+
+    fun removeMenuBarOffsetFlow(nsWindowPtr: Long) {
+        menuBarOffsetFlows.remove(nsWindowPtr)
+    }
+
+    // Called from native (macOS main thread) when the menu bar offset
+    // changes. MutableStateFlow.value is thread-safe.
+    @JvmStatic
+    fun onMenuBarOffsetChanged(
+        nsWindowPtr: Long,
+        offset: Float,
+    ) {
+        menuBarOffsetFlows.getOrPut(nsWindowPtr) { MutableStateFlow(0f) }.value = offset
+    }
+
+    // ── JNI methods ──
 
     // Sets up (or updates) the custom title bar and repositions traffic light buttons.
     // heightPt: title bar height in NSPoints (= dp on macOS).
@@ -84,4 +73,51 @@ internal object JniMacTitleBarBridge {
     // where Kotlin reflection cannot access sun.awt.AWTAccessor.
     @JvmStatic
     external fun nativeGetNSWindowPtr(awtWindow: java.awt.Window): Long
+
+    // Stores the newFullscreenControls flag on the NSWindow.
+    // When enabled, the title bar and traffic-light buttons are pushed down
+    // by the menu bar height when the auto-hidden menu bar appears in fullscreen.
+    @JvmStatic
+    external fun nativeSetNewFullscreenControls(
+        nsWindowPtr: Long,
+        enabled: Boolean,
+    )
+
+    // Returns the current menu bar offset in points (reads the stored value).
+    @JvmStatic
+    external fun nativeGetMenuBarOffset(nsWindowPtr: Long): Float
+
+    // Stores the current menu bar offset (in points) and repositions
+    // the native traffic-light buttons to match the Compose title bar.
+    @JvmStatic
+    external fun nativeSetMenuBarOffset(
+        nsWindowPtr: Long,
+        offsetPt: Float,
+    )
+
+    // Installs a native NSEvent local monitor that detects menu bar
+    // visibility changes and calls onMenuBarOffsetChanged via JNI.
+    @JvmStatic
+    external fun nativeInstallMenuBarMonitor(nsWindowPtr: Long)
+
+    // Removes the native event monitor installed by nativeInstallMenuBarMonitor.
+    @JvmStatic
+    external fun nativeRemoveMenuBarMonitor(nsWindowPtr: Long)
+
+    // Installs or removes an invisible NSToolbar to trigger the macOS 26pt
+    // corner radius. When disabled, the window uses the standard ~10pt radius.
+    @JvmStatic
+    external fun nativeSetLargeCornerRadius(
+        nsWindowPtr: Long,
+        enabled: Boolean,
+    )
+
+    // Sets the RTL (right-to-left) flag on the NSWindow.
+    // When enabled, traffic-light buttons are positioned on the right side.
+    // Re-applies constraints immediately so the change is visible live.
+    @JvmStatic
+    external fun nativeSetRTL(
+        nsWindowPtr: Long,
+        rtl: Boolean,
+    )
 }

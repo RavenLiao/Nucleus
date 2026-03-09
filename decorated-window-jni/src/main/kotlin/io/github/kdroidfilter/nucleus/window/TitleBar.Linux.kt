@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +38,7 @@ internal fun DecoratedWindowScope.LinuxTitleBar(
 
 // Native title bar: uses JNI to send _NET_WM_MOVERESIZE for native WM drag.
 // Double-click to maximize is handled in Compose.
+// Supports fullscreen sliding overlay via newFullscreenControls modifier.
 @OptIn(ExperimentalComposeUiApi::class)
 @Suppress("FunctionNaming")
 @Composable
@@ -50,6 +52,38 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
     val viewConfig = LocalViewConfiguration.current
     var lastPressTime = 0L
 
+    val isNativeFullscreen = LocalNativeFullscreen.current
+    val onExitFullscreen = LocalExitFullscreen.current
+    val useNewFullscreenControls = modifier.hasNewFullscreenControls()
+
+    // ── Fullscreen with newFullscreenControls: sliding overlay ──
+    if (isNativeFullscreen && useNewFullscreenControls) {
+        val holder = LocalFullscreenTitleBarHolder.current
+        if (holder != null) {
+            holder.compositionLocalContext = currentCompositionLocalContext
+            holder.titleBarHeight = linuxStyle.metrics.height
+            holder.content = {
+                TitleBarImpl(
+                    modifier = modifier,
+                    gradientStartColor = gradientStartColor,
+                    style = linuxStyle,
+                    applyTitleBar = { _, _ -> PaddingValues(0.dp) },
+                ) { currentState ->
+                    WindowControlArea(
+                        window = window,
+                        state = currentState,
+                        style = linuxStyle,
+                        isFullscreen = true,
+                        onExitFullscreen = onExitFullscreen,
+                    )
+                    content(currentState)
+                }
+            }
+        }
+        return
+    }
+
+    // ── Normal title bar (or fullscreen without newFullscreenControls) ──
     TitleBarImpl(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
@@ -98,7 +132,13 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
             )
         },
     ) { currentState ->
-        WindowControlArea(window, currentState, linuxStyle)
+        WindowControlArea(
+            window = window,
+            state = currentState,
+            style = linuxStyle,
+            isFullscreen = isNativeFullscreen,
+            onExitFullscreen = onExitFullscreen,
+        )
         content(currentState)
     }
 }

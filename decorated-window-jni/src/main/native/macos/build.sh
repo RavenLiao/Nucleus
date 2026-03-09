@@ -36,6 +36,7 @@ COMMON_FLAGS=(
     -dynamiclib
     -I"$JNI_INCLUDE" -I"$JNI_INCLUDE_DARWIN"
     -framework Cocoa
+    -framework QuartzCore
     -mmacosx-version-min=10.13
     -fobjc-arc
     -Oz                     # optimize for smallest code size

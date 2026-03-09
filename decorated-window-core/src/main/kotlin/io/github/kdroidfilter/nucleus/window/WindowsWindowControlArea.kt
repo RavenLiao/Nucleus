@@ -53,6 +53,8 @@ fun TitleBarScope.WindowsWindowControlArea(
     window: java.awt.Window,
     state: DecoratedWindowState,
     style: TitleBarStyle,
+    isFullscreen: Boolean = false,
+    onExitFullscreen: (() -> Unit)? = null,
 ) {
     val icons = windowsTitleBarIcons()
 
@@ -67,29 +69,40 @@ fun TitleBarScope.WindowsWindowControlArea(
         isCloseButton = true,
     )
 
-    // Maximize/Restore button (only if resizable)
-    val frame = window as? Frame
-    if (frame != null && frame.isResizable) {
-        if (state.isMaximized) {
-            WindowsCaptionButton(
-                onClick = { frame.extendedState = Frame.NORMAL },
-                state = state,
-                style = style,
-                icon = if (state.isActive) icons.restore else icons.restoreInactive,
-                contentDescription = "Restore",
-            )
-        } else {
-            WindowsCaptionButton(
-                onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
-                state = state,
-                style = style,
-                icon = if (state.isActive) icons.maximize else icons.maximizeInactive,
-                contentDescription = "Maximize",
-            )
+    // In fullscreen: show exit-fullscreen button instead of maximize/restore
+    if (isFullscreen && onExitFullscreen != null) {
+        WindowsCaptionButton(
+            onClick = onExitFullscreen,
+            state = state,
+            style = style,
+            icon = if (state.isActive) icons.exitFullscreen else icons.exitFullscreenInactive,
+            contentDescription = "Exit fullscreen",
+        )
+    } else {
+        // Maximize/Restore button (only if resizable)
+        val frame = window as? Frame
+        if (frame != null && frame.isResizable) {
+            if (state.isMaximized) {
+                WindowsCaptionButton(
+                    onClick = { frame.extendedState = Frame.NORMAL },
+                    state = state,
+                    style = style,
+                    icon = if (state.isActive) icons.restore else icons.restoreInactive,
+                    contentDescription = "Restore",
+                )
+            } else {
+                WindowsCaptionButton(
+                    onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
+                    state = state,
+                    style = style,
+                    icon = if (state.isActive) icons.maximize else icons.maximizeInactive,
+                    contentDescription = "Maximize",
+                )
+            }
         }
     }
 
-    // Minimize button (placed last with Alignment.End, so it's leftmost)
+    // Minimize button
     WindowsCaptionButton(
         onClick = {
             (window as? Frame)?.let {

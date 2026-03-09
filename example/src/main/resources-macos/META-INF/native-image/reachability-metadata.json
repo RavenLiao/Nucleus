@@ -2692,6 +2692,19 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.window.utils.macos.JniMacTitleBarBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onMenuBarOffsetChanged",
+                    "parameterTypes": [
+                        "long",
+                        "float"
+                    ]
+                }
+            ]
         }
     ],
     "resources": [

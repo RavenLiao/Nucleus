@@ -15,6 +15,8 @@ internal data class WindowsTitleBarIconSet(
     val maximizeInactive: Painter,
     val restore: Painter,
     val restoreInactive: Painter,
+    val exitFullscreen: Painter,
+    val exitFullscreenInactive: Painter,
 )
 
 @Composable
@@ -32,5 +34,7 @@ internal fun windowsTitleBarIcons(isDark: Boolean = LocalIsDarkTheme.current): W
         maximizeInactive = painterResource("$prefix/maximizeInactive$suffix.svg"),
         restore = painterResource("$prefix/restore$suffix.svg"),
         restoreInactive = painterResource("$prefix/restoreInactive$suffix.svg"),
+        exitFullscreen = painterResource("$prefix/close_fullscreen$suffix.svg"),
+        exitFullscreenInactive = painterResource("$prefix/close_fullscreenInactive$suffix.svg"),
     )
 }
