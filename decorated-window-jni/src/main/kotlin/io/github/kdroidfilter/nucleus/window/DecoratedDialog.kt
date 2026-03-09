@@ -1,13 +1,15 @@
 package io.github.kdroidfilter.nucleus.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 
 @Suppress("FunctionNaming", "LongParameterList")
 @Composable
@@ -45,8 +47,18 @@ fun DecoratedDialog(
         // Window in the composition tree (the DecoratedWindow). When used
         // outside a Window (no parent), setLocationRelativeTo(null) centres
         // on the screen instead.
-        LaunchedEffect(window) {
-            window.setLocationRelativeTo(window.owner)
+        // We use windowOpened (fires when the native window is first shown)
+        // so that Compose Desktop has already applied the DialogState position
+        // before we override it with relative placement.
+        DisposableEffect(window) {
+            val listener =
+                object : WindowAdapter() {
+                    override fun windowOpened(e: WindowEvent?) {
+                        window.setLocationRelativeTo(window.owner)
+                    }
+                }
+            window.addWindowListener(listener)
+            onDispose { window.removeWindowListener(listener) }
         }
         DecoratedDialogBody(
             title = title,

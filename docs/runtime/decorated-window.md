@@ -204,6 +204,13 @@ DecoratedDialog(
 }
 ```
 
+!!! note "Automatic centering on parent window (`decorated-window-jni` only)"
+    When `DecoratedDialog` is composed inside a `DecoratedWindow`, it is automatically positioned **centered on its parent window** — no extra code needed. This is handled by hooking into the AWT `windowOpened` event, which fires exactly when the native dialog window is first shown. At that point, Compose Desktop has already applied any `DialogState` position, so the centering override reliably lands at the right time.
+
+    If there is no parent window in the composition tree (for example, a dialog opened from a non-windowed context), the dialog falls back to being **centered on the screen** (`setLocationRelativeTo(null)`).
+
+    This behavior is **not present** in `decorated-window-jbr`.
+
 ### `TitleBar` / `DialogTitleBar`
 
 Platform-dispatched title bar composable. Provides a `TitleBarScope` with:
