@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        google()
         gradlePluginPortal()
         mavenCentral()
     }
@@ -47,4 +48,5 @@ include(":decorated-window-material")
 include(":graalvm-runtime")
 include(":energy-manager")
 include(":jewel-sample")
+include(":sample-cmp")
 includeBuild("plugin-build")
