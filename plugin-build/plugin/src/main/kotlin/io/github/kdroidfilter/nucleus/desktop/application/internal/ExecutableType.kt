@@ -76,18 +76,22 @@ private fun writeExecutableTypeMarker(
         return
     }
     val marker = dir.resolve(EXECUTABLE_TYPE_MARKER)
-    val content = buildString {
-        appendLine(targetFormat.executableTypeValue)
-        if (appVersion != null) appendLine(appVersion)
-    }
+    val content =
+        buildString {
+            appendLine(targetFormat.executableTypeValue)
+            if (appVersion != null) appendLine(appVersion)
+        }
     marker.writeText(content)
     logger.info("Wrote executable type '${targetFormat.executableTypeValue}' (version=$appVersion) to ${marker.absolutePath}")
 }
 
 private fun findNativeBinaryDir(appImageDir: File): File? {
     // macOS: AppName.app/Contents/MacOS/
-    val macOsDir = appImageDir.walkTopDown().maxDepth(3)
-        .firstOrNull { it.isDirectory && it.name == "MacOS" && it.parentFile?.name == "Contents" }
+    val macOsDir =
+        appImageDir
+            .walkTopDown()
+            .maxDepth(3)
+            .firstOrNull { it.isDirectory && it.name == "MacOS" && it.parentFile?.name == "Contents" }
     if (macOsDir != null) return macOsDir
 
     // Windows/Linux: first subdirectory that contains an executable
