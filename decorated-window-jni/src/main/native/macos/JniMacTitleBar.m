@@ -1000,29 +1000,32 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
 
     if (nsWindowPtr == 0) return;
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
+    __weak NSWindow *weakWindow = window;
     dispatch_async(dispatch_get_main_queue(), ^{
         @autoreleasepool {
-            removeMenuBarMonitor(window);
-            removeFullScreenButtons(window);
-            removeFullscreenObserver(window);
-            removeZoomButtonResponder(window);
-            removeDragView(window);
-            removeResizeObserver(window);
-            removeExistingConstraints(window);
-            objc_setAssociatedObject(window, &kTitleBarHeightKey, nil,
+            NSWindow *w = weakWindow;
+            if (!w) return;
+            removeMenuBarMonitor(w);
+            removeFullScreenButtons(w);
+            removeFullscreenObserver(w);
+            removeZoomButtonResponder(w);
+            removeDragView(w);
+            removeResizeObserver(w);
+            removeExistingConstraints(w);
+            objc_setAssociatedObject(w, &kTitleBarHeightKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            objc_setAssociatedObject(window, &kNewFullscreenControlsKey, nil,
+            objc_setAssociatedObject(w, &kNewFullscreenControlsKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            objc_setAssociatedObject(window, &kMenuBarOffsetKey, nil,
+            objc_setAssociatedObject(w, &kMenuBarOffsetKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            objc_setAssociatedObject(window, &kLargeCornerRadiusKey, nil,
+            objc_setAssociatedObject(w, &kLargeCornerRadiusKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            objc_setAssociatedObject(window, &kRTLKey, nil,
+            objc_setAssociatedObject(w, &kRTLKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            window.toolbar = nil;
-            [window setTitlebarAppearsTransparent:NO];
-            [window setTitleVisibility:NSWindowTitleVisible];
-            [window setMovable:YES];
+            w.toolbar = nil;
+            [w setTitlebarAppearsTransparent:NO];
+            [w setTitleVisibility:NSWindowTitleVisible];
+            [w setMovable:YES];
         }
     });
 }
@@ -1167,9 +1170,11 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
 
     if (nsWindowPtr == 0) return;
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
+    __weak NSWindow *weakWindow = window;
     dispatch_async(dispatch_get_main_queue(), ^{
         @autoreleasepool {
-            removeMenuBarMonitor(window);
+            NSWindow *w = weakWindow;
+            if (w) removeMenuBarMonitor(w);
         }
     });
 }
