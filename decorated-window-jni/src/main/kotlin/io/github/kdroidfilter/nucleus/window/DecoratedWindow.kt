@@ -319,6 +319,14 @@ private fun FrameWindowScope.NativeFullscreenEffect(state: WindowState, windowSt
                     }
                     else -> {}
                 }
+                // The caller may have written any non-Fullscreen value as a
+                // trigger to exit (e.g. Floating regardless of previous state).
+                // Override the delegate with the actual pre-fullscreen placement
+                // so Compose's Window composable syncs to the correct state and
+                // does not fight the native SetWindowPlacement restoration.
+                if (placement != lastNonFullscreenPlacement) {
+                    state.placement = lastNonFullscreenPlacement
+                }
                 isNativeFullscreen = false
             }
         }
