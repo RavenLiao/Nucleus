@@ -2,20 +2,16 @@ package io.github.kdroidfilter.nucleus.window
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +24,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import io.github.kdroidfilter.nucleus.window.utils.macos.JniMacTitleBarBridge
@@ -86,7 +83,10 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
     DisposableEffect(window) {
         onDispose {
             val ptr = JniMacWindowUtil.getWindowPtr(window)
-            if (ptr != 0L) JniMacTitleBarBridge.nativeResetTitleBar(ptr)
+            if (ptr != 0L) {
+                JniMacTitleBarBridge.nativeResetTitleBar(ptr)
+                JniMacTitleBarBridge.removeMenuBarOffsetFlow(ptr)
+            }
         }
     }
 
@@ -102,110 +102,58 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
 
     val background by style.colors.backgroundFor(state)
 
-    // ── Fullscreen with newFullscreenControls: render as overlay ──
-    // The title bar is stored in FullscreenTitleBarHolder and rendered by
-    // DecoratedWindow as an overlay on top of the content — outside the
-    // normal DecoratedWindowMeasurePolicy layout. This avoids the need
-    // for zIndex (which can hide Compose popups) and keeps popup/tooltip
-    // positioning correct because the overlay naturally draws last.
-    //
-    // Menu bar offset detection is event-driven: a native NSEvent local
-    // monitor (installed via nativeInstallMenuBarMonitor) observes mouse
-    // events on the macOS main thread and calls onMenuBarOffsetChanged
-    // via JNI when [NSMenu menuBarVisible] transitions. The Kotlin side
-    // collects the resulting StateFlow — no polling needed.
-    if (state.isFullscreen && useNewFullscreenControls) {
-        val holder = LocalFullscreenTitleBarHolder.current
-        if (holder != null) {
-            val viewConfig = LocalViewConfiguration.current
-            holder.compositionLocalContext = currentCompositionLocalContext
-            holder.titleBarHeight = style.metrics.height
-            holder.content = {
-                val ptr = remember(window) { JniMacWindowUtil.getWindowPtr(window) }
+    // ── Menu bar offset for fullscreen ──
+    // In fullscreen on non-notch screens, the system menu bar auto-hides.
+    // When it appears (mouse at top), it pushes the title bar down — and
+    // since the title bar is in the normal layout, the content below it
+    // is pushed down too (like Safari). On notch screens the menu bar
+    // lives in the notch area so the offset stays at 0.
+    val isFullscreenWithNewControls = state.isFullscreen && useNewFullscreenControls
 
-                // Install the native event monitor for menu bar offset detection.
-                DisposableEffect(ptr) {
-                    if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                        JniMacTitleBarBridge.nativeInstallMenuBarMonitor(ptr)
-                    }
-                    onDispose {
-                        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                            JniMacTitleBarBridge.nativeRemoveMenuBarMonitor(ptr)
-                            JniMacTitleBarBridge.removeMenuBarOffsetFlow(ptr)
-                        }
-                    }
-                }
-
-                // Collect the menu bar offset pushed by the native event monitor.
-                val menuBarOffsetPt by remember(ptr) {
-                    JniMacTitleBarBridge.menuBarOffsetFlow(ptr)
-                }.collectAsState()
-
-                val animatedOffset by animateDpAsState(
-                    targetValue = menuBarOffsetPt.dp,
-                    animationSpec = tween(durationMillis = MENU_BAR_ANIMATION_MS),
-                )
-
-                // Push animated offset to native so traffic-light buttons follow
-                // the same smooth animation as the Compose title bar.
-                LaunchedEffect(animatedOffset) {
-                    if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                        JniMacTitleBarBridge.nativeSetMenuBarOffset(ptr, animatedOffset.value)
-                    }
-                }
-
-                var lastPress by remember { mutableStateOf(0L) }
-                TitleBarImpl(
-                    modifier =
-                        Modifier
-                            .background(background)
-                            .padding(top = animatedOffset)
-                            .then(modifier)
-                            .titleBarHitTestHandler(window)
-                            .onPointerEvent(PointerEventType.Press, PointerEventPass.Final) {
-                                if (
-                                    this.currentEvent.button == PointerButton.Primary &&
-                                    this.currentEvent.changes.any { !it.isConsumed }
-                                ) {
-                                    val now = System.currentTimeMillis()
-                                    if (now - lastPress in
-                                        viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis
-                                    ) {
-                                        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                                            JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(ptr)
-                                        }
-                                    }
-                                    lastPress = now
-                                }
-                            },
-                    gradientStartColor = gradientStartColor,
-                    style = style,
-                    applyTitleBar = { _, _ ->
-                        JniMacWindowUtil.applyWindowProperties(window)
-                        PaddingValues(start = 80.dp)
-                    },
-                    onPlace = {
-                        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                            JniMacTitleBarBridge.nativeUpdateFullScreenButtons(ptr)
-                        }
-                    },
-                    backgroundContent = {
-                        Spacer(modifier = Modifier.fillMaxSize())
-                    },
-                    content = content,
-                )
+    // Install/remove the native menu bar monitor during fullscreen.
+    // The ptr is evaluated inside the effect so it picks up the AWT peer
+    // even if it wasn't available at initial composition.
+    DisposableEffect(window, isFullscreenWithNewControls) {
+        val ptr = JniMacWindowUtil.getWindowPtr(window)
+        if (isFullscreenWithNewControls && ptr != 0L && JniMacTitleBarBridge.isLoaded) {
+            JniMacTitleBarBridge.nativeInstallMenuBarMonitor(ptr)
+        }
+        onDispose {
+            if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
+                JniMacTitleBarBridge.nativeRemoveMenuBarMonitor(ptr)
             }
-            return
         }
     }
 
-    // ── Normal title bar (not fullscreen, or without newFullscreenControls) ──
+    // Collect the menu bar offset. The ptr must be fresh here too.
+    val currentPtr = JniMacWindowUtil.getWindowPtr(window)
+    val menuBarOffsetPt by remember(currentPtr) {
+        JniMacTitleBarBridge.menuBarOffsetFlow(currentPtr)
+    }.collectAsState()
+
+    val menuBarOffset by animateDpAsState(
+        targetValue = if (isFullscreenWithNewControls) menuBarOffsetPt.dp else 0.dp,
+        animationSpec = tween(durationMillis = MENU_BAR_ANIMATION_MS),
+    )
+
+    // Push animated offset to native so traffic-light buttons follow.
+    LaunchedEffect(menuBarOffset) {
+        val ptr = JniMacWindowUtil.getWindowPtr(window)
+        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
+            JniMacTitleBarBridge.nativeSetMenuBarOffset(ptr, menuBarOffset.value)
+        }
+    }
+
+    // ── Title bar (always in layout, never overlay) ──
     val viewConfig = LocalViewConfiguration.current
     var lastPress = 0L
 
     TitleBarImpl(
         modifier =
-            modifier
+            Modifier
+                .offset(y = menuBarOffset)
+                .zIndex(if (menuBarOffset > 0.dp) 1f else 0f)
+                .then(modifier)
                 .titleBarHitTestHandler(window)
                 .onPointerEvent(PointerEventType.Press, PointerEventPass.Final) {
                     if (
@@ -214,9 +162,9 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                     ) {
                         val now = System.currentTimeMillis()
                         if (now - lastPress in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
-                            val ptr = JniMacWindowUtil.getWindowPtr(window)
-                            if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                                JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(ptr)
+                            val p = JniMacWindowUtil.getWindowPtr(window)
+                            if (p != 0L && JniMacTitleBarBridge.isLoaded) {
+                                JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(p)
                             }
                         }
                         lastPress = now
@@ -227,14 +175,14 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
         applyTitleBar = { height, titleBarState ->
             JniMacWindowUtil.applyWindowProperties(window)
 
-            val ptr = JniMacWindowUtil.getWindowPtr(window)
+            val p = JniMacWindowUtil.getWindowPtr(window)
 
             if (titleBarState.isFullscreen) {
                 PaddingValues(start = 80.dp)
             } else {
                 val leftInset =
-                    if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                        JniMacTitleBarBridge.nativeApplyTitleBar(ptr, height.value)
+                    if (p != 0L && JniMacTitleBarBridge.isLoaded) {
+                        JniMacTitleBarBridge.nativeApplyTitleBar(p, height.value)
                     } else {
                         @Suppress("MagicNumber")
                         val shrink = minOf(height.value / 28f, 1f)
@@ -250,9 +198,9 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
         },
         onPlace = {
             if (state.isFullscreen) {
-                val ptr = JniMacWindowUtil.getWindowPtr(window)
-                if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                    JniMacTitleBarBridge.nativeUpdateFullScreenButtons(ptr)
+                val p = JniMacWindowUtil.getWindowPtr(window)
+                if (p != 0L && JniMacTitleBarBridge.isLoaded) {
+                    JniMacTitleBarBridge.nativeUpdateFullScreenButtons(p)
                 }
             }
         },

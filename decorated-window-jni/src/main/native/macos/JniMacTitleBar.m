@@ -547,9 +547,11 @@ static void installMenuBarMonitor(NSWindow *window) {
 
         float offset = 0.0f;
 
-        // On screens with a notch (e.g. MacBook Pro), the menu bar lives
-        // in the notch area and is always visible in fullscreen — no need
-        // to push the title bar down.
+        // On screens with a notch (MacBook Pro 14"/16") the menu bar
+        // lives permanently in the notch area — no offset needed, the
+        // title bar sits flush at the top of the usable content area.
+        // On non-notch screens the menu bar slides in/out dynamically,
+        // so we offset by its height when visible.
         NSScreen *screen = w.screen;
         BOOL hasNotch = NO;
         if (@available(macOS 12.0, *)) {
@@ -604,6 +606,11 @@ static void installMenuBarMonitor(NSWindow *window) {
     };
     objc_setAssociatedObject(window, &kMenuBarMonitorKey, monitors,
                              OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    // Fire an initial check so the offset is notified immediately — especially
+    // important on notch screens where the offset is constant and won't change
+    // in response to mouse/keyboard events.
+    checkMenuBar();
 }
 
 static void removeMenuBarMonitor(NSWindow *window) {
