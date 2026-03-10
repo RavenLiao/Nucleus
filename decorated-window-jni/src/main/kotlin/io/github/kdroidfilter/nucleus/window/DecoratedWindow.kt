@@ -117,7 +117,7 @@ fun DecoratedWindow(
         onKeyEvent,
     ) {
         if (useNativeFullscreen) {
-            NativeFullscreenEffect(state)
+            NativeFullscreenEffect(state, windowState)
             if (Platform.Current == Platform.Windows) {
                 NativeFullscreenSyncEffect(state, windowState)
             }
@@ -280,11 +280,23 @@ private fun FullscreenTitleBarOverlay(
  * Works on both Windows (Win32 fullscreen) and Linux (_NET_WM_STATE_FULLSCREEN).
  */
 @Composable
-private fun FrameWindowScope.NativeFullscreenEffect(state: WindowState) {
+private fun FrameWindowScope.NativeFullscreenEffect(state: WindowState, windowState: WindowState) {
     LaunchedEffect(state, window) {
         var isNativeFullscreen = false
+        // Track the last non-Fullscreen placement so we can restore it correctly
+        // on exit — e.g. Maximized instead of always falling back to Floating.
+        var lastNonFullscreenPlacement =
+            state.placement.takeIf { it != WindowPlacement.Fullscreen }
+                ?: WindowPlacement.Floating
         snapshotFlow { state.placement }.collect { placement ->
+            if (placement != WindowPlacement.Fullscreen) {
+                lastNonFullscreenPlacement = placement
+            }
             if (placement == WindowPlacement.Fullscreen && !isNativeFullscreen) {
+                // Persist the pre-fullscreen placement so the exit callback
+                // restores the correct state (Maximized, Floating, etc.).
+                (windowState as? NativeFullscreenWindowState)
+                    ?.placementBeforeFullscreen = lastNonFullscreenPlacement
                 when (Platform.Current) {
                     Platform.Windows -> {
                         val hwnd = JniWindowsWindowUtil.getHwnd(window)

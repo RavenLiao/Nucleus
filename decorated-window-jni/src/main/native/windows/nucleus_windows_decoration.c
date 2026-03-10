@@ -801,6 +801,32 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
         state->savedPlacement.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(hwnd, &state->savedPlacement);
 
+        /* Get monitor dimensions early — needed for the rcNormalPosition
+         * trick below and for the final SetWindowPos call. */
+        HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO mi;
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfoW(hMon, &mi);
+
+        /* Suppress DWM animations so the "unmaximize" transition that
+         * Windows plays when WS_MAXIMIZE is stripped does not flash. */
+        BOOL disableTransitions = TRUE;
+        DwmSetWindowAttribute(hwnd, 3 /* DWMWA_TRANSITIONS_FORCEDISABLED */,
+            &disableTransitions, sizeof(disableTransitions));
+
+        /* When the window is maximized, override rcNormalPosition to the
+         * fullscreen monitor rect BEFORE removing WS_MAXIMIZE.  Without
+         * this, Windows "restores" the window to its pre-maximize size for
+         * one frame, producing a visible shrink-then-expand artifact. */
+        if (state->savedPlacement.showCmd == SW_SHOWMAXIMIZED) {
+            WINDOWPLACEMENT wp = state->savedPlacement;
+            wp.rcNormalPosition.left   = mi.rcMonitor.left;
+            wp.rcNormalPosition.top    = mi.rcMonitor.top;
+            wp.rcNormalPosition.right  = mi.rcMonitor.right;
+            wp.rcNormalPosition.bottom = mi.rcMonitor.bottom;
+            SetWindowPlacement(hwnd, &wp);
+        }
+
         /* Mark fullscreen BEFORE SetWindowLongW so every WM_NCCALCSIZE
          * triggered by style changes already uses the fullscreen path
          * (return 0 = client area fills the whole window). */
@@ -819,12 +845,6 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
                      | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
         SetWindowLongW(hwnd, GWL_EXSTYLE, exStyle);
 
-        /* Get the monitor dimensions (multi-monitor aware) */
-        HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO mi;
-        mi.cbSize = sizeof(mi);
-        GetMonitorInfoW(hMon, &mi);
-
         /* HWND_TOPMOST keeps the window above the auto-hide taskbar.
          * Without it, a WS_EX_TOPMOST taskbar can slide over the window
          * when the user hovers the screen edge. */
@@ -833,6 +853,12 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
             mi.rcMonitor.right - mi.rcMonitor.left,
             mi.rcMonitor.bottom - mi.rcMonitor.top,
             SWP_FRAMECHANGED);
+
+        /* Re-enable DWM animations so the exit from fullscreen can
+         * animate smoothly back to the previous window placement. */
+        BOOL enableTransitions = FALSE;
+        DwmSetWindowAttribute(hwnd, 3 /* DWMWA_TRANSITIONS_FORCEDISABLED */,
+            &enableTransitions, sizeof(enableTransitions));
     } else {
         if (!state->isFullscreen) return; /* already not fullscreen */
 
