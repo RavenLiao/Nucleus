@@ -419,9 +419,60 @@ static LRESULT CALLBACK decorationWndProc(
     }
 
     /* -------------------------------------------------------------- */
+    /*  WM_SYSCOMMAND: block state-changing commands while fullscreen  */
+    /*  to prevent native/Kotlin state desync. The application must   */
+    /*  exit fullscreen via its own UI controls.                       */
+    /* -------------------------------------------------------------- */
+    case WM_SYSCOMMAND: {
+        if (state->isFullscreen) {
+            WPARAM cmd = wParam & 0xFFF0;
+            if (cmd == SC_RESTORE || cmd == SC_MAXIMIZE ||
+                cmd == SC_SIZE   || cmd == SC_MOVE) {
+                return 0;
+            }
+        }
+        break;
+    }
+
+    /* -------------------------------------------------------------- */
+    /*  WM_SIZE: safety net — detect when the window is resized        */
+    /*  externally while fullscreen (e.g. via ShowWindow called        */
+    /*  directly by AWT). Clears the flag and restores styles so       */
+    /*  the frame is never permanently stripped.                       */
+    /* -------------------------------------------------------------- */
+    case WM_SIZE: {
+        if (state->isFullscreen && wParam != SIZE_MINIMIZED) {
+            int newW = (int)(short)LOWORD(lParam);
+            int newH = (int)(short)HIWORD(lParam);
+            HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO mi;
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(hMon, &mi)) {
+                int monW = mi.rcMonitor.right - mi.rcMonitor.left;
+                int monH = mi.rcMonitor.bottom - mi.rcMonitor.top;
+                if (newW != monW || newH != monH) {
+                    /* External resize detected — sync native state */
+                    state->isFullscreen = FALSE;
+                    SetWindowLongW(hwnd, GWL_STYLE, state->savedStyle);
+                    SetWindowLongW(hwnd, GWL_EXSTYLE, state->savedExStyle);
+                    SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+                }
+            }
+        }
+        break;
+    }
+
+    /* -------------------------------------------------------------- */
     /*  WM_NCDESTROY: clean up state                                   */
     /* -------------------------------------------------------------- */
     case WM_NCDESTROY: {
+        /* Safety: restore window styles if destroyed while fullscreen
+         * so the OS does not hold stripped style bits in its cache.  */
+        if (state->isFullscreen) {
+            SetWindowLongW(hwnd, GWL_STYLE, state->savedStyle);
+            SetWindowLongW(hwnd, GWL_EXSTYLE, state->savedExStyle);
+        }
         WNDPROC origProc = state->originalWndProc;
         RemovePropW(hwnd, PROP_NAME);
         HeapFree(GetProcessHeap(), 0, state);
@@ -750,6 +801,37 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
         state->savedPlacement.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(hwnd, &state->savedPlacement);
 
+        /* Get monitor dimensions early — needed for the rcNormalPosition
+         * trick below and for the final SetWindowPos call. */
+        HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO mi;
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfoW(hMon, &mi);
+
+        /* Suppress DWM animations so the "unmaximize" transition that
+         * Windows plays when WS_MAXIMIZE is stripped does not flash. */
+        BOOL disableTransitions = TRUE;
+        DwmSetWindowAttribute(hwnd, 3 /* DWMWA_TRANSITIONS_FORCEDISABLED */,
+            &disableTransitions, sizeof(disableTransitions));
+
+        /* When the window is maximized, override rcNormalPosition to the
+         * fullscreen monitor rect BEFORE removing WS_MAXIMIZE.  Without
+         * this, Windows "restores" the window to its pre-maximize size for
+         * one frame, producing a visible shrink-then-expand artifact. */
+        if (state->savedPlacement.showCmd == SW_SHOWMAXIMIZED) {
+            WINDOWPLACEMENT wp = state->savedPlacement;
+            wp.rcNormalPosition.left   = mi.rcMonitor.left;
+            wp.rcNormalPosition.top    = mi.rcMonitor.top;
+            wp.rcNormalPosition.right  = mi.rcMonitor.right;
+            wp.rcNormalPosition.bottom = mi.rcMonitor.bottom;
+            SetWindowPlacement(hwnd, &wp);
+        }
+
+        /* Mark fullscreen BEFORE SetWindowLongW so every WM_NCCALCSIZE
+         * triggered by style changes already uses the fullscreen path
+         * (return 0 = client area fills the whole window). */
+        state->isFullscreen = TRUE;
+
         /* Remove window borders, title bar, and maximize flag.
          * WS_MAXIMIZE must be stripped because the system constrains
          * maximized windows to the work area (excluding the taskbar). */
@@ -763,39 +845,49 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
                      | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
         SetWindowLongW(hwnd, GWL_EXSTYLE, exStyle);
 
-        /* Get the monitor dimensions (multi-monitor aware) */
-        HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO mi;
-        mi.cbSize = sizeof(mi);
-        GetMonitorInfoW(hMon, &mi);
-
-        /* Mark fullscreen BEFORE SetWindowPos so WM_NCCALCSIZE uses
-         * the fullscreen path. */
-        state->isFullscreen = TRUE;
-
-        /* Set window to cover entire monitor */
-        SetWindowPos(hwnd, HWND_TOP,
+        /* HWND_TOPMOST keeps the window above the auto-hide taskbar.
+         * Without it, a WS_EX_TOPMOST taskbar can slide over the window
+         * when the user hovers the screen edge. */
+        SetWindowPos(hwnd, HWND_TOPMOST,
             mi.rcMonitor.left, mi.rcMonitor.top,
             mi.rcMonitor.right - mi.rcMonitor.left,
             mi.rcMonitor.bottom - mi.rcMonitor.top,
             SWP_FRAMECHANGED);
+
+        /* Re-enable DWM animations so the exit from fullscreen can
+         * animate smoothly back to the previous window placement. */
+        BOOL enableTransitions = FALSE;
+        DwmSetWindowAttribute(hwnd, 3 /* DWMWA_TRANSITIONS_FORCEDISABLED */,
+            &enableTransitions, sizeof(enableTransitions));
     } else {
         if (!state->isFullscreen) return; /* already not fullscreen */
 
-        /* Restore window styles */
-        SetWindowLongW(hwnd, GWL_STYLE, state->savedStyle);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, state->savedExStyle);
-
-        /* Clear fullscreen flag BEFORE restoring placement so
-         * WM_NCCALCSIZE uses the normal path. */
+        /* Clear fullscreen flag BEFORE style restoration so every
+         * WM_NCCALCSIZE triggered by the changes below immediately
+         * uses the normal path (title-bar extension, resize borders). */
         state->isFullscreen = FALSE;
 
-        /* Restore window placement (maximized/normal state + position) */
+        /* Restore extended styles first (no size/position side-effects). */
+        SetWindowLongW(hwnd, GWL_EXSTYLE, state->savedExStyle);
+
+        /* Restore the main style WITHOUT WS_MAXIMIZE initially.
+         * If we set WS_MAXIMIZE via SetWindowLongW, Windows constrains
+         * the window to the work area and sends WM_SIZE(SIZE_RESTORED)
+         * instead of WM_SIZE(SIZE_MAXIMIZED). AWT then misses the
+         * maximize event and Frame.getExtendedState() stays stale.
+         * SetWindowPlacement with SW_SHOWMAXIMIZED goes through the
+         * proper maximize code path and sends the correct events. */
+        LONG restoreStyle = state->savedStyle & ~(LONG)WS_MAXIMIZE;
+        SetWindowLongW(hwnd, GWL_STYLE, restoreStyle);
+
+        /* Restore window placement (maximized/normal state + position).
+         * For SW_SHOWMAXIMIZED this re-applies WS_MAXIMIZE internally
+         * and sends WM_SIZE(SIZE_MAXIMIZED) so AWT detects it. */
         SetWindowPlacement(hwnd, &state->savedPlacement);
 
-        /* Force frame recalculation */
-        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        /* Remove topmost and force frame recalculation */
+        SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
     }
 }
 
