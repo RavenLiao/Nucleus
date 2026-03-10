@@ -39,7 +39,9 @@ val client = HttpClient.newBuilder()
     .build()
 ```
 
-`NativeHttpClient.create()` returns a `java.net.http.HttpClient` configured with `NativeTrustManager.sslContext`. The `withNativeSsl()` extension lets you compose it into an existing builder chain.
+`NativeHttpClient.create()` returns a `java.net.http.HttpClient` configured with `NativeTrustManager.sslContext` and `followRedirects(NORMAL)`. The `withNativeSsl()` extension lets you compose it into an existing builder chain.
+
+> **Note:** `create()` enables redirect following by default. If you use `withNativeSsl()` directly, remember to call `.followRedirects(HttpClient.Redirect.NORMAL)` yourself — without it, HTTP 302 responses (common with GitHub Releases, CDNs, etc.) will be treated as errors instead of being followed automatically.
 
 ---
 

@@ -4889,6 +4889,9 @@
             "glob": "nucleus/native/win32-x64/nucleus_systemcolor.dll"
         },
         {
+            "glob": "nucleus/native/win32-x64/nucleus_ssl.dll"
+        },
+        {
             "glob": "nucleus/window/icons/windows/close_fullscreen.svg"
         },
         {

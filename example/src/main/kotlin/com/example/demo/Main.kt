@@ -71,6 +71,7 @@ import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
+import io.github.kdroidfilter.nucleus.nativehttp.NativeHttpClient
 import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
@@ -337,6 +338,7 @@ fun NucleusContent() {
         remember {
             NucleusUpdater {
                 provider = GitHubProvider(owner = "kdroidfilter", repo = "Nucleus")
+                httpClient = NativeHttpClient.create()
             }
         }
 

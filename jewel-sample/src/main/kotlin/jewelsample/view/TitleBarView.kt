@@ -34,7 +34,8 @@ import java.net.URI
 @Composable
 internal fun DecoratedWindowScope.TitleBarView() {
     val startPadding = if (hostOs.isMacOS) 0.dp else 8.dp
-    TitleBar(Modifier.newFullscreenControls().macOSLargeCornerRadius(), gradientStartColor = MainViewModel.projectColor) {
+    val titleBarModifier = Modifier.newFullscreenControls().macOSLargeCornerRadius()
+    TitleBar(titleBarModifier, gradientStartColor = MainViewModel.projectColor) {
         Row(Modifier.align(Alignment.Start).padding(start = startPadding)) {
             Dropdown(
                 Modifier.height(30.dp),

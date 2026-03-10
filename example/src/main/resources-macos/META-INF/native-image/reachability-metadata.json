@@ -2770,6 +2770,9 @@
         },
         {
             "glob": "nucleus/native/darwin-aarch64/libnucleus_systemcolor.dylib"
+        },
+        {
+            "glob": "nucleus/native/darwin-aarch64/libnucleus_ssl.dylib"
         }
     ]
 }

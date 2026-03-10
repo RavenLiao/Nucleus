@@ -8,6 +8,7 @@ object NativeHttpClient {
     fun create(): HttpClient =
         HttpClient
             .newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
             .withNativeSsl()
             .build()
 

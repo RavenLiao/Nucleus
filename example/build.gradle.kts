@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core-runtime"))
     implementation(project(":aot-runtime"))
     implementation(project(":updater-runtime"))
+    implementation(project(":native-http"))
     implementation(project(":darkmode-detector"))
     implementation(project(":system-color"))
     implementation(project(":decorated-window-material"))
@@ -98,7 +99,7 @@ nucleus.application {
 
         // --- Trusted CA certificates ---
         // Certificates are imported into the bundled JVM's cacerts keystore at build time.
-        trustedCertificates.from(files("resources/common/netfree-ca.crt"))
+//        trustedCertificates.from(files("resources/common/netfree-ca.crt"))
 
         // --- Native libs handling ---
         cleanupNativeLibs = true // Auto cleanup native libraries
