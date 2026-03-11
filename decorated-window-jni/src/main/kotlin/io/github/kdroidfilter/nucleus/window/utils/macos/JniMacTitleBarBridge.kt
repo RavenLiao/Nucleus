@@ -13,6 +13,16 @@ internal object JniMacTitleBarBridge {
 
     val isLoaded: Boolean get() = loaded
 
+    // Register a shutdown hook to disable native → JVM callbacks before the
+    // JVM tears down. Without this, the NSEvent menu bar monitor can fire
+    // notifyMenuBarOffsetChanged during JVM_Halt, calling CallStaticVoidMethod
+    // on a freed sBridgeClass global ref → EXC_BAD_ACCESS → abort.
+    init {
+        if (loaded) {
+            Runtime.getRuntime().addShutdownHook(Thread({ nativeShutdown() }, "nucleus-native-shutdown"))
+        }
+    }
+
     // ── Menu bar offset (event-driven via native NSEvent monitor) ──
 
     private val menuBarOffsetFlows = ConcurrentHashMap<Long, MutableStateFlow<Float>>()
@@ -120,4 +130,9 @@ internal object JniMacTitleBarBridge {
         nsWindowPtr: Long,
         rtl: Boolean,
     )
+
+    // Disables native → JVM callbacks and removes all menu bar monitors.
+    // Called from the shutdown hook before the JVM starts tearing down.
+    @JvmStatic
+    private external fun nativeShutdown()
 }
