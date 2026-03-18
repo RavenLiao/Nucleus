@@ -314,6 +314,35 @@ TitleBar { state ->
 
 Centered content is automatically shifted to avoid overlapping with start/end content.
 
+### `controlButtonsDirection` — Independent Button Placement
+
+By default, the window control buttons (close, minimize, maximize) follow the same layout direction as the title bar content. This means that in an RTL locale, both the content and the buttons mirror together.
+
+The `controlButtonsDirection` parameter lets you decouple the two: you can have RTL content in the title bar while keeping the control buttons on their conventional side, or vice versa.
+
+```kotlin
+TitleBar(
+    controlButtonsDirection = ControlButtonsDirection.Ltr,
+) { state ->
+    // Content follows LocalLayoutDirection (e.g. RTL for Arabic),
+    // but control buttons always stay on the right side (LTR trailing).
+    Text(title, modifier = Modifier.align(Alignment.CenterHorizontally))
+}
+```
+
+| Value | Behavior |
+|-------|----------|
+| `Auto` | Follows Compose `LocalLayoutDirection` — the previous default behavior. |
+| `System` | Follows the JVM platform locale (`java.util.Locale`). |
+| `Ltr` | Always places buttons as in a left-to-right layout (trailing = right side). |
+| `Rtl` | Always places buttons as in a right-to-left layout (trailing = left side). |
+
+The default is `Auto`, which preserves backward compatibility.
+
+This parameter is available on `TitleBar` (both JBR and JNI modules) and on `MaterialTitleBar`.
+
+On macOS, this controls the native traffic-light button position (via JBR `controls.rtl` or JNI `nativeSetRTL`). On Windows and Linux, it controls the placement of the Compose-rendered control buttons.
+
 ### `Modifier.clientRegion()` — Interactive Title Bar Regions
 
 When you place interactive elements (buttons, dropdowns, etc.) inside a `TitleBar`, they need to receive mouse events instead of triggering window dragging. The `clientRegion` modifier registers a composable as an interactive area within the title bar, so the platform's hit-test system knows to treat it as a clickable region rather than a drag surface.
@@ -585,6 +614,22 @@ Two options are available for RTL support on macOS:
 ### Linux
 
 RTL layout is handled entirely by Compose since the window is fully undecorated on Linux. Both modules support RTL with live hot-swapping.
+
+### Decoupling Content and Button Directions
+
+In many RTL applications, the title bar content should follow the RTL direction (text flows right-to-left) while the window control buttons stay on their platform-conventional side. Use the [`controlButtonsDirection`](#controlbuttonsdirection--independent-button-placement) parameter to achieve this:
+
+```kotlin
+// RTL app where buttons stay on the right (Windows/Linux convention)
+CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    DecoratedWindow(onCloseRequest = ::exitApplication, title = "تطبيقي") {
+        TitleBar(controlButtonsDirection = ControlButtonsDirection.Ltr) { state ->
+            Text(title, modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
+        // app content
+    }
+}
+```
 
 ## Linux Desktop Environment Detection
 

@@ -20,7 +20,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -41,6 +40,7 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
@@ -92,12 +92,13 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
     }
 
     // Sync RTL state with native side so traffic-light buttons move to the
-    // correct side. Reacts to live changes in LocalLayoutDirection.
-    val layoutDirection = LocalLayoutDirection.current
-    LaunchedEffect(window, layoutDirection) {
+    // correct side. Uses the control buttons direction (decoupled from content).
+    val controlDir = controlButtonsDirection.resolve()
+    val controlIsRtl = controlDir == LayoutDirection.Rtl
+    LaunchedEffect(window, controlIsRtl) {
         val ptr = JniMacWindowUtil.getWindowPtr(window)
         if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-            JniMacTitleBarBridge.nativeSetRTL(ptr, layoutDirection == LayoutDirection.Rtl)
+            JniMacTitleBarBridge.nativeSetRTL(ptr, controlIsRtl)
         }
     }
 
@@ -173,15 +174,20 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                 },
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlDir,
         applyTitleBar = { height, titleBarState ->
             JniMacWindowUtil.applyWindowProperties(window)
 
             val p = JniMacWindowUtil.getWindowPtr(window)
 
             if (titleBarState.isFullscreen) {
-                PaddingValues(start = 80.dp)
+                if (controlIsRtl) {
+                    PaddingValues(end = 80.dp)
+                } else {
+                    PaddingValues(start = 80.dp)
+                }
             } else {
-                val leftInset =
+                val buttonInset =
                     if (p != 0L && JniMacTitleBarBridge.isLoaded) {
                         JniMacTitleBarBridge.nativeApplyTitleBar(p, height.value)
                     } else {
@@ -194,7 +200,11 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                         @Suppress("MagicNumber")
                         2f * leftMargin + 2f * shrink * 20f
                     }
-                PaddingValues(start = leftInset.dp)
+                if (controlIsRtl) {
+                    PaddingValues(end = buttonInset.dp)
+                } else {
+                    PaddingValues(start = buttonInset.dp)
+                }
             }
         },
         onPlace = {

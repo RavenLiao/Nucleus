@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
@@ -22,6 +21,7 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
@@ -29,14 +29,15 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
 
     WindowMouseEventEffect(titleBar)
 
-    val layoutDirection = LocalLayoutDirection.current
-    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val controlDir = controlButtonsDirection.resolve()
+    val controlIsRtl = controlDir == LayoutDirection.Rtl
     TitleBarImpl(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlDir,
         applyTitleBar = { height, _ ->
-            titleBar.putProperty("controls.rtl", isRtl)
+            titleBar.putProperty("controls.rtl", controlIsRtl)
             titleBar.height = height.value
             titleBar.putProperty("controls.dark", style.colors.background.isDark())
             JBR.getWindowDecorations().setCustomTitleBar(window, titleBar)
