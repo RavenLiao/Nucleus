@@ -7,6 +7,8 @@ package io.github.kdroidfilter.nucleus.desktop.application.tasks
 
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.MacOSNotarizationSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
+import io.github.kdroidfilter.nucleus.desktop.application.internal.NOTARIZATION_REQUEST_INFO_FILE_NAME
+import io.github.kdroidfilter.nucleus.desktop.application.internal.NotarizationRequestInfo
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.checkExistingFile
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.findOutputFileOrDir
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.ValidatedMacOSNotarizationSettings
@@ -15,7 +17,11 @@ import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractNucleusTask
 import io.github.kdroidfilter.nucleus.internal.utils.MacUtils
 import io.github.kdroidfilter.nucleus.internal.utils.ioFile
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.security.MessageDigest
 import java.util.Base64
@@ -52,7 +58,7 @@ abstract class AbstractNotarizationTask
             notarization: ValidatedMacOSNotarizationSettings,
             packageFile: File,
         ) {
-            logger.info("Uploading '${packageFile.name}' for notarization")
+            logger.lifecycle("Uploading '${packageFile.name}' for notarization")
             val args =
                 listOfNotNull(
                     "notarytool",
@@ -64,7 +70,91 @@ abstract class AbstractNotarizationTask
                     notarization.teamID,
                     packageFile.absolutePath,
                 )
-            runExternalTool(tool = MacUtils.xcrun, args = args, stdinStr = notarization.password)
+
+            var submissionId: String? = null
+            var stdout = ""
+
+            val result =
+                runExternalTool(
+                    tool = MacUtils.xcrun,
+                    args = args,
+                    stdinStr = notarization.password,
+                    checkExitCodeIsNormal = false,
+                    processStdout = { output ->
+                        stdout = output
+                        submissionId = SUBMISSION_ID_REGEX.find(output)?.groupValues?.get(1)
+                    },
+                )
+
+            if (submissionId != null) {
+                logger.lifecycle("Notarization submission ID: $submissionId (file: ${packageFile.name})")
+                saveNotarizationRequestInfo(submissionId!!)
+            }
+
+            if (result.exitValue != 0 || stdout.contains("status: Invalid")) {
+                val appleLog = fetchNotarizationLog(notarization, submissionId)
+                val errMsg =
+                    buildString {
+                        appendLine("Notarization failed for '${packageFile.name}'")
+                        if (submissionId != null) {
+                            appendLine("Submission ID: $submissionId")
+                        }
+                        appendLine("Exit code: ${result.exitValue}")
+                        if (appleLog != null) {
+                            appendLine("Apple notarization log:")
+                            appendLine(appleLog)
+                        } else if (submissionId != null) {
+                            appendLine("To fetch the log manually run:")
+                            appendLine(
+                                "  xcrun notarytool log $submissionId" +
+                                    " --apple-id ${notarization.appleID}" +
+                                    " --team-id ${notarization.teamID}",
+                            )
+                        }
+                    }
+                error(errMsg)
+            }
+        }
+
+        private fun saveNotarizationRequestInfo(submissionId: String) {
+            val info = NotarizationRequestInfo(uuid = submissionId)
+            val propsFile = temporaryDir.resolve(NOTARIZATION_REQUEST_INFO_FILE_NAME)
+            info.saveTo(propsFile)
+            logger.info("Saved notarization request info to ${propsFile.absolutePath}")
+        }
+
+        /**
+         * Attempts to fetch the notarization log from Apple.
+         * Returns the log content on success, or null if it cannot be retrieved.
+         */
+        private fun fetchNotarizationLog(
+            notarization: ValidatedMacOSNotarizationSettings,
+            submissionId: String?,
+        ): String? {
+            if (submissionId == null) return null
+
+            return try {
+                var logContent = ""
+                runExternalTool(
+                    tool = MacUtils.xcrun,
+                    args =
+                        listOf(
+                            "notarytool",
+                            "log",
+                            submissionId,
+                            "--apple-id",
+                            notarization.appleID,
+                            "--team-id",
+                            notarization.teamID,
+                        ),
+                    stdinStr = notarization.password,
+                    processStdout = { logContent = it },
+                )
+                logContent.ifEmpty { null }
+            } catch (e: IllegalStateException) {
+                logger.warn("Could not fetch notarization log: ${e.message}")
+                null
+            }
         }
 
         private fun staple(packageFile: File) {
@@ -115,6 +205,7 @@ abstract class AbstractNotarizationTask
 
         companion object {
             private const val DEFAULT_BUFFER_SIZE = 8192
+            private val SUBMISSION_ID_REGEX = Regex("""^\s*id:\s*([0-9a-fA-F-]+)\s*$""", RegexOption.MULTILINE)
 
             internal fun updateYamlEntry(
                 yaml: String,
