@@ -14,6 +14,7 @@ import com.jetbrains.JBR
 import io.github.kdroidfilter.nucleus.window.internal.isDark
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
+import io.github.kdroidfilter.nucleus.window.utils.WindowMouseEventEffect
 
 @Suppress("FunctionNaming")
 @Composable
@@ -24,6 +25,9 @@ internal fun DecoratedDialogScope.WindowsDialogTitleBar(
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
+
+    WindowMouseEventEffect(titleBar)
+
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
@@ -42,7 +46,7 @@ internal fun DecoratedDialogScope.WindowsDialogTitleBar(
                 PaddingValues(start = titleBar.leftInset.dp, end = titleBar.rightInset.dp)
             }
         },
-        backgroundContent = { Spacer(modifier = modifier.fillMaxSize().customTitleBarMouseEventHandler(titleBar)) },
+        backgroundContent = { Spacer(modifier = Modifier.fillMaxSize()) },
         content = content,
     )
 }

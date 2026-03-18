@@ -29,12 +29,11 @@ Both `decorated-window-jbr` and `decorated-window-jni` expose **the same public 
 
 Uses JetBrains' official `CustomTitleBar` API. This is the more **battle-tested** option, backed by the same code that powers IntelliJ IDEA and other JetBrains products. Requires JBR.
 
-However, there are a few known issues on **Windows**:
+However, there is a known issue on **Windows**:
 
 - The window **cannot open in maximized state** directly — you need to use a `LaunchedEffect` with a short delay after the window appears, then set `WindowPlacement.Maximized`
-- Title bar drag events are **occasionally missed**, causing the window to not follow the cursor during drag
 
-These are upstream JBR bugs, not Nucleus bugs. The module throws an `IllegalStateException` at startup if JBR is not detected.
+This is an upstream JBR bug, not a Nucleus bug. The module throws an `IllegalStateException` at startup if JBR is not detected.
 
 !!! tip
     When running via `./gradlew run`, Gradle uses the JDK configured in your toolchain. Make sure it is a JBR distribution if using this module.
@@ -167,12 +166,12 @@ The following tables compare a standard Compose `Window()`, the JBR module (`dec
 |---|---|---|---|
 | Custom title bar content | No | Yes (JBR `CustomTitleBar`) | Yes (JNI DLL, WndProc subclass) |
 | Window controls | Native | Native min/max/close | Compose-drawn (SVG icons, Windows style) |
-| Title bar drag | Native | JBR `forceHitTest` | Native DLL or Compose fallback |
+| Title bar drag | Native | JBR `forceHitTest` + `clientRegion` | Native DLL or Compose fallback |
 | Double-click maximize | Native | Native (via JBR `CustomTitleBar`) | Compose detection |
 | Window snapping / tiling | Native | Native | Native (via `WM_NCLBUTTONDOWN` + `HTCAPTION`) |
 | Resize white flash | White flash on dark themes | White flash on dark themes | **Fixed** — `WM_ERASEBKGND` fill + `SWP_NOCOPYBITS` + DWM color sync |
 | Open in maximized state | Works | Broken (requires `LaunchedEffect` workaround) | Works |
-| Drag reliability | Native | Occasional missed events (JBR bug) | Reliable |
+| Drag reliability | Native | Reliable (`clientRegion` hit-test) | Reliable |
 | True fullscreen | Broken (doesn't cover taskbar) | Broken (doesn't cover taskbar) | **Fixed** — native Win32 fullscreen (`newFullscreenControls()`) |
 | Fullscreen sliding title bar | No | No | Yes (`newFullscreenControls()`) |
 | DWM dark mode sync | No | No | Yes (`DWMWA_USE_IMMERSIVE_DARK_MODE`, caption/border color) |
@@ -314,6 +313,40 @@ TitleBar { state ->
 ```
 
 Centered content is automatically shifted to avoid overlapping with start/end content.
+
+### `Modifier.clientRegion()` — Interactive Title Bar Regions
+
+When you place interactive elements (buttons, dropdowns, etc.) inside a `TitleBar`, they need to receive mouse events instead of triggering window dragging. The `clientRegion` modifier registers a composable as an interactive area within the title bar, so the platform's hit-test system knows to treat it as a clickable region rather than a drag surface.
+
+This is particularly important with `decorated-window-jbr`, where the old pointer-event-based approach could occasionally miss drag events on Windows. The new `clientRegion` modifier uses AWT-level mouse listeners with precise coordinate-based hit testing, which is more reliable.
+
+```kotlin
+TitleBar { state ->
+    // This dropdown is marked as a client region — clicks go to
+    // the dropdown, not to the window drag handler.
+    Dropdown(
+        modifier = Modifier.align(Alignment.Start).clientRegion("main_menu"),
+        menuContent = { /* ... */ },
+    ) {
+        Text("File")
+    }
+
+    Text(title, modifier = Modifier.align(Alignment.CenterHorizontally))
+
+    // This icon button is also a client region.
+    IconButton(
+        onClick = { /* ... */ },
+        modifier = Modifier.align(Alignment.End).clientRegion("settings"),
+    ) {
+        Icon(Icons.Default.Settings, contentDescription = "Settings")
+    }
+}
+```
+
+The `key` parameter must be unique within the same window's title bar. When the composable is removed from the composition, its region is automatically unregistered.
+
+!!! note "`decorated-window-jbr` only"
+    The `clientRegion` modifier is provided by `decorated-window-jbr`. The `decorated-window-jni` module handles hit testing differently (via native platform APIs) and does not need this modifier — interactive elements in the title bar work automatically.
 
 ## Styling
 

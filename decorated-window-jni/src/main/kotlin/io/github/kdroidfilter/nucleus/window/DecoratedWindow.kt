@@ -221,9 +221,13 @@ private fun BoxScope.FullscreenTitleBarRenderers(
             { content -> content() }
         }
 
+    val titleBarInfo = remember { TitleBarInfo(title, icon) }
+    LaunchedEffect(title) { titleBarInfo.title = title }
+    LaunchedEffect(icon) { titleBarInfo.icon = icon }
+
     if (isNativeFullscreen) {
         wrapper {
-            CompositionLocalProvider(LocalTitleBarInfo provides TitleBarInfo(title, icon)) {
+            CompositionLocalProvider(LocalTitleBarInfo provides titleBarInfo) {
                 FullscreenTitleBarOverlay(
                     holder = titleBarHolder,
                     visible = fullscreenBarVisible,
@@ -237,7 +241,7 @@ private fun BoxScope.FullscreenTitleBarRenderers(
     // (newFullscreenControls sets holder.content during macOS fullscreen)
     if (!isNativeFullscreen && titleBarHolder.content != null) {
         wrapper {
-            CompositionLocalProvider(LocalTitleBarInfo provides TitleBarInfo(title, icon)) {
+            CompositionLocalProvider(LocalTitleBarInfo provides titleBarInfo) {
                 Box(modifier = Modifier.align(Alignment.TopCenter)) {
                     titleBarHolder.content?.invoke()
                 }

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
+import io.github.kdroidfilter.nucleus.window.utils.WindowMouseEventEffect
 import io.github.kdroidfilter.nucleus.window.utils.macos.MacUtil
 
 fun Modifier.newFullscreenControls(newControls: Boolean = true): Modifier =
@@ -86,10 +87,12 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
 
     val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
 
+    WindowMouseEventEffect(titleBar)
+
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     TitleBarImpl(
-        modifier = modifier.customTitleBarMouseEventHandler(titleBar),
+        modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
         applyTitleBar = { height, titleBarState ->

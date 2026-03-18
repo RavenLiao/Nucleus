@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
+import io.github.kdroidfilter.nucleus.window.utils.WindowMouseEventEffect
 
 @Suppress("FunctionNaming")
 @Composable
@@ -22,10 +23,12 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
 ) {
     val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
 
+    WindowMouseEventEffect(titleBar)
+
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     DialogTitleBarImpl(
-        modifier = modifier.customTitleBarMouseEventHandler(titleBar),
+        modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
         applyTitleBar = { height, _ ->

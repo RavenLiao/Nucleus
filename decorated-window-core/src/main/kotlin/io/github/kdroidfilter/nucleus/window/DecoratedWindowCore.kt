@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.Layout
@@ -155,10 +156,15 @@ value class DecoratedWindowState(
     }
 }
 
-data class TitleBarInfo(
-    val title: String,
-    val icon: Painter?,
-)
+@Stable
+class TitleBarInfo(
+    title: String,
+    icon: Painter?,
+) {
+    var title by mutableStateOf(title)
+    var icon by mutableStateOf(icon)
+    val clientRegions: MutableMap<String, Rect> = mutableMapOf()
+}
 
 val LocalTitleBarInfo: ProvidableCompositionLocal<TitleBarInfo> =
     compositionLocalOf {
@@ -372,8 +378,12 @@ fun FrameWindowScope.DecoratedWindowBody(
         javax.swing.SwingUtilities.invokeLater { applyRecursive(window) }
     }
 
+    val titleBarInfo = remember { TitleBarInfo(title, icon) }
+    LaunchedEffect(title) { titleBarInfo.title = title }
+    LaunchedEffect(icon) { titleBarInfo.icon = icon }
+
     CompositionLocalProvider(
-        LocalTitleBarInfo provides TitleBarInfo(title, icon),
+        LocalTitleBarInfo provides titleBarInfo,
         LocalLayoutDirection provides platformLayoutDirection,
     ) {
         Layout(

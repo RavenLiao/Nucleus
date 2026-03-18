@@ -7,19 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
-import com.jetbrains.WindowDecorations.CustomTitleBar
 import io.github.kdroidfilter.nucleus.window.internal.isDark
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
+import io.github.kdroidfilter.nucleus.window.utils.WindowMouseEventEffect
 
 @Suppress("FunctionNaming")
 @Composable
@@ -31,6 +26,8 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
     val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
+
+    WindowMouseEventEffect(titleBar)
 
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
@@ -46,34 +43,10 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
             PaddingValues(start = titleBar.leftInset.dp, end = titleBar.rightInset.dp)
         },
         backgroundContent = {
-            Spacer(modifier = modifier.fillMaxSize().customTitleBarMouseEventHandler(titleBar))
+            Spacer(modifier = Modifier.fillMaxSize())
             backgroundContent()
         },
     ) { state ->
         content(state)
     }
 }
-
-internal fun Modifier.customTitleBarMouseEventHandler(titleBar: CustomTitleBar): Modifier =
-    pointerInput(Unit) {
-        val currentContext = currentCoroutineContext()
-        awaitPointerEventScope {
-            var inUserControl = false
-            while (currentContext.isActive) {
-                val event = awaitPointerEvent(PointerEventPass.Main)
-                event.changes.forEach {
-                    if (!it.isConsumed && !inUserControl) {
-                        titleBar.forceHitTest(false)
-                    } else {
-                        if (event.type == PointerEventType.Press) {
-                            inUserControl = true
-                        }
-                        if (event.type == PointerEventType.Release) {
-                            inUserControl = false
-                        }
-                        titleBar.forceHitTest(true)
-                    }
-                }
-            }
-        }
-    }
