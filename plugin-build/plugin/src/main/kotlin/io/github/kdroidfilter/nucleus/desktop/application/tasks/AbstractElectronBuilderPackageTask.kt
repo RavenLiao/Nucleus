@@ -294,7 +294,7 @@ abstract class AbstractElectronBuilderPackageTask
 
         private fun resolvePublishFlag(): String {
             val publish = distributions?.publish
-            val anyProviderEnabled = publish != null && (publish.github.enabled || publish.s3.enabled)
+            val anyProviderEnabled = publish != null && (publish.github.enabled || publish.s3.enabled || publish.generic.enabled)
             if (!anyProviderEnabled) {
                 logger.info("No publish provider enabled, using publish mode: never")
                 return "never"
