@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
@@ -19,18 +18,21 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
 
     WindowMouseEventEffect(titleBar)
 
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val controlDir = controlButtonsDirection.resolve()
+    val isRtl = controlDir == LayoutDirection.Rtl
 
     DialogTitleBarImpl(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlDir,
         applyTitleBar = { height, _ ->
             titleBar.putProperty("controls.rtl", isRtl)
             titleBar.height = height.value

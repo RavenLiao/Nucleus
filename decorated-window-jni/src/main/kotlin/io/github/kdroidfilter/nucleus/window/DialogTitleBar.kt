@@ -16,6 +16,7 @@ fun DecoratedDialogScope.DialogTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     val dialogTitleBarInfo = LocalDialogTitleBarInfo.current
@@ -26,9 +27,12 @@ fun DecoratedDialogScope.DialogTitleBar(
         LocalTitleBarInfo provides titleBarInfo,
     ) {
         when (Platform.Current) {
-            Platform.Linux -> LinuxDialogTitleBar(modifier, gradientStartColor, style, content)
-            Platform.Windows -> WindowsDialogTitleBar(modifier, gradientStartColor, style, content)
-            Platform.MacOS -> MacOSDialogTitleBar(modifier, gradientStartColor, style, content)
+            Platform.Linux ->
+                LinuxDialogTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, content)
+            Platform.Windows ->
+                WindowsDialogTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, content)
+            Platform.MacOS ->
+                MacOSDialogTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, content)
             Platform.Unknown ->
                 error("DialogTitleBar is not supported on this platform(${System.getProperty("os.name")})")
         }
