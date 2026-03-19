@@ -19,7 +19,7 @@ dependencies {
     // implementation: either :decorated-window-jbr (JBR) or :decorated-window-jni.
     compileOnly(project(":decorated-window-jbr"))
     api(project(":core-runtime"))
-    compileOnly(compose.desktop.common)
+    compileOnly(libs.compose.desktop.common)
     compileOnly(libs.jewel.foundation)
 }
 

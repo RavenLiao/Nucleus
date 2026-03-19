@@ -689,7 +689,7 @@ abstract class AbstractJPackageTask
             plist[PlistKeys.CFBundleInfoDictionaryVersion] = "6.0"
             plist[PlistKeys.CFBundleName] = packageName
             plist[PlistKeys.CFBundlePackageType] = "APPL"
-            val packageVersion = packageVersion.get()!!
+            val packageVersion = packageVersion.get()
             plist[PlistKeys.CFBundleShortVersionString] = packageVersion
             // If building for the App Store, use "utilities" as default just like jpackage.
             val category = macAppCategory.orNull ?: (if (macAppStore.orNull == true) "public.app-category.utilities" else null)
@@ -785,6 +785,7 @@ private class FilesMapping : Serializable {
         stream.writeObject(mapping)
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun readObject(stream: ObjectInputStream) {
         mapping = stream.readObject() as HashMap<File, List<File>>
     }

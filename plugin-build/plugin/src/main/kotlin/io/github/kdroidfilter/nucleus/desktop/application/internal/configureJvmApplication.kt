@@ -742,8 +742,7 @@ internal fun JvmApplicationContext.configureCommonNotarizationSettings(notarizat
     notarizationTask.nonValidatedNotarizationSettings = notarization
     notarizationTask.onlyIf {
         val configured =
-            notarization != null &&
-                !notarization.appleID.orNull.isNullOrEmpty() &&
+            !notarization.appleID.orNull.isNullOrEmpty() &&
                 !notarization.password.orNull.isNullOrEmpty() &&
                 !notarization.teamID.orNull.isNullOrEmpty()
         if (!configured) {

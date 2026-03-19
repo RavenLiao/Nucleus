@@ -17,7 +17,7 @@ val publishVersion =
 
 dependencies {
     api(project(":core-runtime"))
-    compileOnly(compose.desktop.common)
+    compileOnly(libs.compose.desktop.common)
 }
 
 java {

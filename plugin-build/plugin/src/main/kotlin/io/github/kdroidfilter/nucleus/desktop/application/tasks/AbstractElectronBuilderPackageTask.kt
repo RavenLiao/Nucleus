@@ -314,7 +314,7 @@ abstract class AbstractElectronBuilderPackageTask
                 return propValue
             }
 
-            val dslValue = publish?.publishMode?.id ?: "never"
+            val dslValue = publish.publishMode.id
             logger.info("Using publish mode from DSL: $dslValue")
             return dslValue
         }

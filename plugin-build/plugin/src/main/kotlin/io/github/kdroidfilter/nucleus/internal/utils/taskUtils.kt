@@ -29,7 +29,7 @@ inline fun <reified T : Task> TaskContainer.registerOrConfigure(
 ): TaskProvider<T> =
     when (taskName) {
         in names -> named(taskName) as TaskProvider<T>
-        else -> register(taskName, T::class.java) as TaskProvider<T>
+        else -> register(taskName, T::class.java)
     }.apply {
         configure { it.configureFn() }
     }

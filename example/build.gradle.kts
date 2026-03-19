@@ -31,7 +31,7 @@ dependencies {
     implementation(project(":graalvm-runtime"))
     implementation(libs.reorderable)
     implementation("com.materialkolor:material-kolor:4.1.1")
-    implementation(compose.materialIconsExtended)
+    implementation(libs.compose.material.icons.extended)
 }
 
 val releaseVersion =

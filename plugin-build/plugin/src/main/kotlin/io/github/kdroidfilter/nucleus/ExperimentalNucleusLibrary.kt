@@ -5,5 +5,4 @@ package io.github.kdroidfilter.nucleus
     "This library is experimental and can be unstable. " +
         "Add @OptIn(io.github.kdroidfilter.nucleus.ExperimentalNucleusLibrary::class) annotation.",
 )
-@Deprecated("Please specify dependency via version catalog")
 annotation class ExperimentalNucleusLibrary

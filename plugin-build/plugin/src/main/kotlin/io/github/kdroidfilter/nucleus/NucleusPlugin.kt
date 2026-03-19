@@ -283,7 +283,6 @@ abstract class NucleusPlugin : Plugin<Project> {
         val uiToolingPreview = composeDependency("org.jetbrains.compose.components:components-ui-tooling-preview")
     }
 
-    @Deprecated("Specify dependency directly")
     object DesktopComponentsDependencies {
         @Deprecated(
             "Specify dependency directly",
