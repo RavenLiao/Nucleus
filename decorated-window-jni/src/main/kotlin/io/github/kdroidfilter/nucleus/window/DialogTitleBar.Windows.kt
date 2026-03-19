@@ -19,6 +19,7 @@ internal fun DecoratedDialogScope.WindowsDialogTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     if (JniWindowsDecorationBridge.isLoaded) {
@@ -33,6 +34,7 @@ internal fun DecoratedDialogScope.WindowsDialogTitleBar(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ -> PaddingValues(0.dp) },
         backgroundContent = {
             Spacer(modifier = Modifier.fillMaxSize().windowDragHandler(window))

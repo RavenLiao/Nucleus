@@ -24,12 +24,13 @@ internal fun DecoratedDialogScope.LinuxDialogTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     if (JniLinuxWindowBridge.isLoaded) {
-        NativeLinuxDialogTitleBar(modifier, gradientStartColor, style, content)
+        NativeLinuxDialogTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, content)
     } else {
-        FallbackLinuxDialogTitleBar(modifier, gradientStartColor, style, content)
+        FallbackLinuxDialogTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, content)
     }
 }
 
@@ -42,6 +43,7 @@ private fun DecoratedDialogScope.NativeLinuxDialogTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit,
 ) {
     val linuxStyle = createLinuxTitleBarStyle(style)
@@ -51,6 +53,7 @@ private fun DecoratedDialogScope.NativeLinuxDialogTitleBar(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = linuxStyle,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
             if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
                 PaddingValues(end = 4.dp)
@@ -96,6 +99,7 @@ private fun DecoratedDialogScope.FallbackLinuxDialogTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit,
 ) {
     val linuxStyle = createLinuxTitleBarStyle(style)
@@ -115,6 +119,7 @@ private fun DecoratedDialogScope.FallbackLinuxDialogTitleBar(
             },
         gradientStartColor = gradientStartColor,
         style = linuxStyle,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
             if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
                 PaddingValues(end = 4.dp)

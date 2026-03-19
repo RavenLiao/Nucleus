@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 
@@ -14,6 +16,7 @@ fun DecoratedDialogScope.DialogTitleBarImpl(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: LayoutDirection = LocalLayoutDirection.current,
     applyTitleBar: (Dp, DecoratedWindowState) -> PaddingValues,
     onPlace: (() -> Unit)? = null,
     backgroundContent: @Composable () -> Unit = {},
@@ -26,6 +29,7 @@ fun DecoratedDialogScope.DialogTitleBarImpl(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlButtonsDirection,
         applyTitleBar = applyTitleBar,
         onPlace = onPlace,
         backgroundContent = backgroundContent,

@@ -19,6 +19,7 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     content: @Composable TitleBarScope.(DecoratedDialogState) -> Unit = {},
 ) {
     DisposableEffect(window) {
@@ -32,6 +33,7 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
         modifier = modifier.titleBarHitTestHandler(window),
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { height, _ ->
             JniMacWindowUtil.applyWindowProperties(window)
 
