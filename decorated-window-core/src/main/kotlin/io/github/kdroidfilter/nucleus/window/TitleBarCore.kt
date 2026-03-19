@@ -52,6 +52,14 @@ private const val GRADIENT_MIDPOINT = 0.5f
 
 val LocalContentColor = staticCompositionLocalOf { Color.Black }
 
+/**
+ * The resolved layout direction for window control buttons.
+ * Provided by [GenericTitleBarImpl] so that control button composables
+ * can apply this as [LocalLayoutDirection] around their content,
+ * independently of the app's content direction.
+ */
+val LocalControlButtonsDirection = staticCompositionLocalOf { LayoutDirection.Ltr }
+
 @Suppress("FunctionNaming", "LongParameterList")
 @Composable
 fun GenericTitleBarImpl(
@@ -104,6 +112,7 @@ fun GenericTitleBarImpl(
             content = {
                 CompositionLocalProvider(
                     LocalContentColor provides style.colors.content,
+                    LocalControlButtonsDirection provides controlButtonsDirection,
                 ) {
                     val scope = TitleBarScopeImpl(titleBarInfo.title, titleBarInfo.icon)
                     scope.content(state)
