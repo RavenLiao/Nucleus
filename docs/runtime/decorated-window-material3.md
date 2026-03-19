@@ -79,19 +79,22 @@ MaterialDecoratedDialog(
 
 ### `MaterialTitleBar` / `MaterialDialogTitleBar`
 
-Material-styled title bars. They read `MaterialTheme.colorScheme` and build a `TitleBarStyle` from it. They accept the same `gradientStartColor` and `backgroundContent` parameters as the base `TitleBar`.
+Material-styled title bars. They read `MaterialTheme.colorScheme` and build a `TitleBarStyle` from it. They accept the same `gradientStartColor`, `backgroundContent`, and `controlButtonsDirection` parameters as the base `TitleBar`.
 
 ```kotlin
 MaterialTitleBar(
     modifier = Modifier
         .newFullscreenControls()   // sliding overlay title bar in fullscreen (all platforms)
         .macOSLargeCornerRadius(), // 26pt corner radius on macOS (Finder/Safari style)
-    gradientStartColor = Color.Unspecified, // optional horizontal gradient
-    backgroundContent = {},                // optional custom background layer
+    gradientStartColor = Color.Unspecified,                  // optional horizontal gradient
+    controlButtonsDirection = ControlButtonsDirection.Auto,   // button placement (Auto/System/Ltr/Rtl)
+    backgroundContent = {},                                  // optional custom background layer
 ) { state ->
     // TitleBarScope content
 }
 ```
+
+See [controlButtonsDirection](decorated-window.md#controlbuttonsdirection--independent-button-placement) for details on decoupling button placement from content direction.
 
 See [Decorated Window — Fullscreen Title Bar](decorated-window.md#fullscreen-title-bar) for details on the sliding overlay behavior and the large corner radius modifier.
 

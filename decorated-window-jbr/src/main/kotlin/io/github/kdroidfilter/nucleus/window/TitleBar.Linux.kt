@@ -24,6 +24,7 @@ internal fun DecoratedWindowScope.LinuxTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
@@ -53,7 +54,8 @@ internal fun DecoratedWindowScope.LinuxTitleBar(
         },
         gradientStartColor,
         linuxStyle,
-        { _, _ ->
+        controlButtonsDirection = controlButtonsDirection.resolve(),
+        applyTitleBar = { _, _ ->
             if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
                 PaddingValues(end = 4.dp)
             } else {

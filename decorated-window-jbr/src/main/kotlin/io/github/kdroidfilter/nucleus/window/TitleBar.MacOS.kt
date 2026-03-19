@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -61,6 +60,7 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
@@ -89,19 +89,21 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
 
     WindowMouseEventEffect(titleBar)
 
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val controlDir = controlButtonsDirection.resolve()
+    val controlIsRtl = controlDir == LayoutDirection.Rtl
 
     TitleBarImpl(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlDir,
         applyTitleBar = { height, titleBarState ->
-            titleBar.putProperty("controls.rtl", isRtl)
+            titleBar.putProperty("controls.rtl", controlIsRtl)
             titleBar.height = height.value
             JBR.getWindowDecorations().setCustomTitleBar(window, titleBar)
 
             if (titleBarState.isFullscreen && newFullscreenControls) {
-                if (isRtl) {
+                if (controlIsRtl) {
                     PaddingValues(end = 80.dp)
                 } else {
                     PaddingValues(start = 80.dp)

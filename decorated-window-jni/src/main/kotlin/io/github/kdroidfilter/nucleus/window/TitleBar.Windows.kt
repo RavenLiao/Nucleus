@@ -31,13 +31,28 @@ internal fun DecoratedWindowScope.WindowsTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle = LocalTitleBarStyle.current,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
     if (JniWindowsDecorationBridge.isLoaded) {
-        NativeWindowsTitleBar(modifier, gradientStartColor, style, backgroundContent, content)
+        NativeWindowsTitleBar(
+            modifier,
+            gradientStartColor,
+            style,
+            controlButtonsDirection,
+            backgroundContent,
+            content,
+        )
     } else {
-        FallbackWindowsTitleBar(modifier, gradientStartColor, style, backgroundContent, content)
+        FallbackWindowsTitleBar(
+            modifier,
+            gradientStartColor,
+            style,
+            controlButtonsDirection,
+            backgroundContent,
+            content,
+        )
     }
 }
 
@@ -48,6 +63,7 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     backgroundContent: @Composable () -> Unit,
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit,
 ) {
@@ -103,6 +119,7 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
                     modifier = modifier,
                     gradientStartColor = gradientStartColor,
                     style = style,
+                    controlButtonsDirection = controlButtonsDirection.resolve(),
                     applyTitleBar = { _, _ -> PaddingValues(0.dp) },
                 ) { currentState ->
                     WindowsWindowControlArea(
@@ -124,6 +141,7 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { height, _ ->
             val hwnd = JniWindowsWindowUtil.getHwnd(window)
             if (hwnd != 0L) {
@@ -182,6 +200,7 @@ private fun DecoratedWindowScope.FallbackWindowsTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     backgroundContent: @Composable () -> Unit,
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit,
 ) {
@@ -208,6 +227,7 @@ private fun DecoratedWindowScope.FallbackWindowsTitleBar(
             },
         gradientStartColor = gradientStartColor,
         style = style,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ -> PaddingValues(0.dp) },
         backgroundContent = {
             backgroundContent()

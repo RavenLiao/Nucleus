@@ -27,13 +27,14 @@ internal fun DecoratedWindowScope.LinuxTitleBar(
     modifier: Modifier = Modifier,
     gradientStartColor: Color = Color.Unspecified,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection = ControlButtonsDirection.Auto,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
     if (JniLinuxWindowBridge.isLoaded) {
-        NativeLinuxTitleBar(modifier, gradientStartColor, style, backgroundContent, content)
+        NativeLinuxTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, backgroundContent, content)
     } else {
-        FallbackLinuxTitleBar(modifier, gradientStartColor, style, backgroundContent, content)
+        FallbackLinuxTitleBar(modifier, gradientStartColor, style, controlButtonsDirection, backgroundContent, content)
     }
 }
 
@@ -47,6 +48,7 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     backgroundContent: @Composable () -> Unit,
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit,
 ) {
@@ -69,6 +71,7 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
                     modifier = modifier,
                     gradientStartColor = gradientStartColor,
                     style = linuxStyle,
+                    controlButtonsDirection = controlButtonsDirection.resolve(),
                     applyTitleBar = { _, _ -> PaddingValues(0.dp) },
                 ) { currentState ->
                     WindowControlArea(
@@ -90,6 +93,7 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
         modifier = modifier,
         gradientStartColor = gradientStartColor,
         style = linuxStyle,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
             if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
                 PaddingValues(end = 4.dp)
@@ -154,6 +158,7 @@ private fun DecoratedWindowScope.FallbackLinuxTitleBar(
     modifier: Modifier,
     gradientStartColor: Color,
     style: TitleBarStyle,
+    controlButtonsDirection: ControlButtonsDirection,
     backgroundContent: @Composable () -> Unit,
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit,
 ) {
@@ -183,6 +188,7 @@ private fun DecoratedWindowScope.FallbackLinuxTitleBar(
             },
         gradientStartColor = gradientStartColor,
         style = linuxStyle,
+        controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
             if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
                 PaddingValues(end = 4.dp)
