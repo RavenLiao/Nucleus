@@ -925,6 +925,29 @@
             ]
         },
         {
+            "type": "com.sun.java.swing.plaf.windows.WindowsLookAndFeel",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.sun.java.swing.plaf.windows.WindowsRootPaneUI",
+            "methods": [
+                {
+                    "name": "createUI",
+                    "parameterTypes": [
+                        "javax.swing.JComponent"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.sun.java.swing.plaf.windows.resources.windows"
+        },
+        {
             "type": "java.awt.AWTEvent",
             "jniAccessible": true,
             "fields": [
@@ -2092,6 +2115,55 @@
             "type": "sun.awt.windows.WCanvasPeer"
         },
         {
+            "type": "sun.awt.windows.WComponentPeer",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "hwnd"
+                },
+                {
+                    "name": "winGraphicsConfig"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "disposeLater",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getHWnd",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "handleExpose",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                },
+                {
+                    "name": "postEvent",
+                    "parameterTypes": [
+                        "java.awt.AWTEvent"
+                    ]
+                },
+                {
+                    "name": "replaceSurfaceData",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "replaceSurfaceDataLater",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "dynamicallyLayoutContainer",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
             "type": "sun.awt.windows.WDesktopPeer",
             "jniAccessible": true,
             "methods": [
@@ -2166,6 +2238,9 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "sun.awt.windows.WDialogPeer"
         },
         {
             "type": "sun.awt.windows.WFontPeer",
@@ -2248,6 +2323,40 @@
                 {
                     "name": "windowsSettingChange",
                     "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.windows.WWindowPeer",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "windowType"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "draggedToNewScreen",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "notifyWindowStateChanged",
+                    "parameterTypes": [
+                        "int",
+                        "int"
+                    ]
+                },
+                {
+                    "name": "setBackground",
+                    "parameterTypes": [
+                        "java.awt.Color"
+                    ]
+                },
+                {
+                    "name": "getActiveWindowHandles",
+                    "parameterTypes": [
+                        "java.awt.Component"
+                    ]
                 }
             ]
         },

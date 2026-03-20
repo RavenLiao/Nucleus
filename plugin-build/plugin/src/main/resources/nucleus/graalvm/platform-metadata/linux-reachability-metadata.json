@@ -1,6 +1,21 @@
 {
     "reflection": [
         {
+            "type": "com.sun.java.swing.plaf.gtk.GTKLookAndFeel",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.sun.java.swing.plaf.gtk.resources.gtk"
+        },
+        {
+            "type": "com.sun.swing.internal.plaf.synth.resources.synth"
+        },
+        {
             "type": "java.awt.Component",
             "jniAccessible": true,
             "fields": [
@@ -277,6 +292,9 @@
         },
         {
             "type": "sun.awt.X11.XContentWindow"
+        },
+        {
+            "type": "sun.awt.X11.XDialogPeer"
         },
         {
             "type": "sun.awt.X11.XErrorHandlerUtil",
