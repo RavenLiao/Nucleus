@@ -201,12 +201,13 @@ private fun mergeSimpleEntries(
 }
 
 /**
- * Removes entries from the project's `reachability-metadata.json` that are already provided
- * by library JARs on the classpath. This prevents the tracing agent from re-adding entries
- * that Nucleus (or other libraries) ship in their own metadata.
+ * Removes entries from the project's `reachability-metadata.json` that are already fully
+ * covered by library JARs on the classpath. This prevents the tracing agent from re-adding
+ * entries that Nucleus (or other libraries) ship in their own metadata.
  *
  * Scans all JARs in [classpathFiles] for `META-INF/native-image/ ** /reachability-metadata.json`,
- * collects their reflection/jni/resources entries, and removes matching entries from [targetDir].
+ * collects their reflection/jni/resources entries, and removes matching entries from [targetDir]
+ * only when the library entry is a superset of the project entry (all methods/fields covered).
  */
 internal fun deduplicateAgainstLibraryMetadata(
     classpathFiles: Iterable<File>,
@@ -217,8 +218,9 @@ internal fun deduplicateAgainstLibraryMetadata(
 
     val slurper = JsonSlurper()
 
-    // Collect all library-provided type names per section
-    val libraryTypes = mutableMapOf<String, MutableSet<String>>()
+    // Collect full library entries per section, keyed by type name.
+    // Multiple JARs may contribute entries for the same type -- merge them.
+    val libraryEntries = mutableMapOf<String, MutableMap<String, MutableMap<String, Any?>>>()
     val libraryResources = mutableSetOf<String>()
 
     for (file in classpathFiles) {
@@ -241,9 +243,16 @@ internal fun deduplicateAgainstLibraryMetadata(
                     for (section in listOf("reflection", "jni")) {
                         @Suppress("UNCHECKED_CAST")
                         val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
-                        val typeSet = libraryTypes.getOrPut(section) { mutableSetOf() }
+                        val sectionMap = libraryEntries.getOrPut(section) { mutableMapOf() }
                         for (e in entries) {
-                            (e["type"] as? String)?.let { typeSet.add(it) }
+                            val typeName = e["type"] as? String ?: continue
+                            val existing = sectionMap[typeName]
+                            if (existing == null) {
+                                sectionMap[typeName] = e.toMutableMap()
+                            } else {
+                                // Merge: union of methods/fields, upgrade flags
+                                mergeTypeEntry(e, existing)
+                            }
                         }
                     }
 
@@ -261,20 +270,24 @@ internal fun deduplicateAgainstLibraryMetadata(
         }
     }
 
-    if (libraryTypes.isEmpty() && libraryResources.isEmpty()) return
+    if (libraryEntries.isEmpty() && libraryResources.isEmpty()) return
 
     @Suppress("UNCHECKED_CAST")
     val targetRoot = slurper.parseText(targetFile.readText()) as MutableMap<String, Any?>
     var changed = false
 
-    // Remove reflection/jni entries whose type is already provided by a library
+    // Remove reflection/jni entries only when the library fully covers the project entry
     for (section in listOf("reflection", "jni")) {
-        val knownTypes = libraryTypes[section] ?: continue
+        val sectionMap = libraryEntries[section] ?: continue
 
         @Suppress("UNCHECKED_CAST")
         val targetArray = targetRoot[section] as? MutableList<Map<String, Any?>> ?: continue
         val before = targetArray.size
-        targetArray.removeAll { entry -> (entry["type"] as? String) in knownTypes }
+        targetArray.removeAll { projectEntry ->
+            val typeName = projectEntry["type"] as? String ?: return@removeAll false
+            val libEntry = sectionMap[typeName] ?: return@removeAll false
+            libraryCoversProject(libEntry, projectEntry)
+        }
         if (targetArray.size != before) changed = true
     }
 
@@ -292,6 +305,63 @@ internal fun deduplicateAgainstLibraryMetadata(
     if (changed) {
         targetFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(targetRoot)) + "\n")
     }
+}
+
+/**
+ * Returns true if the library entry fully covers the project entry, meaning the project
+ * entry can be safely removed. Checks that all methods, fields, and flags in the project
+ * entry are present in the library entry.
+ */
+private fun libraryCoversProject(
+    libEntry: Map<String, Any?>,
+    projectEntry: Map<String, Any?>,
+): Boolean {
+    // Check broad flags: if project needs a flag, library must have it
+    val broadFlags =
+        listOf(
+            "allDeclaredFields",
+            "allDeclaredMethods",
+            "allDeclaredConstructors",
+            "allPublicFields",
+            "allPublicMethods",
+            "allPublicConstructors",
+            "unsafeAllocated",
+            "jniAccessible",
+        )
+    for (flag in broadFlags) {
+        if (projectEntry[flag] == true && libEntry[flag] != true) {
+            return false
+        }
+    }
+
+    // Check methods, fields, queriedMethods
+    for (memberKey in listOf("methods", "fields", "queriedMethods")) {
+        @Suppress("UNCHECKED_CAST")
+        val projectMembers = projectEntry[memberKey] as? List<Map<String, Any?>>
+        if (projectMembers.isNullOrEmpty()) continue
+
+        // If library has allDeclared* for this category, it covers everything
+        val allDeclaredKey =
+            when (memberKey) {
+                "fields" -> "allDeclaredFields"
+                "methods", "queriedMethods" -> "allDeclaredMethods"
+                else -> null
+            }
+        if (allDeclaredKey != null && libEntry[allDeclaredKey] == true) continue
+
+        @Suppress("UNCHECKED_CAST")
+        val libMembers = libEntry[memberKey] as? List<Map<String, Any?>>
+        if (libMembers == null) return false
+
+        val libSignatures = libMembers.map { memberSignature(it) }.toSet()
+        for (pm in projectMembers) {
+            if (memberSignature(pm) !in libSignatures) {
+                return false
+            }
+        }
+    }
+
+    return true
 }
 
 /**
