@@ -449,6 +449,44 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                 )
         }
 
+    // ── Run the native image ──
+
+    tasks.register<Exec>(
+        taskNameAction = "run",
+        taskNameObject = "graalvmNative",
+    ) {
+        description = "Build and run the GraalVM native image"
+        dependsOn(packageGraalvmNative)
+
+        val binaryFile =
+            when (currentOS) {
+                OS.MacOS -> {
+                    val dir =
+                        appTmpDir.map {
+                            it.dir("graalvm/output/${packageNameProvider.get()}.app/Contents/MacOS")
+                        }
+                    dir.map { it.file(imageName.get()) }
+                }
+                OS.Windows -> {
+                    val dir =
+                        appTmpDir.map {
+                            it.dir("graalvm/output/${packageNameProvider.get()}")
+                        }
+                    dir.map { it.file(binaryName.get()) }
+                }
+                OS.Linux -> {
+                    val dir =
+                        appTmpDir.map {
+                            it.dir("graalvm/output/${packageNameProvider.get()}")
+                        }
+                    dir.map { it.file(imageName.get()) }
+                }
+            }
+
+        executable = binaryFile.get().asFile.absolutePath
+        args = app.args
+    }
+
     // ── Electron-builder integration ──
 
     configureGraalvmElectronBuilderPackaging(packageGraalvmNative, unpackDefaultResources, imageName)

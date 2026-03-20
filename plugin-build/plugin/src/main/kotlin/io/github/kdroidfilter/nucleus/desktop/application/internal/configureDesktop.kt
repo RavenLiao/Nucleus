@@ -24,9 +24,6 @@ internal fun configureDesktop(
                 .getOrElse(false)
         ) {
             appData.configureGraalvmApplication()
-            appData
-                .copy(buildType = appInternal.data.buildTypes.release)
-                .configureGraalvmApplication()
         }
     }
 

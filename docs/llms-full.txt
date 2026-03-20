@@ -153,6 +153,7 @@ nucleus.application {
 |------|-------------|
 | `runWithNativeAgent` | Run with GraalVM tracing agent to collect reflection metadata |
 | `packageGraalvmNative` | Compile as native binary |
+| `runGraalvmNative` | Build and run the native image directly |
 | `packageGraalvmDeb` / `packageGraalvmDmg` / `packageGraalvmNsis` | Package native image as installer |
 
 ### Utility

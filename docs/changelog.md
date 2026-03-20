@@ -7,6 +7,8 @@
 ### New Features
 
 - **Automatic resource inclusion for GraalVM native-image** — `graalvm-runtime` now ships a `native-image.properties` that auto-includes all `.svg`, `.ttf`, `.otf` resources, `nucleus/native/*` JNI libraries, and `META-INF/services/*` descriptors via glob patterns. Projects no longer need to run the tracing agent just to discover icon and font resources — they are embedded in the native binary automatically. The tracing agent is still required for reflection, JNI, resource bundles, and non-standard resources. See [Automatic Resource Inclusion](graalvm-native-image.md#automatic-resource-inclusion).
+- **`runGraalvmNative` task** — New Gradle task that builds and runs the GraalVM native image directly, without packaging into an installer. Useful for quick iteration during development.
+- **Remove release build type for GraalVM** — GraalVM native-image tasks no longer have `release` variants (`packageReleaseGraalvmNative`, etc.). ProGuard is redundant with native-image's closed-world dead code elimination and harmful because it can rename classes referenced in `reachability-metadata.json`. See [No Release Build Type](graalvm-native-image.md#no-release-build-type).
 
 ---
 

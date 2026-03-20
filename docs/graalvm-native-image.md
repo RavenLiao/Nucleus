@@ -275,6 +275,7 @@ The [`decorated-window-jni`](runtime/decorated-window.md) module was specificall
 |------|-------------|
 | `runWithNativeAgent` | Run the app with the GraalVM tracing agent to collect reflection metadata |
 | `packageGraalvmNative` | Compile and package the application as a native binary |
+| `runGraalvmNative` | Build and run the native image directly |
 | `packageGraalvmDeb` | Package the native image as a `.deb` installer (Linux) |
 | `packageGraalvmDmg` | Package the native image as a `.dmg` installer (macOS) |
 | `packageGraalvmNsis` | Package the native image as an NSIS `.exe` installer (Windows) |
@@ -285,6 +286,9 @@ The [`decorated-window-jni`](runtime/decorated-window.md) module was specificall
 
 # Build the raw native image
 ./gradlew packageGraalvmNative
+
+# Build and run the native image
+./gradlew runGraalvmNative
 
 # Build platform-specific installers (requires Node.js for electron-builder)
 ./gradlew packageGraalvmDeb    # Linux
@@ -385,6 +389,15 @@ jobs:
 ```
 
 See [CI/CD](ci-cd.md#graalvm-native-image-release) for the full release workflow with publishing to GitHub Releases.
+
+## No Release Build Type
+
+Unlike standard JVM builds, GraalVM native-image builds **do not have a release variant**. There is no `packageReleaseGraalvmNative` or `runReleaseGraalvmNative` task. This is intentional:
+
+- **ProGuard is redundant** — GraalVM native-image already performs closed-world dead code elimination at compile time. Running ProGuard beforehand provides no additional size benefit.
+- **ProGuard is harmful** — ProGuard can rename or remove classes that are referenced in `reachability-metadata.json`, causing runtime crashes. Maintaining both ProGuard keep rules and reflection metadata is error-prone.
+
+All GraalVM tasks use the default (non-ProGuard) build type. Use `-Os` in `buildArgs` for size optimization.
 
 ## Best Practices
 
