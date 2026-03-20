@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowState
 import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.internal.insideBorder
 import io.github.kdroidfilter.nucleus.window.styling.LocalDecoratedWindowStyle
@@ -408,6 +409,35 @@ fun FrameWindowScope.DecoratedWindowBody(
             modifier = undecoratedWindowBorder,
             measurePolicy = DecoratedWindowMeasurePolicy,
         )
+    }
+}
+
+/**
+ * Pre-sizes the AWT window to the screen work area when [state] has
+ * [WindowPlacement.Maximized]. This ensures the first Compose/Skia frame
+ * renders at the maximized dimensions, preventing the brief flash of a
+ * default-sized window before the window manager processes the maximize.
+ *
+ * Must be called inside a [FrameWindowScope] (i.e. inside a `Window` block).
+ */
+@Suppress("FunctionNaming")
+@Composable
+fun FrameWindowScope.PreSizeIfMaximized(state: WindowState) {
+    DisposableEffect(window) {
+        if (state.placement == WindowPlacement.Maximized) {
+            val gc = window.graphicsConfiguration
+            if (gc != null) {
+                val sb = gc.bounds
+                val insets = java.awt.Toolkit.getDefaultToolkit().getScreenInsets(gc)
+                window.setBounds(
+                    sb.x + insets.left,
+                    sb.y + insets.top,
+                    sb.width - insets.left - insets.right,
+                    sb.height - insets.top - insets.bottom,
+                )
+            }
+        }
+        onDispose { }
     }
 }
 
