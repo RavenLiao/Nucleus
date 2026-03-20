@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.5
+
+**Released: 2026-03-19**
+
+### New Features
+
+- **Add `SystemNative` enum value to `ControlButtonsDirection`** — A new `SystemNative` variant that reads the native OS locale from JVM startup system properties (`user.language`, `user.country`, `user.variant`) instead of `Locale.getDefault()`. Unlike the `System` mode which reflects the current JVM default locale (mutable via `Locale.setDefault()`), `SystemNative` is immune to runtime locale overrides and always reflects the true operating system configuration. Useful for applications that temporarily change the UI locale but want control buttons to match the native system direction.
+
+---
+
 ## v1.5.4
 
 **Released: 2026-03-19**

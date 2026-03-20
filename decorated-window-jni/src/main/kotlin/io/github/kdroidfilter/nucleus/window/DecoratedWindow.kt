@@ -115,6 +115,12 @@ fun DecoratedWindow(
         onPreviewKeyEvent,
         onKeyEvent,
     ) {
+        // When starting maximized, pre-size the AWT window to the screen work
+        // area so the first Compose/Skia frame renders at the correct dimensions.
+        // Without this, the window briefly flashes at its default size before the
+        // WM processes the maximize.
+        PreSizeIfMaximized(state)
+
         if (useNativeFullscreen) {
             NativeFullscreenEffect(state, windowState)
             if (Platform.Current == Platform.Windows) {
