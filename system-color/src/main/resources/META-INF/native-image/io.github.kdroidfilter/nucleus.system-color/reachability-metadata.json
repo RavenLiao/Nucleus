@@ -1,0 +1,46 @@
+{
+    "reflection": [
+        {
+            "type": "io.github.kdroidfilter.nucleus.systemcolor.windows.NativeWindowsSystemColorBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onAccentColorChanged",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.systemcolor.mac.NativeMacSystemColorBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onAccentColorChanged",
+                    "parameterTypes": [
+                        "float",
+                        "float",
+                        "float"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.systemcolor.linux.NativeLinuxSystemColorBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onAccentColorChanged",
+                    "parameterTypes": [
+                        "float",
+                        "float",
+                        "float"
+                    ]
+                }
+            ]
+        }
+    ]
+}

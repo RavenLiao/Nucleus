@@ -201,6 +201,123 @@ private fun mergeSimpleEntries(
 }
 
 /**
+ * Removes entries from the project's `reachability-metadata.json` that are already provided
+ * by library JARs on the classpath. This prevents the tracing agent from re-adding entries
+ * that Nucleus (or other libraries) ship in their own metadata.
+ *
+ * Scans all JARs in [classpathFiles] for `META-INF/native-image/ ** /reachability-metadata.json`,
+ * collects their reflection/jni/resources entries, and removes matching entries from [targetDir].
+ */
+internal fun deduplicateAgainstLibraryMetadata(
+    classpathFiles: Iterable<File>,
+    targetDir: File,
+) {
+    val targetFile = File(targetDir, "reachability-metadata.json")
+    if (!targetFile.exists()) return
+
+    val slurper = JsonSlurper()
+
+    // Collect all library-provided type names per section
+    val libraryTypes = mutableMapOf<String, MutableSet<String>>()
+    val libraryResources = mutableSetOf<String>()
+
+    for (file in classpathFiles) {
+        if (!file.exists() || !file.name.endsWith(".jar")) continue
+        try {
+            java.util.jar.JarFile(file).use { jar ->
+                for (entry in jar.entries()) {
+                    if (!entry.name.contains("META-INF/native-image/") ||
+                        !entry.name.endsWith("reachability-metadata.json")
+                    ) {
+                        continue
+                    }
+
+                    @Suppress("UNCHECKED_CAST")
+                    val libRoot =
+                        slurper.parseText(
+                            jar.getInputStream(entry).bufferedReader().readText(),
+                        ) as? Map<String, Any?> ?: continue
+
+                    for (section in listOf("reflection", "jni")) {
+                        @Suppress("UNCHECKED_CAST")
+                        val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
+                        val typeSet = libraryTypes.getOrPut(section) { mutableSetOf() }
+                        for (e in entries) {
+                            (e["type"] as? String)?.let { typeSet.add(it) }
+                        }
+                    }
+
+                    for (section in listOf("resources")) {
+                        @Suppress("UNCHECKED_CAST")
+                        val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
+                        for (e in entries) {
+                            libraryResources.add(JsonOutput.toJson(e))
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Skip unreadable JARs
+        }
+    }
+
+    if (libraryTypes.isEmpty() && libraryResources.isEmpty()) return
+
+    @Suppress("UNCHECKED_CAST")
+    val targetRoot = slurper.parseText(targetFile.readText()) as MutableMap<String, Any?>
+    var changed = false
+
+    // Remove reflection/jni entries whose type is already provided by a library
+    for (section in listOf("reflection", "jni")) {
+        val knownTypes = libraryTypes[section] ?: continue
+
+        @Suppress("UNCHECKED_CAST")
+        val targetArray = targetRoot[section] as? MutableList<Map<String, Any?>> ?: continue
+        val before = targetArray.size
+        targetArray.removeAll { entry -> (entry["type"] as? String) in knownTypes }
+        if (targetArray.size != before) changed = true
+    }
+
+    // Remove resource entries already provided by libraries
+    if (libraryResources.isNotEmpty()) {
+        @Suppress("UNCHECKED_CAST")
+        val targetResources = targetRoot["resources"] as? MutableList<Map<String, Any?>>
+        if (targetResources != null) {
+            val before = targetResources.size
+            targetResources.removeAll { entry -> JsonOutput.toJson(entry) in libraryResources }
+            if (targetResources.size != before) changed = true
+        }
+    }
+
+    if (changed) {
+        targetFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(targetRoot)) + "\n")
+    }
+}
+
+/**
+ * Writes the platform-specific `reachability-metadata.json` (AWT, Java2D, font entries)
+ * bundled inside the plugin JAR into the given [outputDir].
+ *
+ * The plugin ships pre-built metadata for each platform under
+ * `nucleus/graalvm/platform-metadata/{windows,macos,linux}-reachability-metadata.json`.
+ */
+internal fun writePlatformMetadata(
+    platform: String,
+    outputDir: File,
+) {
+    val resourcePath = "nucleus/graalvm/platform-metadata/$platform-reachability-metadata.json"
+    val stream =
+        object {}::class.java.classLoader.getResourceAsStream(resourcePath)
+            ?: return
+
+    outputDir.mkdirs()
+    val targetFile = File(outputDir, "reachability-metadata.json")
+    stream.bufferedReader().use { reader ->
+        targetFile.writeText(reader.readText())
+    }
+}
+
+/**
  * Merges individual JSON array config files (reflect-config.json, jni-config.json, etc.)
  * that the agent may generate in the old format.
  */

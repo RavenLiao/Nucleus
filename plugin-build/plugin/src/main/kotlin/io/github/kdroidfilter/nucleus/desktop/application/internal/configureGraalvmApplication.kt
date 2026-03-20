@@ -135,6 +135,11 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     )
                 }
 
+                // Deduplicate: remove entries already provided by library JARs
+                // (graalvm-runtime, darkmode-detector, system-color, decorated-window-jni, etc.)
+                val runtimeClasspath = classpath?.files ?: emptySet()
+                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir)
+
                 logger.lifecycle("Native-image agent config merged into: $targetDir")
             }
         }
@@ -328,6 +333,32 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             null
         }
 
+    // ── Platform metadata (Level 3) ──
+    // Write AWT/Java2D/font reflection entries for the current OS into a build directory
+    // so native-image picks them up alongside the project's own metadata.
+
+    val platformMetadataDir = appTmpDir.map { it.dir("graalvm/platformMetadata") }
+
+    val generatePlatformMetadata =
+        tasks.register<DefaultTask>(
+            taskNameAction = "generate",
+            taskNameObject = "graalvmPlatformMetadata",
+        ) {
+            description = "Generate platform-specific GraalVM metadata for AWT/Java2D"
+            outputs.dir(platformMetadataDir)
+
+            doLast {
+                val platform =
+                    when (currentOS) {
+                        OS.Windows -> "windows"
+                        OS.MacOS -> "macos"
+                        OS.Linux -> "linux"
+                    }
+                writePlatformMetadata(platform, platformMetadataDir.get().asFile)
+                logger.lifecycle("Platform metadata ($platform) written to: ${platformMetadataDir.get().asFile}")
+            }
+        }
+
     // ── nativeImageCompile ──
 
     val nativeImageCompile =
@@ -338,6 +369,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             description = "Compile the application into a GraalVM native image"
 
             dependsOn(packageUberJar)
+            dependsOn(generatePlatformMetadata)
             compileStubs?.let { dependsOn(it) }
             generateWindowsResources?.let { dependsOn(it) }
 
@@ -412,6 +444,11 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     if (configDir.exists()) {
                         add("-H:ConfigurationFileDirectories=$configDir")
                     }
+
+                    // Include platform-specific AWT/Java2D metadata
+                    // Always add — the directory is created by generateGraalvmPlatformMetadata
+                    // which runs before this task via dependsOn.
+                    add("-H:ConfigurationFileDirectories=${platformMetadataDir.get().asFile}")
 
                     addAll(graalvm.buildArgs.get())
                 }

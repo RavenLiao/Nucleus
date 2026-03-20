@@ -1,14 +1,84 @@
 {
     "reflection": [
         {
-            "type": "com.intellij.openapi.diagnostic.Logger"
+            "type": "java.awt.Component",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "appContext"
+                },
+                {
+                    "name": "background"
+                },
+                {
+                    "name": "foreground"
+                },
+                {
+                    "name": "graphicsConfig"
+                },
+                {
+                    "name": "height"
+                },
+                {
+                    "name": "isPacked"
+                },
+                {
+                    "name": "name"
+                },
+                {
+                    "name": "peer"
+                },
+                {
+                    "name": "width"
+                },
+                {
+                    "name": "x"
+                },
+                {
+                    "name": "y"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "getLocationOnScreen_NoTreeLock",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getParent_NoClientCode",
+                    "parameterTypes": []
+                }
+            ]
         },
         {
-            "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+            "type": "java.awt.Rectangle",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "<init>",
-                    "parameterTypes": []
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.awt.SequencedEvent"
+        },
+        {
+            "type": "java.awt.event.KeyEvent",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "VK_CONTEXT_MENU"
+                },
+                {
+                    "name": "VK_F10"
+                },
+                {
+                    "name": "isProxyActive"
                 }
             ]
         },
@@ -87,40 +157,15 @@
             ]
         },
         {
-            "type": "java.awt.image.BufferedImage",
+            "type": "java.awt.image.DirectColorModel",
             "jniAccessible": true,
-            "fields": [
-                {
-                    "name": "colorModel"
-                },
-                {
-                    "name": "imageType"
-                },
-                {
-                    "name": "raster"
-                }
-            ],
             "methods": [
                 {
-                    "name": "getRGB",
+                    "name": "<init>",
                     "parameterTypes": [
                         "int",
                         "int",
                         "int",
-                        "int",
-                        "int[]",
-                        "int",
-                        "int"
-                    ]
-                },
-                {
-                    "name": "setRGB",
-                    "parameterTypes": [
-                        "int",
-                        "int",
-                        "int",
-                        "int",
-                        "int[]",
                         "int",
                         "int"
                     ]
@@ -128,150 +173,21 @@
             ]
         },
         {
-            "type": "java.awt.image.IndexColorModel",
-            "jniAccessible": true,
-            "fields": [
-                {
-                    "name": "allgrayopaque"
-                },
-                {
-                    "name": "colorData"
-                },
-                {
-                    "name": "map_size"
-                },
-                {
-                    "name": "rgb"
-                },
-                {
-                    "name": "transparent_index"
-                }
-            ]
+            "type": "java.lang.String",
+            "jniAccessible": true
         },
         {
-            "type": "java.awt.image.Raster",
+            "type": "java.lang.System",
             "jniAccessible": true,
-            "fields": [
-                {
-                    "name": "dataBuffer"
-                },
-                {
-                    "name": "height"
-                },
-                {
-                    "name": "minX"
-                },
-                {
-                    "name": "minY"
-                },
-                {
-                    "name": "numBands"
-                },
-                {
-                    "name": "numDataElements"
-                },
-                {
-                    "name": "sampleModel"
-                },
-                {
-                    "name": "sampleModelTranslateX"
-                },
-                {
-                    "name": "sampleModelTranslateY"
-                },
-                {
-                    "name": "width"
-                }
-            ]
-        },
-        {
-            "type": "java.awt.image.SampleModel",
-            "jniAccessible": true,
-            "fields": [
-                {
-                    "name": "height"
-                },
-                {
-                    "name": "width"
-                }
-            ],
             "methods": [
                 {
-                    "name": "getPixels",
+                    "name": "getProperty",
                     "parameterTypes": [
-                        "int",
-                        "int",
-                        "int",
-                        "int",
-                        "int[]",
-                        "java.awt.image.DataBuffer"
+                        "java.lang.String"
                     ]
                 },
                 {
-                    "name": "setPixels",
-                    "parameterTypes": [
-                        "int",
-                        "int",
-                        "int",
-                        "int",
-                        "int[]",
-                        "java.awt.image.DataBuffer"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "java.awt.image.SinglePixelPackedSampleModel",
-            "jniAccessible": true,
-            "fields": [
-                {
-                    "name": "bitMasks"
-                },
-                {
-                    "name": "bitOffsets"
-                },
-                {
-                    "name": "bitSizes"
-                },
-                {
-                    "name": "maxBitSize"
-                }
-            ]
-        },
-        {
-            "type": "org.jetbrains.skia.paragraph.TextBox[]"
-        },
-        {
-            "type": "org.slf4j.Logger",
-            "methods": [
-                {
-                    "name": "info",
-                    "parameterTypes": [
-                        "java.lang.String",
-                        "java.lang.Throwable"
-                    ]
-                },
-                {
-                    "name": "trace",
-                    "parameterTypes": [
-                        "java.lang.String",
-                        "java.lang.Throwable"
-                    ]
-                },
-                {
-                    "name": "warn",
-                    "parameterTypes": [
-                        "java.lang.String",
-                        "java.lang.Throwable"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "org.slf4j.LoggerFactory",
-            "methods": [
-                {
-                    "name": "getLogger",
+                    "name": "load",
                     "parameterTypes": [
                         "java.lang.String"
                     ]
@@ -279,7 +195,21 @@
             ]
         },
         {
+            "type": "java.lang.Thread",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "yield",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "org.jetbrains.skiko.SkiaLayer"
+        },
+        {
             "type": "sun.awt.AWTAccessor",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "getComponentAccessor",
@@ -289,6 +219,7 @@
         },
         {
             "type": "sun.awt.AWTAccessor$ComponentAccessor",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "getPeer",
@@ -299,16 +230,67 @@
             ]
         },
         {
-            "type": "sun.awt.image.BufImgSurfaceData$ICMColorData",
+            "type": "sun.awt.SunToolkit",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "awtLock",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "awtLockNotify",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "awtLockNotifyAll",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "awtLockWait",
+                    "parameterTypes": [
+                        "long"
+                    ]
+                },
+                {
+                    "name": "awtUnlock",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11.XBaseWindow",
             "jniAccessible": true,
             "fields": [
                 {
-                    "name": "pData"
+                    "name": "window"
                 }
             ],
             "methods": [
                 {
-                    "name": "<init>",
+                    "name": "getWindow",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11.XCanvasPeer"
+        },
+        {
+            "type": "sun.awt.X11.XContentWindow"
+        },
+        {
+            "type": "sun.awt.X11.XErrorHandlerUtil",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "globalErrorHandler",
+                    "parameterTypes": [
+                        "long",
+                        "long"
+                    ]
+                },
+                {
+                    "name": "init",
                     "parameterTypes": [
                         "long"
                     ]
@@ -316,23 +298,85 @@
             ]
         },
         {
-            "type": "sun.awt.image.IntegerComponentRaster",
+            "type": "sun.awt.X11.XFramePeer"
+        },
+        {
+            "type": "sun.awt.X11.XToolkit",
             "jniAccessible": true,
             "fields": [
                 {
-                    "name": "data"
+                    "name": "modLockIsShiftLock"
                 },
                 {
-                    "name": "dataOffsets"
+                    "name": "numLockMask"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "getDisplay",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11.XWindow",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "drawState"
                 },
                 {
-                    "name": "pixelStride"
+                    "name": "graphicsConfig"
                 },
                 {
-                    "name": "scanlineStride"
+                    "name": "target"
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11GraphicsConfig",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "aData"
                 },
                 {
-                    "name": "type"
+                    "name": "bitsPerPixel"
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11GraphicsDevice",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "addDoubleBufferVisual",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.X11InputMethodBase",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "pData"
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.screencast.TokenStorage",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "storeTokenFromNative",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.String",
+                        "int[]"
+                    ]
                 }
             ]
         },
@@ -392,26 +436,6 @@
                     "parameterTypes": [
                         "int"
                     ]
-                }
-            ]
-        },
-        {
-            "type": "sun.font.FontUtilities",
-            "jniAccessible": true,
-            "methods": [
-                {
-                    "name": "debugFonts",
-                    "parameterTypes": []
-                }
-            ]
-        },
-        {
-            "type": "sun.font.FreetypeFontScaler",
-            "jniAccessible": true,
-            "methods": [
-                {
-                    "name": "invalidateScaler",
-                    "parameterTypes": []
                 }
             ]
         },
@@ -524,132 +548,60 @@
             ]
         },
         {
-            "type": "sun.lwawt.macosx.LWCToolkit",
+            "type": "sun.java2d.pipe.ShapeSpanIterator",
             "jniAccessible": true,
-            "methods": [
+            "fields": [
                 {
-                    "name": "installToolkitThreadInJava",
-                    "parameterTypes": []
+                    "name": "pData"
                 }
             ]
         },
         {
-            "type": "android.os.Build$VERSION"
-        },
-        {
-            "type": "sun.text.resources.cldr.FormatData"
-        },
-        {
-            "type": "byte[]"
-        },
-        {
-            "type": "char[]"
-        },
-        {
-            "type": "java.awt.Image"
-        },
-        {
-            "type": "java.io.InputStream"
-        },
-        {
-            "type": "java.io.Reader"
-        },
-        {
-            "type": "java.net.URL"
-        },
-        {
-            "type": "java.nio.ByteBuffer"
-        },
-        {
-            "type": "java.nio.CharBuffer"
-        },
-        {
-            "type": "java.rmi.MarshalledObject"
-        },
-        {
-            "type": "java.rmi.Remote"
-        },
-        {
-            "type": "java.util.List"
-        },
-        {
-            "type": "sun.lwawt.macosx.CInputMethod",
+            "type": "sun.java2d.xr.XRBackendNative",
             "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "FMTPTR_A8"
+                },
+                {
+                    "name": "FMTPTR_ARGB32"
+                },
+                {
+                    "name": "MASK_XIMG"
+                }
+            ]
+        },
+        {
+            "type": "sun.java2d.xr.XRSurfaceData",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "picture"
+                },
+                {
+                    "name": "xid"
+                }
+            ]
+        },
+        {
+            "type": "sun.security.provider.NativePRNG",
             "methods": [
                 {
-                    "name": "unmarkText",
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.security.SecureRandomParameters"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.security.provider.SHA2$SHA256",
+            "methods": [
+                {
+                    "name": "<init>",
                     "parameterTypes": []
                 }
             ]
-        }
-    ],
-    "resources": [
-        {
-            "glob": "libskiko-macos-arm64.dylib.sha256"
-        },
-        {
-            "glob": "org/slf4j/impl/StaticLoggerBinder.class"
-        },
-        {
-            "module": "java.desktop",
-            "glob": "com/apple/laf/resources/aqua_fr_IL.properties"
-        },
-        {
-            "module": "java.desktop",
-            "glob": "com/sun/swing/internal/plaf/basic/resources/basic_fr_IL.properties"
-        },
-        {
-            "module": "java.desktop",
-            "glob": "sun/awt/resources/awt_fr_IL.properties"
-        },
-        {
-            "module": "java.desktop",
-            "glob": "sun/awt/resources/awtosx_fr.properties"
-        },
-        {
-            "module": "java.desktop",
-            "glob": "sun/awt/resources/awtosx_fr_IL.properties"
-        },
-        {
-            "module": "java.xml",
-            "glob": "com/sun/org/apache/xml/internal/serializer/Encodings.properties"
-        },
-        {
-            "module": "java.xml",
-            "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities.properties"
-        },
-        {
-            "module": "java.xml",
-            "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_fr.properties"
-        },
-        {
-            "module": "java.xml",
-            "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_fr_IL.properties"
-        },
-        {
-            "bundle": "com.apple.laf.resources.aqua"
-        },
-        {
-            "bundle": "com.sun.org.apache.xml.internal.serializer.XMLEntities"
-        },
-        {
-            "bundle": "sun.awt.resources.awtosx"
-        },
-        {
-            "glob": "messages/JewelIntUIBundle.properties"
-        },
-        {
-            "glob": "messages/JewelIntUIBundle_fr.properties"
-        },
-        {
-            "glob": "messages/JewelIntUIBundle_fr_IL.properties"
-        },
-        {
-            "bundle": "messages.JewelIntUIBundle"
-        },
-        {
-            "module": "java.datatransfer",
-            "glob": "sun/datatransfer/resources/flavormap.properties"
         }
     ]
 }

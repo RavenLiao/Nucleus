@@ -1,0 +1,585 @@
+{
+    "reflection": [
+        {
+            "type": "com.apple.eawt.FullScreenHandler",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "handleFullScreenEventFromNative",
+                    "parameterTypes": [
+                        "java.awt.Window",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.eawt._AppEventHandler",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "handleNativeNotification",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.eawt._AppMenuBarHandler",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "initMenuStates",
+                    "parameterTypes": [
+                        "boolean",
+                        "boolean",
+                        "boolean",
+                        "boolean"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.laf.AquaKeyBindings",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.apple.laf.AquaLookAndFeel",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.apple.laf.AquaPanelUI",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "createUI",
+                    "parameterTypes": [
+                        "javax.swing.JComponent"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.laf.AquaRootPaneUI",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "createUI",
+                    "parameterTypes": [
+                        "javax.swing.JComponent"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.laf.resources.aqua"
+        },
+        {
+            "type": "java.awt.Component",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "height"
+                },
+                {
+                    "name": "peer"
+                },
+                {
+                    "name": "width"
+                },
+                {
+                    "name": "x"
+                },
+                {
+                    "name": "y"
+                }
+            ]
+        },
+        {
+            "type": "java.awt.DisplayMode",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.awt.Insets",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.awt.SequencedEvent"
+        },
+        {
+            "type": "java.awt.SystemColor",
+            "fields": [
+                {
+                    "name": "activeCaption"
+                },
+                {
+                    "name": "activeCaptionBorder"
+                },
+                {
+                    "name": "activeCaptionText"
+                },
+                {
+                    "name": "control"
+                },
+                {
+                    "name": "controlDkShadow"
+                },
+                {
+                    "name": "controlHighlight"
+                },
+                {
+                    "name": "controlLtHighlight"
+                },
+                {
+                    "name": "controlShadow"
+                },
+                {
+                    "name": "controlText"
+                },
+                {
+                    "name": "desktop"
+                },
+                {
+                    "name": "inactiveCaption"
+                },
+                {
+                    "name": "inactiveCaptionBorder"
+                },
+                {
+                    "name": "inactiveCaptionText"
+                },
+                {
+                    "name": "info"
+                },
+                {
+                    "name": "infoText"
+                },
+                {
+                    "name": "menu"
+                },
+                {
+                    "name": "menuText"
+                },
+                {
+                    "name": "scrollbar"
+                },
+                {
+                    "name": "text"
+                },
+                {
+                    "name": "textHighlight"
+                },
+                {
+                    "name": "textHighlightText"
+                },
+                {
+                    "name": "textInactiveText"
+                },
+                {
+                    "name": "textText"
+                },
+                {
+                    "name": "window"
+                },
+                {
+                    "name": "windowBorder"
+                },
+                {
+                    "name": "windowText"
+                }
+            ]
+        },
+        {
+            "type": "java.awt.Toolkit",
+            "fields": [
+                {
+                    "name": "eventListener"
+                }
+            ]
+        },
+        {
+            "type": "java.awt.event.InputEvent",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getButtonDownMasks",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.awt.event.KeyEvent",
+            "fields": [
+                {
+                    "name": "VK_CONTEXT_MENU"
+                },
+                {
+                    "name": "VK_F10"
+                }
+            ]
+        },
+        {
+            "type": "java.awt.geom.Point2D$Double",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "double",
+                        "double"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.awt.geom.Rectangle2D$Double",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "double",
+                        "double",
+                        "double",
+                        "double"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Boolean",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "booleanValue",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getBoolean",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.String",
+            "jniAccessible": true
+        },
+        {
+            "type": "java.lang.System",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getProperty",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "load",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.ArrayList",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "add",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                },
+                {
+                    "name": "contains",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.Locale",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.String",
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "org.jetbrains.skiko.SkiaLayer"
+        },
+        {
+            "type": "org.jetbrains.skiko.redrawer.MetalRedrawer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onOcclusionStateChanged",
+                    "parameterTypes": [
+                        "boolean"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.awt.AWTAutoShutdown",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "notifyToolkitThreadBusy",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "notifyToolkitThreadFree",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.java2d.metal.MTLLayer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "drawInMTLContext",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.java2d.metal.MTLSurfaceData",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "nativeHeight"
+                },
+                {
+                    "name": "nativeWidth"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "dispose",
+                    "parameterTypes": [
+                        "long",
+                        "sun.java2d.metal.MTLGraphicsConfig"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.java2d.metal.MTLSurfaceData$MTLLayerSurfaceData"
+        },
+        {
+            "type": "sun.java2d.metal.MTLSurfaceData$MTLOffScreenSurfaceData"
+        },
+        {
+            "type": "sun.lwawt.LWComponentPeer",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "platformComponent"
+                }
+            ]
+        },
+        {
+            "type": "sun.lwawt.LWWindowPeer",
+            "methods": [
+                {
+                    "name": "getPlatformWindow",
+                    "parameterTypes": []
+                }
+            ],
+            "jniAccessible": true
+        },
+        {
+            "type": "sun.lwawt.macosx.CFRetainedResource",
+            "fields": [
+                {
+                    "name": "ptr"
+                }
+            ],
+            "jniAccessible": true
+        },
+        {
+            "type": "sun.lwawt.macosx.CPlatformComponent",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getPointer",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "sun.lwawt.macosx.CPlatformView",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "deliverMouseEvent",
+                    "parameterTypes": [
+                        "sun.lwawt.macosx.NSEvent"
+                    ]
+                },
+                {
+                    "name": "deliverResize",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.lwawt.macosx.CPlatformWindow",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "deliverMoveResizeEvent",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "boolean"
+                    ]
+                },
+                {
+                    "name": "deliverWindowClosingEvent",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "deliverWindowFocusEvent",
+                    "parameterTypes": [
+                        "boolean",
+                        "sun.lwawt.macosx.CPlatformWindow"
+                    ]
+                },
+                {
+                    "name": "isBlocked",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "isVisible",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "windowDidBecomeMain",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "deliverNCMouseDown",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "windowDidEnterFullScreen",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "windowDidExitFullScreen",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "windowWillEnterFullScreen",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "windowWillExitFullScreen",
+                    "parameterTypes": []
+                }
+            ],
+            "fields": [
+                {
+                    "name": "target"
+                }
+            ]
+        },
+        {
+            "type": "sun.lwawt.macosx.NSEvent",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "double",
+                        "double",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.security.provider.NativePRNG",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.security.SecureRandomParameters"
+                    ]
+                }
+            ]
+        }
+    ]
+}
