@@ -1,3 +1,25 @@
 {
-    "reflection": []
+    "reflection": [
+        {
+            "type": "java.util.ArrayList",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "add",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                },
+                {
+                    "name": "clear",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        }
+    ],
+    "resources": [
+        
+    ]
 }

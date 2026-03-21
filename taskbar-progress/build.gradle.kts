@@ -68,13 +68,31 @@ val buildNativeWindows by tasks.registering(Exec::class) {
     commandLine("cmd", "/c", nativeDir.file("build.bat").asFile.absolutePath)
 }
 
+val buildNativeLinux by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into a Linux shared library (x64 or aarch64)"
+    group = "build"
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("linux-x64")
+            .file("libnucleus_taskbar_progress.so")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir)
+    workingDir(nativeDir)
+    commandLine("bash", "build.sh")
+}
+
 tasks.processResources {
-    dependsOn(buildNativeMacOs, buildNativeWindows)
+    dependsOn(buildNativeMacOs, buildNativeWindows, buildNativeLinux)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeMacOs, buildNativeWindows)
+        dependsOn(buildNativeMacOs, buildNativeWindows, buildNativeLinux)
     }
 }
 
@@ -83,7 +101,7 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Taskbar Progress")
-        description.set("Cross-platform taskbar/dock progress indicator for Compose Desktop (Windows + macOS)")
+        description.set("Cross-platform taskbar/dock progress indicator for Compose Desktop (Windows + macOS + Linux)")
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

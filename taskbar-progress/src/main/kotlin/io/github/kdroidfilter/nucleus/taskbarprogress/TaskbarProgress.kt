@@ -1,6 +1,8 @@
 package io.github.kdroidfilter.nucleus.taskbarprogress
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.taskbarprogress.linux.LinuxDesktopFileDetector
+import io.github.kdroidfilter.nucleus.taskbarprogress.linux.NativeLinuxTaskbarBridge
 import io.github.kdroidfilter.nucleus.taskbarprogress.macos.NativeMacOsTaskbarBridge
 import io.github.kdroidfilter.nucleus.taskbarprogress.windows.NativeWindowsTaskbarBridge
 import java.awt.Window
@@ -10,7 +12,7 @@ import java.awt.Window
  *
  * Windows: uses ITaskbarList3 COM interface and FlashWindowEx via JNI.
  * macOS: uses NSDockTile with a custom NSProgressIndicator and requestUserAttention via JNI.
- * Linux: not yet implemented (calls are no-ops).
+ * Linux: uses DBus `com.canonical.Unity.LauncherEntry` protocol (GNOME, KDE, etc.) via JNI.
  */
 object TaskbarProgress {
     private const val PROGRESS_MAX = 100L
@@ -18,6 +20,18 @@ object TaskbarProgress {
     /** Last macOS attention request ID for cancellation. */
     @Volatile
     private var macOsAttentionRequestId: Int = -1
+
+    /**
+     * Explicit override for the `.desktop` filename on Linux.
+     *
+     * When set, bypasses all auto-detection. Must match the installed `.desktop` file
+     * (e.g. `"myapp.desktop"`).
+     *
+     * In most cases you do **not** need to set this — the runtime auto-detects it via
+     * [LinuxDesktopFileDetector].
+     */
+    @Volatile
+    var linuxDesktopFilename: String? = null
 
     enum class AttentionType(
         internal val nativeValue: Int,
@@ -56,6 +70,7 @@ object TaskbarProgress {
         when (Platform.Current) {
             Platform.Windows -> NativeWindowsTaskbarBridge.isLoaded
             Platform.MacOS -> NativeMacOsTaskbarBridge.isLoaded
+            Platform.Linux -> NativeLinuxTaskbarBridge.isLoaded && resolveDesktopFilename() != null
             else -> false
         }
 
@@ -88,6 +103,15 @@ object TaskbarProgress {
                     PROGRESS_MAX,
                 ) == 0
             }
+            Platform.Linux -> {
+                val filename = resolveDesktopFilename() ?: return false
+                if (!NativeLinuxTaskbarBridge.isLoaded) return false
+                NativeLinuxTaskbarBridge.nativeSetProgress(
+                    filename,
+                    (clamped * PROGRESS_MAX).toLong(),
+                    PROGRESS_MAX,
+                ) == 0
+            }
             else -> false
         }
     }
@@ -112,41 +136,36 @@ object TaskbarProgress {
                 if (!NativeMacOsTaskbarBridge.isLoaded) return false
                 NativeMacOsTaskbarBridge.nativeSetDockState(state.flag) == 0
             }
+            Platform.Linux -> {
+                val filename = resolveDesktopFilename() ?: return false
+                if (!NativeLinuxTaskbarBridge.isLoaded) return false
+                NativeLinuxTaskbarBridge.nativeSetProgressState(filename, state.flag) == 0
+            }
             else -> false
         }
 
-    /**
-     * Convenience: shows normal progress at the given value.
-     */
+    /** Convenience: shows normal progress at the given value. */
     fun showProgress(
         window: Window,
         value: Double,
     ): Boolean = setState(window, State.NORMAL) && setProgress(window, value)
 
-    /**
-     * Convenience: shows error progress at the given value.
-     */
+    /** Convenience: shows error progress at the given value. */
     fun showError(
         window: Window,
         value: Double = 1.0,
     ): Boolean = setState(window, State.ERROR) && setProgress(window, value)
 
-    /**
-     * Convenience: shows indeterminate (pulsing) progress.
-     */
+    /** Convenience: shows indeterminate (pulsing) progress. */
     fun showIndeterminate(window: Window): Boolean = setState(window, State.INDETERMINATE)
 
-    /**
-     * Convenience: shows paused progress at the given value.
-     */
+    /** Convenience: shows paused progress at the given value. */
     fun showPaused(
         window: Window,
         value: Double = 1.0,
     ): Boolean = setState(window, State.PAUSED) && setProgress(window, value)
 
-    /**
-     * Hides progress from the taskbar button / dock icon.
-     */
+    /** Hides progress from the taskbar button / dock icon. */
     fun hideProgress(window: Window): Boolean = setState(window, State.NO_PROGRESS)
 
     /**
@@ -156,8 +175,9 @@ object TaskbarProgress {
      *   [CRITICAL][AttentionType.CRITICAL] = until the app gets focus).
      * - macOS: bounces the dock icon ([INFORMATIONAL][AttentionType.INFORMATIONAL] = once,
      *   [CRITICAL][AttentionType.CRITICAL] = until activated).
+     * - Linux: sets the `urgent` flag on the launcher entry via DBus.
      *
-     * @param window the AWT window to flash (ignored on macOS — attention is app-wide)
+     * @param window the AWT window to flash (ignored on macOS/Linux — attention is app-wide)
      * @param type   the attention urgency level
      * @return true if the operation succeeded
      */
@@ -176,13 +196,18 @@ object TaskbarProgress {
                 macOsAttentionRequestId = id
                 id >= 0
             }
+            Platform.Linux -> {
+                val filename = resolveDesktopFilename() ?: return false
+                if (!NativeLinuxTaskbarBridge.isLoaded) return false
+                NativeLinuxTaskbarBridge.nativeSetUrgent(filename, true) == 0
+            }
             else -> false
         }
 
     /**
      * Stops any active attention request (window flashing / dock bouncing).
      *
-     * @param window the AWT window (ignored on macOS)
+     * @param window the AWT window (ignored on macOS/Linux)
      * @return true if the operation succeeded
      */
     fun stopAttention(window: Window): Boolean =
@@ -200,6 +225,13 @@ object TaskbarProgress {
                 }
                 true
             }
+            Platform.Linux -> {
+                val filename = resolveDesktopFilename() ?: return false
+                if (!NativeLinuxTaskbarBridge.isLoaded) return false
+                NativeLinuxTaskbarBridge.nativeSetUrgent(filename, false) == 0
+            }
             else -> false
         }
+
+    private fun resolveDesktopFilename(): String? = linuxDesktopFilename ?: LinuxDesktopFileDetector.desktopFilename
 }
