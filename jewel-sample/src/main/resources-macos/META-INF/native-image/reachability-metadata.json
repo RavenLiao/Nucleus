@@ -1,17 +1,11 @@
 {
-    "reflection": [],
+    "reflection": [
+        
+    ],
     "resources": [
         {
-            "glob": "messages/JewelIntUIBundle.properties"
-        },
-        {
-            "glob": "messages/JewelIntUIBundle_fr.properties"
-        },
-        {
-            "glob": "messages/JewelIntUIBundle_fr_IL.properties"
-        },
-        {
-            "bundle": "messages.JewelIntUIBundle"
+            "module": "java.desktop",
+            "glob": "com/apple/laf/resources/aqua_fr_IL.properties"
         }
     ]
 }

@@ -13,22 +13,24 @@ internal object JniMacWindowUtil {
 
     // Extracts the native NSWindow pointer from an AWT window.
     // Prefers the JNI path (bypasses module access checks, works in GraalVM native-image).
-    // Falls back to reflection if the native library is not loaded.
+    // Falls back to reflection only if the native library is not loaded.
     // Returns 0 if the pointer cannot be obtained (e.g. peer not yet created).
     fun getWindowPtr(w: Window?): Long {
         if (w == null) return 0L
 
-        // JNI path: works in both JVM and native-image
+        // JNI path: works in both JVM and native-image.
+        // If the native lib is loaded, trust its result (including 0 when the peer is gone)
+        // and never fall through to reflection — it is blocked by JPMS in native-image.
         if (JniMacTitleBarBridge.isLoaded) {
-            try {
-                val ptr = JniMacTitleBarBridge.nativeGetNSWindowPtr(w)
-                if (ptr != 0L) return ptr
+            return try {
+                JniMacTitleBarBridge.nativeGetNSWindowPtr(w)
             } catch (e: Exception) {
                 logger.log(Level.WARNING, "JNI nativeGetNSWindowPtr failed.", e)
+                0L
             }
         }
 
-        // Reflection fallback (JVM only, blocked by module system in native-image)
+        // Reflection fallback (JVM only, when native library is unavailable)
         if (!reflectionFailed) {
             return getWindowPtrViaReflection(w)
         }
