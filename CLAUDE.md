@@ -52,9 +52,14 @@ A multi-module Gradle plugin and runtime library toolkit for shipping production
 
 ## GraalVM Native Image
 
-- `graalvm-runtime` auto-includes all `.svg`, `.ttf`, `.otf` resources, `nucleus/native/*` libs, and `META-INF/services/*` via `native-image.properties` glob patterns — no agent needed for icons/fonts
-- The tracing agent (`runWithNativeAgent`) is still required for reflection, JNI, resource bundles (`.properties`), and non-standard resources (`.sha256`, `.class`, ICU data)
-- Platform-specific `reachability-metadata.json` files live in `src/main/resources-{macos,windows,linux}/META-INF/native-image/` — they only contain reflection/JNI/bundles, NOT SVG/font entries
+- Reflection metadata is centralized in 3 levels — users no longer copy hundreds of entries:
+    - **L1**: Generic cross-platform metadata shipped in `graalvm-runtime` JAR (`reachability-metadata.json` with ~300+ types)
+    - **L2**: Oracle GraalVM Reachability Metadata Repository — auto-resolved for classpath deps (enabled by default, `metadataRepository {}` DSL)
+    - **L3**: Platform-specific metadata (macOS/Windows/Linux) shipped inside the plugin JAR under `nucleus/graalvm/platform-metadata/`
+- `graalvm-runtime` auto-includes `.svg`, `.ttf`, `.otf`, `composeResources/*`, `nucleus/native/*`, and `META-INF/services/*` via `native-image.properties` glob patterns
+- The tracing agent (`runWithNativeAgent`) is only needed for app-specific reflection, uncommon libraries, and resource bundles
+- Agent output is automatically deduplicated against library metadata on the classpath
+- Sample apps have near-empty `reachability-metadata.json` — only app-specific entries remain
 - `GraalVmInitializer.initialize()` must be the first call in `main()` for native-image builds
 - Font substitutions (`@TargetClass`) in `graalvm-runtime` fix `InternalError: platform encoding not initialized` on Windows/Linux
 - Only BellSoft Liberica NIK 25 (full) is supported — standard GraalVM CE lacks AWT support

@@ -23,7 +23,7 @@ Native image is not a free lunch. In addition to significantly more complex conf
 | RAM (idle) | 300–400 MB | 100–150 MB |
 | CPU throughput | Excellent (JIT) | Lower (no JIT) |
 | Bundle size | Larger (includes JRE) | Smaller |
-| Configuration | Simple (`enableAotCache = true`) | Complex (reflection metadata) |
+| Configuration | Simple (`enableAotCache = true`) | Simplified (centralized metadata) |
 | Stability | Stable | Experimental |
 
 **Choose native image when** startup speed and memory footprint are critical and CPU throughput is secondary. **Choose Leyden when** you want the best balance of performance, simplicity, and stability.
@@ -69,22 +69,24 @@ nucleus.application {
             "-Os",
             "-H:-IncludeMethodData",
         )
+
+        // Optional: customize Oracle Reachability Metadata Repository
+        metadataRepository {
+            enabled = true              // default
+            version = "0.10.6"          // default
+            excludedModules.add("com.example:my-lib")
+        }
+
+        // Optional: point to your own app-specific metadata
         nativeImageConfigBaseDir.set(
-            layout.projectDirectory.dir(
-                when {
-                    org.gradle.internal.os.OperatingSystem.current().isMacOsX ->
-                        "src/main/resources-macos/META-INF/native-image"
-                    org.gradle.internal.os.OperatingSystem.current().isWindows ->
-                        "src/main/resources-windows/META-INF/native-image"
-                    org.gradle.internal.os.OperatingSystem.current().isLinux ->
-                        "src/main/resources-linux/META-INF/native-image"
-                    else -> throw GradleException("Unsupported OS")
-                },
-            ),
+            layout.projectDirectory.dir("src/main/graalvm-config"),
         )
     }
 }
 ```
+
+!!! success "No more platform-switching boilerplate"
+    In previous versions, you had to set `nativeImageConfigBaseDir` with a `when` block selecting between `resources-macos`, `resources-windows`, and `resources-linux` directories. **This is no longer needed.** Nucleus now ships all generic and platform-specific reflection metadata automatically. The `nativeImageConfigBaseDir` is only needed if you have app-specific entries that the tracing agent or the centralized metadata don't cover.
 
 ### DSL Reference
 
@@ -96,7 +98,17 @@ nucleus.application {
 | `imageName` | `String` | project name | Output executable name |
 | `march` | `String` | `"native"` | CPU architecture target (`native` for current CPU, `compatibility` for broad compatibility) |
 | `buildArgs` | `ListProperty<String>` | empty | Extra arguments passed to `native-image` |
-| `nativeImageConfigBaseDir` | `DirectoryProperty` | — | Directory containing `reachability-metadata.json` |
+| `nativeImageConfigBaseDir` | `DirectoryProperty` | — | Directory containing app-specific `reachability-metadata.json` (optional — generic/platform metadata is now built-in) |
+| `metadataRepository` | `MetadataRepositorySettings` | enabled | Oracle GraalVM Reachability Metadata Repository settings (see below) |
+
+#### `metadataRepository` DSL Reference
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enabled` | `Boolean` | `true` | Whether to auto-resolve metadata from the Oracle repository for classpath dependencies |
+| `version` | `String` | `"0.10.6"` | Version of the metadata repository artifact |
+| `excludedModules` | `SetProperty<String>` | empty | Module coordinates (`group:artifact`) to exclude from repository resolution |
+| `moduleToConfigVersion` | `MapProperty<String, String>` | empty | Override the metadata version for specific modules (key: `group:artifact`, value: version directory) |
 
 ### Recommended build arguments
 
@@ -107,24 +119,51 @@ nucleus.application {
 | `-Os` | Optimize for binary size |
 | `-H:-IncludeMethodData` | Reduce binary size by excluding method metadata |
 
-## Reflection Configuration
+## Centralized Reflection Metadata
 
-This is the hardest and most critical part of native-image compilation. GraalVM performs a **closed-world analysis** — any class accessed via reflection must be declared explicitly, otherwise the application crashes at runtime.
+Starting with v1.6.0, Nucleus **centralizes all generic and platform-specific reflection metadata** so you no longer need to copy thousands of entries from the example app. The metadata is organized in three levels:
 
-### Step 1: Copy the pre-configured metadata
+### Level 1 — Generic metadata (shipped in `graalvm-runtime` JAR)
 
-The example app ships with pre-configured `reachability-metadata.json` files for all three platforms. These cover Compose Desktop, `decorated-window-jni`, and standard AWT/Swing classes — representing hundreds of entries that would be tedious to build from scratch. **Always start from these files:**
+The `graalvm-runtime` module ships a `reachability-metadata.json` inside its JAR that covers all cross-platform reflection entries: Compose Desktop, AWT/Swing, Skiko, security providers, font managers, and more (~300+ types). This metadata is **automatically picked up** by native-image from the classpath — no configuration needed.
 
-```bash
-# From the Nucleus repository
-cp -r example/src/main/resources-macos   your-app/src/main/
-cp -r example/src/main/resources-linux   your-app/src/main/
-cp -r example/src/main/resources-windows your-app/src/main/
+### Level 2 — Oracle Reachability Metadata Repository
+
+Nucleus automatically downloads the [Oracle GraalVM Reachability Metadata Repository](https://github.com/oracle/graalvm-reachability-metadata) and resolves metadata for all dependencies on your runtime classpath. This covers popular libraries like ktor, kotlinx.serialization, SLF4J, Logback, and many others. The resolved metadata directories are passed to `native-image` via `-H:ConfigurationFileDirectories=`.
+
+This is enabled by default. To customize:
+
+```kotlin
+graalvm {
+    metadataRepository {
+        enabled = true                    // disable with false
+        version = "0.10.6"               // override repository version
+        excludedModules.add("group:artifact")  // skip specific dependencies
+        moduleToConfigVersion.put(        // pin a specific metadata version
+            "io.ktor:ktor-client-core",
+            "3.0.0",
+        )
+    }
+}
 ```
 
-This gives you a working baseline for a basic Compose Desktop application. The next steps add entries specific to your own dependencies.
+### Level 3 — Platform-specific metadata (shipped in the plugin)
 
-### Step 2: Run the tracing agent
+The Nucleus Gradle plugin ships pre-built platform-specific metadata for macOS, Windows, and Linux. These cover platform-specific AWT implementations (`sun.awt.windows.*`, `sun.lwawt.macosx.*`, `sun.awt.X11.*`), Java2D pipelines, font managers, and security providers. The plugin writes the correct platform metadata to the build directory at compile time — **no per-platform `when` block needed in your build script**.
+
+### What you still need
+
+With these three levels, **most applications will work out of the box** without any manual reflection configuration. You only need the tracing agent or manual entries for:
+
+- **Your own app-specific reflection** — classes in your own code that use `Class.forName()`, etc.
+- **Uncommon libraries** not covered by the Oracle repository
+- **Edge cases** where the centralized metadata is incomplete for your specific code paths
+
+## Reflection Configuration (App-Specific)
+
+For most projects, the centralized metadata covers all framework-level reflection. If your app uses reflection directly or depends on libraries not covered by the Oracle repository, you can add app-specific entries.
+
+### Run the tracing agent
 
 Nucleus provides a Gradle task that runs your application with the GraalVM tracing agent. The agent records all reflection, JNI, resource, and proxy accesses and **merges** the results into your existing configuration (your manual entries are never overwritten):
 
@@ -132,9 +171,7 @@ Nucleus provides a Gradle task that runs your application with the GraalVM traci
 ./gradlew runWithNativeAgent
 ```
 
-The goal is not to run the app for a fixed duration — it is to **trigger every code path that loads resources or uses reflection**. This is critical because Compose loads resources (images, fonts, strings) via reflection at runtime. If a resource isn't loaded during the tracing run, it won't be included in the native binary and the app will crash.
-
-During the tracing run, make sure to:
+The goal is to **trigger every code path that uses reflection**. During the tracing run:
 
 - **Navigate to every screen** of your application
 - **Toggle dark/light theme** — if your icons differ between themes, both variants must be loaded
@@ -142,18 +179,18 @@ During the tracing run, make sure to:
 - **Trigger all lazy-loaded content** (expand lists, scroll to bottom, etc.)
 - **Exercise all features** that load resources dynamically
 
-!!! success "SVG icons and fonts are included automatically"
-    If you depend on `nucleus.graalvm-runtime`, all `.svg`, `.ttf`, and `.otf` resources on the classpath are included in the native binary automatically. You do **not** need the tracing agent to discover icon resources — they just work. See [Automatic Resource Inclusion](#automatic-resource-inclusion) for details.
+!!! success "SVG icons, fonts, and Compose resources are included automatically"
+    If you depend on `nucleus.graalvm-runtime`, all `.svg`, `.ttf`, `.otf` resources, all `composeResources/`, all `nucleus/native/` JNI libraries, and all `META-INF/services/` descriptors are included in the native binary automatically. You do **not** need the tracing agent to discover these — they just work. See [Automatic Resource Inclusion](#automatic-resource-inclusion).
 
 !!! warning "Reflection and resource bundles still require the agent"
-    While icons and fonts are covered automatically, **reflection metadata** and **resource bundles** (locale-specific `.properties` files) still require the tracing agent. During the tracing run, make sure to navigate to every screen, toggle dark/light theme, and exercise all features that use reflection or i18n.
+    While resources are covered automatically, **reflection metadata** and **resource bundles** (locale-specific `.properties` files) for your own code still require the tracing agent.
 
 !!! tip "Prefer Kotlin-generated icons over resource files"
     For maximum control over binary size, convert your icons to Kotlin `ImageVector` definitions (using tools like [Composables](https://composables.com/svgtocompose) or the Material Icons library). Kotlin-generated icons are compiled directly into the binary and require no reflection or resource resolution.
 
-The agent output is automatically merged into your `nativeImageConfigBaseDir`.
+The agent output is automatically merged into your `nativeImageConfigBaseDir`. Entries already covered by library metadata (Level 1/2/3) are automatically deduplicated — the agent won't bloat your config with entries that Nucleus already provides.
 
-### Step 3: Review and fix the configuration
+### Review and fix the configuration
 
 The agent captures most reflection calls, but it **cannot capture code paths that weren't exercised** during the tracing run. You may need to manually add or adjust entries in `reachability-metadata.json`.
 
@@ -171,17 +208,9 @@ The agent might have generated an entry for this class, but without `allDeclared
 !!! tip "Debugging missing reflection"
     Run your native binary from the terminal. Reflection failures produce clear error messages like `Class not found` or `No such field`. Add the missing entries and recompile.
 
-### Step 4: Repeat on each platform
+### Repeat on each platform
 
-The reflection configuration is **platform-specific**. Each platform uses different AWT implementations, security providers, and system classes. You need three separate configurations:
-
-```
-src/main/resources-macos/META-INF/native-image/reachability-metadata.json
-src/main/resources-linux/META-INF/native-image/reachability-metadata.json
-src/main/resources-windows/META-INF/native-image/reachability-metadata.json
-```
-
-Run steps 2 and 3 **on each platform separately**. The pre-configured files from step 1 already contain platform-specific entries, but your own dependencies may require additional entries that differ per OS.
+While most reflection is now centralized, **your own app-specific entries** may still differ per platform. If you have custom entries, run the tracing agent on each platform separately. The centralized metadata handles all framework-level platform differences automatically.
 
 ## Application Bootstrap
 
@@ -245,6 +274,7 @@ The `graalvm-runtime` module solves this automatically. It ships a `native-image
 | Pattern | What it covers |
 |---------|----------------|
 | `.*\.(svg\|ttf\|otf)` | All SVG icons and font files on the classpath — Jewel, IntelliJ Platform icons, Compose resources, your own icons |
+| `composeResources/.*` | All Compose Multiplatform resources (images, strings, fonts loaded via `Res.*`) |
 | `nucleus/native/.*` | All Nucleus JNI native libraries (`.dll`, `.dylib`, `.so`) |
 | `META-INF/services/.*` | All `ServiceLoader` descriptors (ktor, coil, SLF4J, etc.) |
 
@@ -252,16 +282,17 @@ This means:
 
 - **All SVG icons work out of the box** — no need to run the tracing agent just to discover icons. Jewel's `PathIconKey`, `AllIconsKeys`, dark/light variants, `@2x` retina variants — everything is included automatically.
 - **All fonts are embedded** — Inter, JetBrains Mono, or any custom `.ttf`/`.otf` in your dependencies.
+- **All Compose Multiplatform resources are included** — images, strings, and other resources loaded via the `Res` API.
 - **Service loaders resolve correctly** — ktor engines, coil fetchers, SLF4J providers, etc.
 
 !!! note "Binary size trade-off"
     The glob pattern `.*\.(svg|ttf|otf)` includes **all** SVGs and fonts from **all** JARs on the classpath. If you depend on the IntelliJ Platform icons library, this may add several megabytes of icons you don't actually use. For most applications, the convenience far outweighs the size increase. If binary size is critical, you can override with more targeted patterns in your own `resource-config.json`.
 
 !!! tip "What still needs the tracing agent?"
-    The automatic resource patterns cover icons, fonts, native libraries, and service loaders. You **still** need the tracing agent (`runWithNativeAgent`) for:
+    The automatic resource patterns cover icons, fonts, Compose resources, native libraries, and service loaders. You **still** need the tracing agent (`runWithNativeAgent`) for:
 
-    - **Reflection metadata** — classes accessed via `Class.forName()`, `getDeclaredField()`, etc.
-    - **JNI metadata** — native methods accessed from C/C++ code
+    - **Reflection metadata** — classes in your own code accessed via `Class.forName()`, `getDeclaredField()`, etc.
+    - **JNI metadata** — native methods in your own code accessed from C/C++
     - **Resource bundles** — locale-specific `.properties` files (AWT, Swing, Jewel i18n bundles)
     - **Non-standard resources** — `.sha256` checksums, `.class` files, `.properties` files, ICU data
 
@@ -274,6 +305,7 @@ The [`decorated-window-jni`](runtime/decorated-window.md) module was specificall
 | Task | Description |
 |------|-------------|
 | `runWithNativeAgent` | Run the app with the GraalVM tracing agent to collect reflection metadata |
+| `resolveReachabilityMetadata` | Resolve Oracle Reachability Metadata Repository for classpath dependencies |
 | `packageGraalvmNative` | Compile and package the application as a native binary |
 | `runGraalvmNative` | Build and run the native image directly |
 | `packageGraalvmDeb` | Package the native image as a `.deb` installer (Linux) |
@@ -399,11 +431,49 @@ Unlike standard JVM builds, GraalVM native-image builds **do not have a release 
 
 All GraalVM tasks use the default (non-ProGuard) build type. Use `-Os` in `buildArgs` for size optimization.
 
+## Migration from v1.5.x
+
+If you were using GraalVM native-image before v1.6.0, you can simplify your configuration:
+
+### 1. Remove the platform-switching `nativeImageConfigBaseDir`
+
+**Before (v1.5.x):**
+
+```kotlin
+graalvm {
+    nativeImageConfigBaseDir.set(
+        layout.projectDirectory.dir(
+            when {
+                org.gradle.internal.os.OperatingSystem.current().isMacOsX ->
+                    "src/main/resources-macos/META-INF/native-image"
+                org.gradle.internal.os.OperatingSystem.current().isWindows ->
+                    "src/main/resources-windows/META-INF/native-image"
+                org.gradle.internal.os.OperatingSystem.current().isLinux ->
+                    "src/main/resources-linux/META-INF/native-image"
+                else -> throw GradleException("Unsupported OS")
+            },
+        ),
+    )
+}
+```
+
+**After (v1.6.0):** Remove the entire `nativeImageConfigBaseDir` block. Nucleus ships all generic and platform-specific metadata automatically. Only set `nativeImageConfigBaseDir` if you have app-specific entries.
+
+### 2. Clean up your `reachability-metadata.json` files
+
+The per-platform `reachability-metadata.json` files in `src/main/resources-{macos,windows,linux}/` can be dramatically reduced. Remove all generic entries (Compose, AWT, Swing, security providers, etc.) — Nucleus now ships them. Keep only entries specific to your own application code.
+
+If your metadata files only contained framework entries, you can delete them entirely and remove the `resources-{macos,windows,linux}` source sets.
+
+### 3. Delete obsolete config files
+
+If your per-platform metadata directories contained old-format files like `predefined-classes-config.json`, `proxy-config.json`, `resource-config.json`, or `serialization-config.json`, delete them. All configuration is now consolidated in `reachability-metadata.json`.
+
 ## Best Practices
 
 ### Avoid reflection-heavy libraries
 
-Every library that uses reflection needs manual configuration. Prefer libraries that work without reflection (compile-time code generation, direct method calls). If you must use reflection-heavy libraries (ktor, serialization), expect to spend significant time on configuration.
+Every library that uses reflection needs configuration. Prefer libraries that work without reflection (compile-time code generation, direct method calls). The Oracle Reachability Metadata Repository covers many popular libraries, but not all.
 
 ### Test on all platforms early
 
@@ -411,30 +481,27 @@ Don't wait until the end to test native-image on all three platforms. Each platf
 
 ### Use the Jewel sample as reference
 
-The [`jewel-sample`](https://github.com/kdroidFilter/Nucleus/tree/main/jewel-sample) in the Nucleus repository demonstrates a more complex native-image setup with the Jewel UI library, including custom font resolution patches for Windows and extensive reflection configuration. It is an excellent reference for advanced use cases.
+The [`jewel-sample`](https://github.com/kdroidFilter/Nucleus/tree/main/jewel-sample) in the Nucleus repository demonstrates a more complex native-image setup with the Jewel UI library. It is an excellent reference for advanced use cases.
 
 ## Future: Automatic Reflection Resolution Plugin
 
 !!! tip "Looking for sponsors"
 
-The biggest pain point of GraalVM Native Image is **reflection configuration**. Today, you must run the tracing agent, manually review the output, and repeat for every dependency and every platform. This is tedious, error-prone, and the primary reason native-image remains "experimental" for most developers.
+The biggest remaining pain point of GraalVM Native Image is **app-specific reflection configuration**. While Nucleus now handles all framework-level metadata (Compose, AWT, Swing, security, fonts) and the Oracle repository covers many popular libraries, your own code and uncovered dependencies still require the tracing agent.
 
 **It is technically feasible to build a Gradle plugin that would automatically resolve nearly all reflection requirements** for a Compose Desktop application. Such a plugin would:
 
 - Analyze the classpath at build time and generate reflection/JNI/resource metadata automatically
 - Cover Compose, AWT/Swing, Skiko, and common libraries (ktor, kotlinx.serialization, coil, etc.)
 - Report libraries for which it could not resolve reflection, so the developer knows exactly what needs manual attention
-- Dramatically lower the barrier to entry for native-image builds
+- Eliminate the tracing agent step entirely for most applications
 
-This would be a **game changer for the Compose Desktop ecosystem** — it would make GraalVM Native Image practical not just for small utilities but for large, real-world applications that need the JVM ecosystem's libraries while benefiting from native startup, low memory, and small bundle size.
-
-However, building this plugin represents a **massive engineering effort** (deep analysis of bytecode, annotation processing, library-specific heuristics, cross-platform testing). This is far beyond what can be done in spare time.
-
-**If you or your company would like to sponsor this work, please reach out!** I would genuinely love to work on this. Contact me via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions).
+**If you or your company would like to sponsor this work, please reach out!** Contact me via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions).
 
 ## Further Reading
 
 - [GraalVM Native Image documentation](https://www.graalvm.org/latest/reference-manual/native-image/)
 - [BellSoft Liberica NIK](https://bell-sw.com/liberica-native-image-kit/)
+- [Oracle GraalVM Reachability Metadata Repository](https://github.com/oracle/graalvm-reachability-metadata)
 - [Nucleus example app](https://github.com/kdroidFilter/Nucleus/tree/main/example) — minimal Compose Desktop + native-image setup
 - [Nucleus Jewel sample](https://github.com/kdroidFilter/Nucleus/tree/main/jewel-sample) — advanced setup with reflection-heavy dependencies

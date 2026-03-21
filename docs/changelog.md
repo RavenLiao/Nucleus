@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.6.0
+
+**Released: 2026-03-21**
+
+### New Features
+
+- **Centralized GraalVM native-image metadata** — Nucleus now ships all generic and platform-specific reflection metadata out of the box, organized in three levels:
+    - **L1 (graalvm-runtime JAR)** — Generic cross-platform reflection entries for Compose Desktop, AWT/Swing, Skiko, security providers, font managers, and more (~300+ types). Automatically picked up from the classpath by native-image.
+    - **L2 (Oracle Reachability Metadata Repository)** — Automatic resolution of metadata for all runtime classpath dependencies from the [Oracle GraalVM Reachability Metadata Repository](https://github.com/oracle/graalvm-reachability-metadata). Covers popular libraries like ktor, kotlinx.serialization, SLF4J, Logback, and many others. Enabled by default.
+    - **L3 (plugin platform metadata)** — Platform-specific AWT/Java2D/font/security metadata for macOS, Windows, and Linux, shipped inside the Gradle plugin. Written to the build directory at compile time — no per-platform `when` block needed in your build script.
+
+    Users no longer need to copy thousands of reflection entries from the example app. Most applications will work without any manual reflection configuration. See [Centralized Reflection Metadata](graalvm-native-image.md#centralized-reflection-metadata).
+
+- **`metadataRepository {}` DSL** — New configuration block in `graalvm {}` to control the Oracle Reachability Metadata Repository integration. Supports `enabled`, `version`, `excludedModules`, and `moduleToConfigVersion`. Enabled by default with version `0.10.6`.
+
+- **`resolveReachabilityMetadata` task** — New Gradle task that resolves Oracle Reachability Metadata Repository entries for all runtime classpath dependencies. Runs automatically before `packageGraalvmNative`.
+
+- **Auto-include Compose Multiplatform resources** — `graalvm-runtime` now includes `composeResources/.*` in the `native-image.properties` resource patterns, so all Compose resources (images, strings, fonts loaded via `Res.*`) are included automatically.
+
+- **Smart agent merge and deduplication** — The `runWithNativeAgent` task now deduplicates agent output against library metadata already shipped in classpath JARs. This prevents the tracing agent from re-adding entries that Nucleus (or other libraries) already provide, keeping your app-specific config clean and minimal.
+
+- **All JDK locale bundles auto-included** — Locale-specific resource bundles are now part of the centralized metadata, reducing runtime `MissingResourceException` crashes.
+
+### Breaking Changes
+
+- **Sample app `reachability-metadata.json` files drastically reduced** — If you copied metadata from the example or jewel-sample apps, the source files are now nearly empty (framework entries moved to L1/L3). This is not a code-breaking change, but you should clean up your own metadata files — see the [migration guide](graalvm-native-image.md#migration-from-v15x).
+
+- **Removed old-format config files from samples** — `predefined-classes-config.json`, `proxy-config.json`, `resource-config.json`, and `serialization-config.json` have been removed. All configuration is consolidated in `reachability-metadata.json`.
+
+---
+
 ## v1.5.9
 
 **Released: 2026-03-20**
