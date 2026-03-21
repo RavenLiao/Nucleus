@@ -85,11 +85,16 @@ fun TaskbarProgressScreen(window: Window) {
                 value = progress,
                 onValueChange = {
                     progress = it
-                    if (currentState == TaskbarProgress.State.NORMAL ||
-                        currentState == TaskbarProgress.State.ERROR ||
-                        currentState == TaskbarProgress.State.PAUSED
-                    ) {
-                        TaskbarProgress.setProgress(window, progress.toDouble())
+                    when (currentState) {
+                        TaskbarProgress.State.NORMAL,
+                        TaskbarProgress.State.ERROR,
+                        TaskbarProgress.State.PAUSED,
+                        -> TaskbarProgress.setProgress(window, progress.toDouble())
+
+                        else -> {
+                            TaskbarProgress.showProgress(window, progress.toDouble())
+                            currentState = TaskbarProgress.State.NORMAL
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(0.6f),

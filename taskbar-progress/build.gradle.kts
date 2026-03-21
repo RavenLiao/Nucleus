@@ -32,6 +32,24 @@ kotlin {
 
 val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
 
+val buildNativeMacOs by tasks.registering(Exec::class) {
+    description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
+    group = "build"
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("darwin-aarch64")
+            .file("libnucleus_taskbar_progress.dylib")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir)
+    workingDir(nativeDir)
+    commandLine("bash", "build.sh")
+}
+
 val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
@@ -51,12 +69,12 @@ val buildNativeWindows by tasks.registering(Exec::class) {
 }
 
 tasks.processResources {
-    dependsOn(buildNativeWindows)
+    dependsOn(buildNativeMacOs, buildNativeWindows)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeWindows)
+        dependsOn(buildNativeMacOs, buildNativeWindows)
     }
 }
 
@@ -65,7 +83,7 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Taskbar Progress")
-        description.set("Windows taskbar progress indicator (ITaskbarList3) for Compose Desktop")
+        description.set("Cross-platform taskbar/dock progress indicator for Compose Desktop (Windows + macOS)")
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.taskbarprogress
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.taskbarprogress.macos.NativeMacOsTaskbarBridge
 import io.github.kdroidfilter.nucleus.taskbarprogress.windows.NativeWindowsTaskbarBridge
 import java.awt.Window
 
@@ -8,18 +9,23 @@ import java.awt.Window
  * Cross-platform taskbar/dock progress indicator and attention request.
  *
  * Windows: uses ITaskbarList3 COM interface and FlashWindowEx via JNI.
- * macOS / Linux: not yet implemented (calls are no-ops).
+ * macOS: uses NSDockTile with a custom NSProgressIndicator and requestUserAttention via JNI.
+ * Linux: not yet implemented (calls are no-ops).
  */
 object TaskbarProgress {
     private const val PROGRESS_MAX = 100L
 
+    /** Last macOS attention request ID for cancellation. */
+    @Volatile
+    private var macOsAttentionRequestId: Int = -1
+
     enum class AttentionType(
         internal val nativeValue: Int,
     ) {
-        /** Flash taskbar button briefly (4 times). */
+        /** Flash taskbar button briefly (4 times on Windows, bounce once on macOS). */
         INFORMATIONAL(1),
 
-        /** Flash window and taskbar button until the app gets focus. */
+        /** Flash window and taskbar button until the app gets focus (continuous bounce on macOS). */
         CRITICAL(2),
     }
 
@@ -33,7 +39,7 @@ object TaskbarProgress {
         /** Indeterminate (pulsing) progress. */
         INDETERMINATE(0x01),
 
-        /** Normal progress bar (green). */
+        /** Normal progress bar (green on Windows, blue on macOS). */
         NORMAL(0x02),
 
         /** Error state (red). */
@@ -46,12 +52,18 @@ object TaskbarProgress {
     /**
      * Returns true if taskbar progress is available on this platform.
      */
-    fun isAvailable(): Boolean = Platform.Current == Platform.Windows && NativeWindowsTaskbarBridge.isLoaded
+    fun isAvailable(): Boolean =
+        when (Platform.Current) {
+            Platform.Windows -> NativeWindowsTaskbarBridge.isLoaded
+            Platform.MacOS -> NativeMacOsTaskbarBridge.isLoaded
+            else -> false
+        }
 
     /**
      * Sets the progress value for the given window.
      *
      * @param window the AWT window whose taskbar button shows the progress
+     *   (ignored on macOS — dock progress is app-wide)
      * @param value  progress fraction in 0.0..1.0
      * @return true if the operation succeeded
      */
@@ -59,29 +71,49 @@ object TaskbarProgress {
         window: Window,
         value: Double,
     ): Boolean {
-        if (Platform.Current != Platform.Windows || !NativeWindowsTaskbarBridge.isLoaded) return false
         val clamped = value.coerceIn(0.0, 1.0)
-        return NativeWindowsTaskbarBridge.nativeSetProgress(
-            window,
-            (clamped * PROGRESS_MAX).toLong(),
-            PROGRESS_MAX,
-        ) == 0
+        return when (Platform.Current) {
+            Platform.Windows -> {
+                if (!NativeWindowsTaskbarBridge.isLoaded) return false
+                NativeWindowsTaskbarBridge.nativeSetProgress(
+                    window,
+                    (clamped * PROGRESS_MAX).toLong(),
+                    PROGRESS_MAX,
+                ) == 0
+            }
+            Platform.MacOS -> {
+                if (!NativeMacOsTaskbarBridge.isLoaded) return false
+                NativeMacOsTaskbarBridge.nativeSetDockProgress(
+                    (clamped * PROGRESS_MAX).toLong(),
+                    PROGRESS_MAX,
+                ) == 0
+            }
+            else -> false
+        }
     }
 
     /**
      * Sets the progress state for the given window.
      *
-     * @param window the AWT window whose taskbar button shows the progress
+     * @param window the AWT window whose taskbar button shows the progress (ignored on macOS)
      * @param state  the desired progress state
      * @return true if the operation succeeded
      */
     fun setState(
         window: Window,
         state: State,
-    ): Boolean {
-        if (Platform.Current != Platform.Windows || !NativeWindowsTaskbarBridge.isLoaded) return false
-        return NativeWindowsTaskbarBridge.nativeSetProgressState(window, state.flag) == 0
-    }
+    ): Boolean =
+        when (Platform.Current) {
+            Platform.Windows -> {
+                if (!NativeWindowsTaskbarBridge.isLoaded) return false
+                NativeWindowsTaskbarBridge.nativeSetProgressState(window, state.flag) == 0
+            }
+            Platform.MacOS -> {
+                if (!NativeMacOsTaskbarBridge.isLoaded) return false
+                NativeMacOsTaskbarBridge.nativeSetDockState(state.flag) == 0
+            }
+            else -> false
+        }
 
     /**
      * Convenience: shows normal progress at the given value.
@@ -113,36 +145,61 @@ object TaskbarProgress {
     ): Boolean = setState(window, State.PAUSED) && setProgress(window, value)
 
     /**
-     * Hides progress from the taskbar button.
+     * Hides progress from the taskbar button / dock icon.
      */
     fun hideProgress(window: Window): Boolean = setState(window, State.NO_PROGRESS)
 
     /**
-     * Requests user attention by flashing the window in the taskbar.
+     * Requests user attention.
      *
-     * - [AttentionType.INFORMATIONAL]: flashes the taskbar button briefly (4 times).
-     * - [AttentionType.CRITICAL]: flashes window and taskbar button until the app gets focus.
+     * - Windows: flashes the taskbar button ([INFORMATIONAL][AttentionType.INFORMATIONAL] = 4 flashes,
+     *   [CRITICAL][AttentionType.CRITICAL] = until the app gets focus).
+     * - macOS: bounces the dock icon ([INFORMATIONAL][AttentionType.INFORMATIONAL] = once,
+     *   [CRITICAL][AttentionType.CRITICAL] = until activated).
      *
-     * @param window the AWT window to flash
+     * @param window the AWT window to flash (ignored on macOS — attention is app-wide)
      * @param type   the attention urgency level
      * @return true if the operation succeeded
      */
     fun requestAttention(
         window: Window,
         type: AttentionType = AttentionType.INFORMATIONAL,
-    ): Boolean {
-        if (Platform.Current != Platform.Windows || !NativeWindowsTaskbarBridge.isLoaded) return false
-        return NativeWindowsTaskbarBridge.nativeRequestAttention(window, type.nativeValue) == 0
-    }
+    ): Boolean =
+        when (Platform.Current) {
+            Platform.Windows -> {
+                if (!NativeWindowsTaskbarBridge.isLoaded) return false
+                NativeWindowsTaskbarBridge.nativeRequestAttention(window, type.nativeValue) == 0
+            }
+            Platform.MacOS -> {
+                if (!NativeMacOsTaskbarBridge.isLoaded) return false
+                val id = NativeMacOsTaskbarBridge.nativeRequestAttention(type.nativeValue)
+                macOsAttentionRequestId = id
+                id >= 0
+            }
+            else -> false
+        }
 
     /**
-     * Stops any active window flashing.
+     * Stops any active attention request (window flashing / dock bouncing).
      *
-     * @param window the AWT window to stop flashing
+     * @param window the AWT window (ignored on macOS)
      * @return true if the operation succeeded
      */
-    fun stopAttention(window: Window): Boolean {
-        if (Platform.Current != Platform.Windows || !NativeWindowsTaskbarBridge.isLoaded) return false
-        return NativeWindowsTaskbarBridge.nativeRequestAttention(window, 0) == 0
-    }
+    fun stopAttention(window: Window): Boolean =
+        when (Platform.Current) {
+            Platform.Windows -> {
+                if (!NativeWindowsTaskbarBridge.isLoaded) return false
+                NativeWindowsTaskbarBridge.nativeRequestAttention(window, 0) == 0
+            }
+            Platform.MacOS -> {
+                if (!NativeMacOsTaskbarBridge.isLoaded) return false
+                val id = macOsAttentionRequestId
+                if (id >= 0) {
+                    NativeMacOsTaskbarBridge.nativeCancelAttention(id)
+                    macOsAttentionRequestId = -1
+                }
+                true
+            }
+            else -> false
+        }
 }
