@@ -228,7 +228,7 @@ internal fun deduplicateAgainstLibraryMetadata(
     // Multiple JARs may contribute entries for the same type -- merge them.
     val libraryEntries = mutableMapOf<String, MutableMap<String, MutableMap<String, Any?>>>()
     val libraryResourceJsons = mutableSetOf<String>()
-    val libraryResourceGlobs = mutableListOf<String>()
+    val libraryResourceGlobs = mutableListOf<Pair<String?, String>>()
     val includeResourcePatterns = mutableListOf<Regex>()
 
     for (file in classpathFiles) {
@@ -324,7 +324,7 @@ private fun collectLibraryMetadata(
     jsonText: String,
     libraryEntries: MutableMap<String, MutableMap<String, MutableMap<String, Any?>>>,
     libraryResourceJsons: MutableSet<String>,
-    libraryResourceGlobs: MutableList<String>,
+    libraryResourceGlobs: MutableList<Pair<String?, String>>,
 ) {
     @Suppress("UNCHECKED_CAST")
     val libRoot = slurper.parseText(jsonText) as? Map<String, Any?> ?: return
@@ -350,7 +350,8 @@ private fun collectLibraryMetadata(
         libraryResourceJsons.add(JsonOutput.toJson(e))
         val glob = e["glob"] as? String
         if (glob != null) {
-            libraryResourceGlobs.add(glob)
+            val module = e["module"] as? String
+            libraryResourceGlobs.add(Pair(module, glob))
         }
     }
 }
@@ -366,29 +367,30 @@ private fun collectLibraryMetadata(
 private fun isResourceCovered(
     entry: Map<String, Any?>,
     libraryResourceJsons: Set<String>,
-    libraryResourceGlobs: List<String>,
+    libraryResourceGlobs: List<Pair<String?, String>>,
     includeResourcePatterns: List<Regex>,
 ): Boolean {
     // Exact JSON match (handles bundles and identical glob entries)
     if (JsonOutput.toJson(entry) in libraryResourceJsons) return true
 
-    // Only glob entries can be matched by patterns; bundles/modules need exact match
+    // Only glob entries can be matched by patterns; bundles need exact match
     val glob = entry["glob"] as? String ?: return false
-
-    // If the entry has a "module" qualifier, skip pattern matching — module-scoped resources
-    // are specific to JDK modules and are better handled by exact match only
-    if (entry.containsKey("module")) return false
+    val module = entry["module"] as? String
 
     // Check against library resource globs (e.g. "*skiko*.sha256" covers "skiko-windows-x64.dll.sha256")
-    for (libGlob in libraryResourceGlobs) {
+    // Module-qualified entries only match against library globs with the same module
+    for ((libModule, libGlob) in libraryResourceGlobs) {
+        if (module != libModule) continue
         if (libGlob.contains('*') || libGlob.contains('?')) {
             if (globMatches(libGlob, glob)) return true
         }
     }
 
-    // Check against IncludeResources regex patterns from native-image.properties
-    for (pattern in includeResourcePatterns) {
-        if (pattern.matches(glob)) return true
+    // IncludeResources patterns only apply to non-module-qualified entries
+    if (module == null) {
+        for (pattern in includeResourcePatterns) {
+            if (pattern.matches(glob)) return true
+        }
     }
 
     return false

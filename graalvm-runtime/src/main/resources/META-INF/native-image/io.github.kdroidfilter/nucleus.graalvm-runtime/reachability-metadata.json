@@ -4756,6 +4756,15 @@
             ]
         },
         {
+            "type": "sun.security.ssl.SSLContextImpl$TLSContext",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
             "type": "sun.security.ssl.TrustManagerFactoryImpl$PKIXFactory",
             "methods": [
                 {
