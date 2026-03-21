@@ -202,16 +202,22 @@ private fun mergeSimpleEntries(
 
 /**
  * Removes entries from the project's `reachability-metadata.json` that are already fully
- * covered by library JARs on the classpath. This prevents the tracing agent from re-adding
- * entries that Nucleus (or other libraries) ship in their own metadata.
+ * covered by library JARs on the classpath, plugin platform metadata, or
+ * `native-image.properties` resource inclusion patterns.
  *
- * Scans all JARs in [classpathFiles] for `META-INF/native-image/ ** /reachability-metadata.json`,
- * collects their reflection/jni/resources entries, and removes matching entries from [targetDir]
- * only when the library entry is a superset of the project entry (all methods/fields covered).
+ * Sources of "already covered" entries:
+ * 1. Library JARs: `META-INF/native-image/ ** /reachability-metadata.json`
+ * 2. Plugin L3 platform metadata: `nucleus/graalvm/platform-metadata/{platform}-reachability-metadata.json`
+ * 3. `native-image.properties` `-H:IncludeResources=` patterns from library JARs
+ * 4. Library resource globs (e.g. `*skiko*.sha256` covers `skiko-windows-x64.dll.sha256`)
+ *
+ * A reflection/jni entry is removed only when the baseline is a **strict superset** —
+ * all methods, fields, and flags in the project entry are present in the baseline.
  */
 internal fun deduplicateAgainstLibraryMetadata(
     classpathFiles: Iterable<File>,
     targetDir: File,
+    platformName: String? = null,
 ) {
     val targetFile = File(targetDir, "reachability-metadata.json")
     if (!targetFile.exists()) return
@@ -221,46 +227,37 @@ internal fun deduplicateAgainstLibraryMetadata(
     // Collect full library entries per section, keyed by type name.
     // Multiple JARs may contribute entries for the same type -- merge them.
     val libraryEntries = mutableMapOf<String, MutableMap<String, MutableMap<String, Any?>>>()
-    val libraryResources = mutableSetOf<String>()
+    val libraryResourceJsons = mutableSetOf<String>()
+    val libraryResourceGlobs = mutableListOf<String>()
+    val includeResourcePatterns = mutableListOf<Regex>()
 
     for (file in classpathFiles) {
         if (!file.exists() || !file.name.endsWith(".jar")) continue
         try {
             java.util.jar.JarFile(file).use { jar ->
                 for (entry in jar.entries()) {
-                    if (!entry.name.contains("META-INF/native-image/") ||
-                        !entry.name.endsWith("reachability-metadata.json")
+                    // Collect reachability-metadata.json from library JARs
+                    if (entry.name.contains("META-INF/native-image/") &&
+                        entry.name.endsWith("reachability-metadata.json")
                     ) {
-                        continue
+                        val text = jar.getInputStream(entry).bufferedReader().readText()
+                        collectLibraryMetadata(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
                     }
 
-                    @Suppress("UNCHECKED_CAST")
-                    val libRoot =
-                        slurper.parseText(
-                            jar.getInputStream(entry).bufferedReader().readText(),
-                        ) as? Map<String, Any?> ?: continue
-
-                    for (section in listOf("reflection", "jni")) {
-                        @Suppress("UNCHECKED_CAST")
-                        val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
-                        val sectionMap = libraryEntries.getOrPut(section) { mutableMapOf() }
-                        for (e in entries) {
-                            val typeName = e["type"] as? String ?: continue
-                            val existing = sectionMap[typeName]
-                            if (existing == null) {
-                                sectionMap[typeName] = e.toMutableMap()
-                            } else {
-                                // Merge: union of methods/fields, upgrade flags
-                                mergeTypeEntry(e, existing)
+                    // Collect IncludeResources patterns from native-image.properties
+                    if (entry.name.contains("META-INF/native-image/") &&
+                        entry.name.endsWith("native-image.properties")
+                    ) {
+                        val props = java.util.Properties()
+                        jar.getInputStream(entry).use { props.load(it) }
+                        val args = props.getProperty("Args") ?: continue
+                        val regex = Regex("""-H:IncludeResources=(\S+)""")
+                        for (match in regex.findAll(args)) {
+                            try {
+                                includeResourcePatterns.add(Regex(match.groupValues[1]))
+                            } catch (_: Exception) {
+                                // Skip malformed patterns
                             }
-                        }
-                    }
-
-                    for (section in listOf("resources")) {
-                        @Suppress("UNCHECKED_CAST")
-                        val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
-                        for (e in entries) {
-                            libraryResources.add(JsonOutput.toJson(e))
                         }
                     }
                 }
@@ -270,7 +267,19 @@ internal fun deduplicateAgainstLibraryMetadata(
         }
     }
 
-    if (libraryEntries.isEmpty() && libraryResources.isEmpty()) return
+    // Include L3 platform metadata from plugin classpath resources
+    if (platformName != null) {
+        val resourcePath = "nucleus/graalvm/platform-metadata/$platformName-reachability-metadata.json"
+        val stream = object {}::class.java.classLoader.getResourceAsStream(resourcePath)
+        if (stream != null) {
+            val text = stream.bufferedReader().use { it.readText() }
+            collectLibraryMetadata(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+        }
+    }
+
+    val hasBaseline = libraryEntries.isNotEmpty() || libraryResourceJsons.isNotEmpty() ||
+        libraryResourceGlobs.isNotEmpty() || includeResourcePatterns.isNotEmpty()
+    if (!hasBaseline) return
 
     @Suppress("UNCHECKED_CAST")
     val targetRoot = slurper.parseText(targetFile.readText()) as MutableMap<String, Any?>
@@ -292,18 +301,127 @@ internal fun deduplicateAgainstLibraryMetadata(
     }
 
     // Remove resource entries already provided by libraries
-    if (libraryResources.isNotEmpty()) {
-        @Suppress("UNCHECKED_CAST")
-        val targetResources = targetRoot["resources"] as? MutableList<Map<String, Any?>>
-        if (targetResources != null) {
-            val before = targetResources.size
-            targetResources.removeAll { entry -> JsonOutput.toJson(entry) in libraryResources }
-            if (targetResources.size != before) changed = true
+    @Suppress("UNCHECKED_CAST")
+    val targetResources = targetRoot["resources"] as? MutableList<Map<String, Any?>>
+    if (targetResources != null) {
+        val before = targetResources.size
+        targetResources.removeAll { entry ->
+            isResourceCovered(entry, libraryResourceJsons, libraryResourceGlobs, includeResourcePatterns)
         }
+        if (targetResources.size != before) changed = true
     }
 
     if (changed) {
         targetFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(targetRoot)) + "\n")
+    }
+}
+
+/**
+ * Parses a library's reachability-metadata.json and adds its entries to the baseline collections.
+ */
+private fun collectLibraryMetadata(
+    slurper: JsonSlurper,
+    jsonText: String,
+    libraryEntries: MutableMap<String, MutableMap<String, MutableMap<String, Any?>>>,
+    libraryResourceJsons: MutableSet<String>,
+    libraryResourceGlobs: MutableList<String>,
+) {
+    @Suppress("UNCHECKED_CAST")
+    val libRoot = slurper.parseText(jsonText) as? Map<String, Any?> ?: return
+
+    for (section in listOf("reflection", "jni")) {
+        @Suppress("UNCHECKED_CAST")
+        val entries = libRoot[section] as? List<Map<String, Any?>> ?: continue
+        val sectionMap = libraryEntries.getOrPut(section) { mutableMapOf() }
+        for (e in entries) {
+            val typeName = e["type"] as? String ?: continue
+            val existing = sectionMap[typeName]
+            if (existing == null) {
+                sectionMap[typeName] = e.toMutableMap()
+            } else {
+                mergeTypeEntry(e, existing)
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    val resources = libRoot["resources"] as? List<Map<String, Any?>> ?: return
+    for (e in resources) {
+        libraryResourceJsons.add(JsonOutput.toJson(e))
+        val glob = e["glob"] as? String
+        if (glob != null) {
+            libraryResourceGlobs.add(glob)
+        }
+    }
+}
+
+/**
+ * Returns true if a project resource entry is already covered by the library baseline.
+ *
+ * Checks:
+ * 1. Exact JSON match with a library resource entry
+ * 2. Agent glob path matches a library resource glob pattern (e.g. `*skiko*.sha256`)
+ * 3. Agent glob path matches a `native-image.properties` IncludeResources regex
+ */
+private fun isResourceCovered(
+    entry: Map<String, Any?>,
+    libraryResourceJsons: Set<String>,
+    libraryResourceGlobs: List<String>,
+    includeResourcePatterns: List<Regex>,
+): Boolean {
+    // Exact JSON match (handles bundles and identical glob entries)
+    if (JsonOutput.toJson(entry) in libraryResourceJsons) return true
+
+    // Only glob entries can be matched by patterns; bundles/modules need exact match
+    val glob = entry["glob"] as? String ?: return false
+
+    // If the entry has a "module" qualifier, skip pattern matching — module-scoped resources
+    // are specific to JDK modules and are better handled by exact match only
+    if (entry.containsKey("module")) return false
+
+    // Check against library resource globs (e.g. "*skiko*.sha256" covers "skiko-windows-x64.dll.sha256")
+    for (libGlob in libraryResourceGlobs) {
+        if (libGlob.contains('*') || libGlob.contains('?')) {
+            if (globMatches(libGlob, glob)) return true
+        }
+    }
+
+    // Check against IncludeResources regex patterns from native-image.properties
+    for (pattern in includeResourcePatterns) {
+        if (pattern.matches(glob)) return true
+    }
+
+    return false
+}
+
+/**
+ * Tests if a simple glob pattern matches a concrete path.
+ * Supports `*` (any chars) and `?` (single char). No `**` or brace expansion.
+ */
+private fun globMatches(
+    pattern: String,
+    path: String,
+): Boolean {
+    val regex =
+        buildString {
+            append("^")
+            for (ch in pattern) {
+                when (ch) {
+                    '*' -> append(".*")
+                    '?' -> append(".")
+                    '.', '(', ')', '[', ']', '{', '}', '\\', '^', '$', '|', '+' -> {
+                        append("\\")
+                        append(ch)
+                    }
+                    else -> append(ch)
+                }
+            }
+            append("$")
+        }
+    return try {
+        Regex(regex).matches(path)
+    } catch (_: Exception) {
+        false
     }
 }
 

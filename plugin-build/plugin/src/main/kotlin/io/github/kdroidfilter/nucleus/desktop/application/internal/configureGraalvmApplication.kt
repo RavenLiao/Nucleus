@@ -135,10 +135,16 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     )
                 }
 
-                // Deduplicate: remove entries already provided by library JARs
-                // (graalvm-runtime, darkmode-detector, system-color, decorated-window-jni, etc.)
+                // Deduplicate: remove entries already provided by library JARs,
+                // plugin platform metadata (L3), and native-image.properties resource patterns.
                 val runtimeClasspath = classpath?.files ?: emptySet()
-                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir)
+                val platform =
+                    when (currentOS) {
+                        OS.Windows -> "windows"
+                        OS.MacOS -> "macos"
+                        OS.Linux -> "linux"
+                    }
+                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir, platform)
 
                 logger.lifecycle("Native-image agent config merged into: $targetDir")
             }
