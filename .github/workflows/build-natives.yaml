@@ -121,6 +121,27 @@ jobs:
           path: energy-manager/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build taskbar-progress Windows DLLs
+        shell: cmd
+        run: call taskbar-progress\src\main\native\windows\build.bat
+
+      - name: Verify taskbar-progress Windows natives
+        shell: bash
+        run: |
+          for f in \
+            taskbar-progress/src/main/resources/nucleus/native/win32-x64/nucleus_taskbar_progress.dll \
+            taskbar-progress/src/main/resources/nucleus/native/win32-aarch64/nucleus_taskbar_progress.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload taskbar-progress Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskbar-progress-windows
+          path: taskbar-progress/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:
@@ -247,6 +268,25 @@ jobs:
           path: energy-manager/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build taskbar-progress macOS dylibs
+        run: bash taskbar-progress/src/main/native/macos/build.sh
+
+      - name: Verify taskbar-progress macOS natives
+        run: |
+          for f in \
+            taskbar-progress/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_taskbar_progress.dylib \
+            taskbar-progress/src/main/resources/nucleus/native/darwin-x64/libnucleus_taskbar_progress.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload taskbar-progress macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskbar-progress-macos
+          path: taskbar-progress/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -268,7 +308,7 @@ jobs:
           java-version: '21'
 
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libx11-dev
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libx11-dev libglib2.0-dev
 
       - name: Build darkmode-detector Linux native shared library
         run: bash darkmode-detector/src/main/native/linux/build.sh
@@ -348,4 +388,20 @@ jobs:
         with:
           name: energy-manager-linux-${{ matrix.arch }}
           path: energy-manager/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build taskbar-progress Linux native shared library
+        run: bash taskbar-progress/src/main/native/linux/build.sh
+
+      - name: Verify taskbar-progress Linux native
+        run: |
+          f="taskbar-progress/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_taskbar_progress.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload taskbar-progress Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskbar-progress-linux-${{ matrix.arch }}
+          path: taskbar-progress/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

@@ -71,6 +71,13 @@ jobs:
           pattern: 'energy-manager-*'
           merge-multiple: true
 
+      - name: Download taskbar-progress artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: taskbar-progress/src/main/resources/nucleus/native/
+          pattern: 'taskbar-progress-*'
+          merge-multiple: true
+
       - name: Verify all natives present
         run: |
           EXPECTED=(
@@ -106,6 +113,12 @@ jobs:
             "energy-manager/src/main/resources/nucleus/native/darwin-x64/libnucleus_energy_manager.dylib"
             "energy-manager/src/main/resources/nucleus/native/linux-x64/libnucleus_energy_manager.so"
             "energy-manager/src/main/resources/nucleus/native/linux-aarch64/libnucleus_energy_manager.so"
+            "taskbar-progress/src/main/resources/nucleus/native/win32-x64/nucleus_taskbar_progress.dll"
+            "taskbar-progress/src/main/resources/nucleus/native/win32-aarch64/nucleus_taskbar_progress.dll"
+            "taskbar-progress/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_taskbar_progress.dylib"
+            "taskbar-progress/src/main/resources/nucleus/native/darwin-x64/libnucleus_taskbar_progress.dylib"
+            "taskbar-progress/src/main/resources/nucleus/native/linux-x64/libnucleus_taskbar_progress.so"
+            "taskbar-progress/src/main/resources/nucleus/native/linux-aarch64/libnucleus_taskbar_progress.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do
