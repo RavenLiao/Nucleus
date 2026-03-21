@@ -1,13 +1,19 @@
 {
     "reflection": [
+        
+    ],
+    "resources": [
         {
-            "type": "coil3.RealImageLoader"
+            "glob": "messages/JewelIntUIBundle.properties"
         },
         {
-            "type": "coil3.compose.internal.DeferredDispatchCoroutineDispatcher"
+            "glob": "messages/JewelIntUIBundle_fr.properties"
         },
         {
-            "type": "coil3.network.ktor3.internal.KtorNetworkFetcherServiceLoaderTarget"
+            "glob": "messages/JewelIntUIBundle_fr_FR.properties"
+        },
+        {
+            "bundle": "messages.JewelIntUIBundle"
         }
     ]
 }

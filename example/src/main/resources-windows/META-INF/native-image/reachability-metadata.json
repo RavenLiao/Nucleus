@@ -1,16 +1,4 @@
 {
-    "reflection": [
-        {
-            "type": "com.example.demo.MainKt",
-            "jniAccessible": true,
-            "methods": [
-                {
-                    "name": "main",
-                    "parameterTypes": [
-                        "java.lang.String[]"
-                    ]
-                }
-            ]
-        }
-    ]
+    "reflection": [],
+    "resources": []
 }

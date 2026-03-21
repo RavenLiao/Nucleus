@@ -53,6 +53,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
         }
 
     val nativeImageConfigDir = graalvm.nativeImageConfigBaseDir
+    val mainClassName = app.mainClass
 
     // ── Uber JAR (reuse existing task) ──
 
@@ -144,7 +145,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                         OS.MacOS -> "macos"
                         OS.Linux -> "linux"
                     }
-                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir, platform)
+                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir, platform, mainClassName)
 
                 logger.lifecycle("Native-image agent config merged into: $targetDir")
             }
@@ -350,7 +351,8 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             taskNameAction = "generate",
             taskNameObject = "graalvmPlatformMetadata",
         ) {
-            description = "Generate platform-specific GraalVM metadata for AWT/Java2D"
+            description = "Generate platform-specific GraalVM metadata for AWT/Java2D and main class"
+            inputs.property("mainClass", mainClassName ?: "")
             outputs.dir(platformMetadataDir)
 
             doLast {
@@ -360,7 +362,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                         OS.MacOS -> "macos"
                         OS.Linux -> "linux"
                     }
-                writePlatformMetadata(platform, platformMetadataDir.get().asFile)
+                writePlatformMetadata(platform, platformMetadataDir.get().asFile, mainClassName)
                 logger.lifecycle("Platform metadata ($platform) written to: ${platformMetadataDir.get().asFile}")
             }
         }

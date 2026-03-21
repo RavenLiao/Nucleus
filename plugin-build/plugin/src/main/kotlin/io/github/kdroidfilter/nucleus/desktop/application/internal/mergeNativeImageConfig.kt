@@ -218,6 +218,7 @@ internal fun deduplicateAgainstLibraryMetadata(
     classpathFiles: Iterable<File>,
     targetDir: File,
     platformName: String? = null,
+    mainClass: String? = null,
 ) {
     val targetFile = File(targetDir, "reachability-metadata.json")
     if (!targetFile.exists()) return
@@ -274,6 +275,29 @@ internal fun deduplicateAgainstLibraryMetadata(
         if (stream != null) {
             val text = stream.bufferedReader().use { it.readText() }
             collectLibraryMetadata(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+        }
+    }
+
+    // Add main class to the baseline so the agent entry gets deduped
+    if (!mainClass.isNullOrBlank()) {
+        val reflectionMap = libraryEntries.getOrPut("reflection") { mutableMapOf() }
+        val mainClassEntry =
+            mutableMapOf<String, Any?>(
+                "type" to mainClass,
+                "jniAccessible" to true,
+                "methods" to
+                    listOf(
+                        mapOf(
+                            "name" to "main",
+                            "parameterTypes" to listOf("java.lang.String[]"),
+                        ),
+                    ),
+            )
+        val existing = reflectionMap[mainClass]
+        if (existing == null) {
+            reflectionMap[mainClass] = mainClassEntry
+        } else {
+            mergeTypeEntry(mainClassEntry, existing)
         }
     }
 
@@ -491,12 +515,16 @@ private fun libraryCoversProject(
  * Writes the platform-specific `reachability-metadata.json` (AWT, Java2D, font entries)
  * bundled inside the plugin JAR into the given [outputDir].
  *
+ * If [mainClass] is provided, its reflection entry is injected into the JSON so that
+ * users don't need to declare it manually in their project config.
+ *
  * The plugin ships pre-built metadata for each platform under
  * `nucleus/graalvm/platform-metadata/{windows,macos,linux}-reachability-metadata.json`.
  */
 internal fun writePlatformMetadata(
     platform: String,
     outputDir: File,
+    mainClass: String? = null,
 ) {
     val resourcePath = "nucleus/graalvm/platform-metadata/$platform-reachability-metadata.json"
     val stream =
@@ -505,8 +533,40 @@ internal fun writePlatformMetadata(
 
     outputDir.mkdirs()
     val targetFile = File(outputDir, "reachability-metadata.json")
-    stream.bufferedReader().use { reader ->
-        targetFile.writeText(reader.readText())
+
+    if (mainClass.isNullOrBlank()) {
+        stream.bufferedReader().use { reader ->
+            targetFile.writeText(reader.readText())
+        }
+    } else {
+        val slurper = JsonSlurper()
+
+        @Suppress("UNCHECKED_CAST")
+        val root =
+            stream.bufferedReader().use {
+                slurper.parseText(it.readText()) as MutableMap<String, Any?>
+            }
+
+        @Suppress("UNCHECKED_CAST")
+        val reflection =
+            (root["reflection"] as? MutableList<Any?>)
+                ?: mutableListOf<Any?>().also { root["reflection"] = it }
+
+        val mainClassEntry =
+            mutableMapOf<String, Any?>(
+                "type" to mainClass,
+                "jniAccessible" to true,
+                "methods" to
+                    listOf(
+                        mapOf(
+                            "name" to "main",
+                            "parameterTypes" to listOf("java.lang.String[]"),
+                        ),
+                    ),
+            )
+        reflection.add(0, mainClassEntry)
+
+        targetFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(root)) + "\n")
     }
 }
 
