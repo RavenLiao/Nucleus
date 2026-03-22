@@ -2,7 +2,18 @@
 
 ## v1.6.0
 
-**Released: 2026-03-21**
+**Released: 2026-03-22**
+
+### New Modules
+
+- **Taskbar Progress** (`nucleus.taskbar-progress`) — Native taskbar/dock progress bar and attention requests on all platforms. Shows download progress, build status, or any long-running operation directly in the OS taskbar. See [Taskbar Progress](runtime/taskbar-progress.md).
+    - **Windows**: `ITaskbarList3` (progress value/state) + `FlashWindowEx` (attention)
+    - **macOS**: `NSDockTile` with custom `NSProgressIndicator` overlay + `NSApplication.requestUserAttention`
+    - **Linux**: D-Bus `com.canonical.Unity.LauncherEntry` (GNOME, KDE Plasma, and compatible DEs)
+    - Five states: `NO_PROGRESS`, `INDETERMINATE`, `NORMAL`, `ERROR`, `PAUSED`
+    - Attention requests: `INFORMATIONAL` (brief flash) and `CRITICAL` (until focus)
+
+- **App Metadata at Runtime** (`NucleusApp`) — New singleton in `core-runtime` that exposes plugin-injected metadata at runtime: `appId`, `version`, `vendor`, `description`. Populated via system properties and a generated `nucleus-app.properties` classpath resource. See [Runtime APIs](runtime/index.md).
 
 ### New Features
 
@@ -23,11 +34,32 @@
 
 - **All JDK locale bundles auto-included** — Locale-specific resource bundles are now part of the centralized metadata, reducing runtime `MissingResourceException` crashes.
 
+- **`UpdateLevel` enum** — `UpdateResult.Available` now carries an `UpdateLevel` (`MAJOR`, `MINOR`, `PATCH`, `PRE_RELEASE`) computed by comparing semantic version numbers. Allows the UI to adapt messaging based on update significance. See [Auto Update](auto-update.md#update-level).
+
+- **Post-update detection** — New `NucleusUpdater.consumeUpdateEvent()` and `wasJustUpdated()` methods detect that the app was just updated and return an `UpdateEvent` with `previousVersion`, `newVersion`, and `updateLevel`. Useful for "What's new" dialogs, migrations, or analytics. See [Auto Update](auto-update.md#post-update-detection).
+
+- **Default jlink modules expanded** — `java.net.http` and `jdk.accessibility` are now included in the default jlink module list alongside `java.base`, `java.desktop`, `java.logging`, and `jdk.crypto.ec`. No need to add them manually.
+
+- **Auto-generate main class reflection metadata** — The plugin now automatically adds the application's main class to the GraalVM native-image reflection configuration, eliminating one manual step.
+
+### Bug Fixes
+
+- **Eliminate resize flash on `DecoratedDialog` (Windows)** — Add native `WndProc` subclass for dialogs that handles `WM_ERASEBKGND` and `WM_WINDOWPOSCHANGING` to prevent white flash during dialog resize.
+- **Fix WM_CLASS showing `LambdaForm` class name in GNOME under native image** — Add `@TargetClass` substitution for `XToolkit.getAWTAppClassName()` that returns the real app name from `NucleusApp.appId` instead of the internal LambdaForm class.
+- **Fix Linux executable alias for GraalVM native image layout** — Support the native image binary directory structure when creating the executable symlink.
+- **Align native image WM_CLASS with `.desktop` `StartupWMClass`** — Ensures the GNOME taskbar icon matches the `.desktop` file.
+- **High-quality Linux icon generation** — Replace single-step `Graphics2D` resizing with Thumbnailator progressive bilinear downscaling, fixing blurry icons in DEB packages at small sizes (16x16, 32x32).
+- **Prevent reflection fallback crash in native image** — When the JNI library is loaded, return its result directly without falling through to reflection-based `sun.awt.AWTAccessor` access, which triggers `IllegalAccessException` under JPMS in native image.
+- **Rethrow `CancellationException` in updater** — Prevent coroutine scope leaks when update operations are cancelled.
+- **npm 11 compatibility** — Multiple fixes for `ECOMPROMISED` errors in parallel builds: isolated npm prefix, separate npmrc files, ensure npm prefix lib directory exists.
+
 ### Breaking Changes
 
 - **Sample app `reachability-metadata.json` files drastically reduced** — If you copied metadata from the example or jewel-sample apps, the source files are now nearly empty (framework entries moved to L1/L3). This is not a code-breaking change, but you should clean up your own metadata files — see the [migration guide](graalvm-native-image.md#migration-from-v15x).
 
 - **Removed old-format config files from samples** — `predefined-classes-config.json`, `proxy-config.json`, `resource-config.json`, and `serialization-config.json` have been removed. All configuration is consolidated in `reachability-metadata.json`.
+
+- **`UpdateResult.Available` signature changed** — Now includes a `level: UpdateLevel` field. If you destructure `UpdateResult.Available`, add the new field.
 
 ---
 

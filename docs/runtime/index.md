@@ -6,9 +6,10 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 
 | Library | Artifact | Description |
 |---------|----------|-------------|
-| Core Runtime | `io.github.kdroidfilter:nucleus.core-runtime` | Executable type detection, single instance, deep links |
+| Core Runtime | `io.github.kdroidfilter:nucleus.core-runtime` | Executable type detection, single instance, deep links, app metadata (`NucleusApp`) |
 | AOT Runtime | `io.github.kdroidfilter:nucleus.aot-runtime` | AOT cache detection (includes core-runtime via `api`) |
-| Updater Runtime | `io.github.kdroidfilter:nucleus.updater-runtime` | Auto-update library (includes core-runtime) |
+| Updater Runtime | `io.github.kdroidfilter:nucleus.updater-runtime` | Auto-update library with update level detection and post-update events (includes core-runtime) |
+| Taskbar Progress | `io.github.kdroidfilter:nucleus.taskbar-progress` | Native taskbar/dock progress bar and attention requests (Windows, macOS, Linux) |
 | Decorated Window | `io.github.kdroidfilter:nucleus.decorated-window` | Custom window decorations with native title bar |
 | Decorated Window — Jewel | `io.github.kdroidfilter:nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) color mapping for decorated windows |
 | Decorated Window — Material 2 | `io.github.kdroidfilter:nucleus.decorated-window-material2` | Material 2 color mapping for decorated windows |
@@ -29,6 +30,7 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.core-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.aot-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jewel:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-material2:<version>")

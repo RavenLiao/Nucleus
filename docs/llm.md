@@ -6,8 +6,8 @@ Nucleus provides machine-readable documentation files designed for Large Languag
 
 | File | Description | Use Case |
 |------|-------------|----------|
-| [`llms.txt`](../llms.txt) | Concise overview (~130 lines) | Quick context for simple questions |
-| [`llms-full.txt`](../llms-full.txt) | Complete documentation (~900 lines) | Full reference for code generation and in-depth tasks |
+| [`llms.txt`](../llms.txt) | Concise overview (~145 lines) | Quick context for simple questions |
+| [`llms-full.txt`](../llms-full.txt) | Complete documentation (~1900 lines) | Full reference for code generation and in-depth tasks |
 
 ## Usage
 
@@ -43,7 +43,7 @@ curl -s https://nucleus.kdroidfilter.com/llms-full.txt   # complete
 
 - Project overview and key features
 - Quick start snippet
-- Runtime libraries summary (all 17 libraries)
+- Runtime libraries summary (all 18 libraries)
 - Links to all documentation pages
 - Migration guide from `org.jetbrains.compose`
 
@@ -60,6 +60,9 @@ curl -s https://nucleus.kdroidfilter.com/llms-full.txt   # complete
 - GraalVM Native Image configuration and DSL reference
 - All runtime APIs with code examples:
     - Executable type, AOT cache, single instance, deep links
+    - App metadata (`NucleusApp` — `appId`, `version`, `vendor`, `description`)
+    - Taskbar progress (Windows ITaskbarList3, macOS NSDockTile, Linux D-Bus)
+    - Auto-update with `UpdateLevel` (major/minor/patch) and post-update detection (`consumeUpdateEvent`, `wasJustUpdated`)
     - Decorated window (JBR and JNI backends, fullscreen controls, large corner radius, `controlButtonsDirection`, `clientRegion`, `backgroundContent`)
     - Design system wrappers (Material 3, Material 2, Jewel)
     - Dark mode detector, system color, energy manager

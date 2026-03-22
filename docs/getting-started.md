@@ -42,6 +42,9 @@ dependencies {
     // Auto-update library (includes core-runtime)
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
 
+    // Native taskbar/dock progress bar
+    implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
+
     // Custom decorated window with native title bar
     implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
 }

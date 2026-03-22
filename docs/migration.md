@@ -142,6 +142,9 @@ dependencies {
 
     // Auto-update (if using publish)
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:1.0.0")
+
+    // Native taskbar/dock progress bar
+    implementation("io.github.kdroidfilter:nucleus.taskbar-progress:1.0.0")
 }
 ```
 

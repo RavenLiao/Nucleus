@@ -320,6 +320,8 @@ https://updates.example.com/MyApp-1.2.3-macos-arm64.dmg
 | `downloadUpdate(info: UpdateInfo): Flow<DownloadProgress>` | Download the installer with progress |
 | `installAndRestart(installerFile: File)` | Launch the installer, exit the current process, and relaunch after install |
 | `installAndQuit(installerFile: File)` | Launch the installer and exit without relaunching — the update is applied on next manual start |
+| `consumeUpdateEvent(): UpdateEvent?` | Returns the post-update event if the app was just updated, then clears it. Returns `null` if no update occurred. |
+| `wasJustUpdated(): Boolean` | Non-consuming check — returns `true` if the app was launched after an update. Call `consumeUpdateEvent()` to clear. |
 
 #### DownloadProgress
 
@@ -336,10 +338,33 @@ data class DownloadProgress(
 
 ```kotlin
 sealed class UpdateResult {
-    data class Available(val info: UpdateInfo)
+    data class Available(val info: UpdateInfo, val level: UpdateLevel)
     data object NotAvailable
     data class Error(val exception: UpdateException)
 }
+```
+
+#### UpdateLevel
+
+```kotlin
+enum class UpdateLevel {
+    MAJOR,       // e.g. 1.x.x → 2.x.x
+    MINOR,       // e.g. 1.2.x → 1.3.x
+    PATCH,       // e.g. 1.2.3 → 1.2.4
+    PRE_RELEASE, // e.g. 1.2.3-beta.1 → 1.2.3-beta.2
+}
+```
+
+The `level` is computed automatically by comparing the current version with the available version using semantic versioning.
+
+#### UpdateEvent
+
+```kotlin
+data class UpdateEvent(
+    val previousVersion: String,
+    val newVersion: String,
+    val updateLevel: UpdateLevel,
+)
 ```
 
 ### Compose Desktop Integration
@@ -471,6 +496,84 @@ val updater = NucleusUpdater {
         .build()
 }
 ```
+
+### Update Level
+
+When `checkForUpdates()` returns `UpdateResult.Available`, the `level` field tells you how significant the update is:
+
+```kotlin
+when (val result = updater.checkForUpdates()) {
+    is UpdateResult.Available -> {
+        when (result.level) {
+            UpdateLevel.MAJOR -> showMajorUpdateDialog(result.info)
+            UpdateLevel.MINOR -> showMinorUpdateBanner(result.info)
+            UpdateLevel.PATCH -> silentlyDownloadAndInstall(result.info)
+            UpdateLevel.PRE_RELEASE -> showPreReleaseBanner(result.info)
+        }
+    }
+    // ...
+}
+```
+
+This allows you to adapt the UI — for example, force a confirmation dialog for major updates while silently applying patches.
+
+### Post-Update Detection
+
+After an update is installed (via `installAndRestart()` or `installAndQuit()`), the updater persists a marker file. On the next launch, you can detect that the app was just updated:
+
+```kotlin
+val updater = NucleusUpdater {
+    provider = GitHubProvider(owner = "myorg", repo = "myapp")
+}
+
+// Quick non-consuming check
+if (updater.wasJustUpdated()) {
+    println("App was just updated!")
+}
+
+// Consume the event (returns null on subsequent calls)
+val event = updater.consumeUpdateEvent()
+if (event != null) {
+    println("Updated from ${event.previousVersion} to ${event.newVersion}")
+    println("This was a ${event.updateLevel} update")
+    showWhatsNewDialog(event)
+}
+```
+
+#### Compose Integration
+
+```kotlin
+@Composable
+fun PostUpdateBanner(updater: NucleusUpdater) {
+    var updateEvent by remember { mutableStateOf(updater.consumeUpdateEvent()) }
+
+    updateEvent?.let { event ->
+        Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Updated to v${event.newVersion}")
+                    Text(
+                        "${event.updateLevel} update from v${event.previousVersion}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                TextButton(onClick = { updateEvent = null }) {
+                    Text("Dismiss")
+                }
+            }
+        }
+    }
+}
+```
+
+The marker file is stored in the platform-specific app data directory (resolved from `NucleusApp.appId`):
+
+- **Linux**: `$XDG_DATA_HOME/<appId>/` or `~/.local/share/<appId>/`
+- **macOS**: `~/Library/Application Support/<appId>/`
+- **Windows**: `%APPDATA%/<appId>/`
 
 ### Security
 

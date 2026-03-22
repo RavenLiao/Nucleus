@@ -67,14 +67,17 @@ Runtime libraries are published on Maven Central:
 dependencies {
     implementation(compose.desktop.currentOs)
 
-    // Executable type detection + single instance + deep links
+    // Executable type detection + single instance + deep links + app metadata (NucleusApp)
     implementation("io.github.kdroidfilter:nucleus.core-runtime:<version>")
 
     // AOT cache runtime detection (includes core-runtime)
     implementation("io.github.kdroidfilter:nucleus.aot-runtime:<version>")
 
-    // Auto-update library (includes core-runtime)
+    // Auto-update library with update level detection and post-update events (includes core-runtime)
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
+
+    // Native taskbar/dock progress bar and attention requests
+    implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
 
     // Custom decorated window with native title bar — choose one backend:
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jbr:<version>")  // JBR backend (requires JetBrains Runtime)
@@ -1021,10 +1024,12 @@ provider = GenericProvider(baseUrl = "https://updates.example.com")
 | Method | Description |
 |--------|-------------|
 | `isUpdateSupported(): Boolean` | Check if the current executable type supports auto-update |
-| `suspend checkForUpdates(): UpdateResult` | Check for a newer version |
+| `suspend checkForUpdates(): UpdateResult` | Check for a newer version (includes `UpdateLevel`) |
 | `downloadUpdate(info: UpdateInfo): Flow<DownloadProgress>` | Download the installer with progress |
 | `installAndRestart(installerFile: File)` | Launch installer, exit, relaunch after install |
 | `installAndQuit(installerFile: File)` | Launch installer and exit without relaunching |
+| `consumeUpdateEvent(): UpdateEvent?` | Returns post-update event if app was just updated, then clears it |
+| `wasJustUpdated(): Boolean` | Non-consuming check — `true` if app was launched after an update |
 
 ```kotlin
 data class DownloadProgress(
@@ -1035,10 +1040,18 @@ data class DownloadProgress(
 )
 
 sealed class UpdateResult {
-    data class Available(val info: UpdateInfo)
+    data class Available(val info: UpdateInfo, val level: UpdateLevel)
     data object NotAvailable
     data class Error(val exception: UpdateException)
 }
+
+enum class UpdateLevel { MAJOR, MINOR, PATCH, PRE_RELEASE }
+
+data class UpdateEvent(
+    val previousVersion: String,
+    val newVersion: String,
+    val updateLevel: UpdateLevel,
+)
 ```
 
 ### Compose Desktop Integration
@@ -1750,6 +1763,59 @@ This eliminates the need to run the tracing agent (`runWithNativeAgent`) just to
 The tracing agent is still required for: reflection metadata, JNI metadata, resource bundles (locale `.properties`), and non-standard resources (`.sha256`, `.class`, ICU data).
 
 Trade-off: `.*\.(svg|ttf|otf)` includes all SVGs/fonts from all classpath JARs. If binary size is critical, override with targeted patterns in your own `resource-config.json`.
+
+## Taskbar Progress
+
+Native taskbar/dock progress bar and attention requests on all platforms via JNI.
+
+```kotlin
+import io.github.kdroidfilter.nucleus.taskbarprogress.TaskbarProgress
+
+// Show progress (0.0–1.0)
+TaskbarProgress.showProgress(window, 0.75)
+
+// States: NORMAL, ERROR, PAUSED, INDETERMINATE, NO_PROGRESS
+TaskbarProgress.showError(window)
+TaskbarProgress.showPaused(window, 0.5)
+TaskbarProgress.showIndeterminate(window)
+TaskbarProgress.hideProgress(window)
+
+// Attention requests
+TaskbarProgress.requestAttention(window, TaskbarProgress.AttentionType.INFORMATIONAL)
+TaskbarProgress.stopAttention(window)
+```
+
+| Platform | Progress API | Attention API |
+|----------|-------------|---------------|
+| Windows | `ITaskbarList3` (per-window) | `FlashWindowEx` |
+| macOS | `NSDockTile` + `NSProgressIndicator` (app-wide) | `NSApplication.requestUserAttention` |
+| Linux | D-Bus `com.canonical.Unity.LauncherEntry` (GNOME, KDE) | D-Bus `urgent` property |
+
+States: `NO_PROGRESS`, `INDETERMINATE`, `NORMAL` (green/blue), `ERROR` (red), `PAUSED` (yellow).
+Attention types: `INFORMATIONAL` (flash 4 times / bounce once), `CRITICAL` (flash until focus / continuous bounce).
+
+For Linux, the `.desktop` file is auto-detected from `NucleusApp.appId`, env vars, or XDG dirs. Override with `TaskbarProgress.linuxDesktopFilename`.
+
+## App Metadata (`NucleusApp`)
+
+`NucleusApp` is a singleton in `core-runtime` that exposes plugin-injected metadata at runtime:
+
+```kotlin
+import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
+
+val appId: String = NucleusApp.appId           // Application identifier
+val version: String? = NucleusApp.version      // Application version
+val vendor: String? = NucleusApp.vendor        // Application vendor
+val description: String? = NucleusApp.description  // Application description
+val configured: Boolean = NucleusApp.isConfigured  // true if plugin injected metadata
+```
+
+Metadata is populated from two sources (first non-null wins):
+
+1. **System properties** — `-Dnucleus.app.id=...` injected by the plugin during `run` and `packageDistribution` tasks
+2. **Classpath resource** — `nucleus/nucleus-app.properties` generated at build time by the plugin
+
+`NucleusApp.appId` is used by other modules (e.g. `taskbar-progress` for Linux `.desktop` detection, `updater-runtime` for update marker storage path).
 
 ### GraalVM DSL Reference
 

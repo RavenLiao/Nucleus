@@ -4,9 +4,10 @@ A multi-module Gradle plugin and runtime library toolkit for shipping production
 
 ## Project Structure
 
-- `core-runtime` - Executable type detection, single instance, deep links, platform detection
+- `core-runtime` - Executable type detection, single instance, deep links, platform detection, app metadata (`NucleusApp`)
 - `aot-runtime` - AOT cache mode detection for JDK 25+ (Project Leyden)
-- `updater-runtime` - Auto-update engine (GitHub/S3), SHA-512 verification, progress tracking
+- `updater-runtime` - Auto-update engine (GitHub/S3), SHA-512 verification, progress tracking, update level detection, post-update events
+- `taskbar-progress` - Native taskbar/dock progress bar and attention requests (Windows ITaskbarList3, macOS NSDockTile, Linux D-Bus)
 - `darkmode-detector` - Reactive OS dark mode detection via JNI
 - `system-color` - Reactive system accent color and high contrast detection via JNI
 - `energy-manager` - Energy efficiency & screen-awake APIs

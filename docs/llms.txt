@@ -39,7 +39,9 @@ nucleus.application {
 - **Liquid Glass (macOS 26)**: automatic SDK version patching via `vtool`, works with any JDK
 - **Store-ready**: Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), Flathub (Flatpak) with automatic sandboxing pipeline
 - **Code signing & notarization**: Windows (PFX, Azure Trusted Signing) and macOS (Developer ID) with notarization
-- **Auto-update**: Integrated update engine with SHA-512 verification, GitHub Releases, S3, or generic HTTP server
+- **Auto-update**: Integrated update engine with SHA-512 verification, update level detection (major/minor/patch), post-update events, GitHub Releases, S3, or generic HTTP server
+- **Taskbar progress**: Native taskbar/dock progress bar and attention requests on Windows (ITaskbarList3), macOS (NSDockTile), and Linux (D-Bus Unity LauncherEntry)
+- **App metadata at runtime**: `NucleusApp` singleton exposes plugin-injected `appId`, `version`, `vendor`, `description` at runtime
 - **Decorated windows**: Custom title bar content with native controls on all platforms — two backends: JBR (JetBrains Runtime) and JNI (any JVM/GraalVM). Features: fullscreen sliding overlay, large corner radius, RTL support, control buttons direction, background content slot
 - **Reactive dark mode detection**: OS-level listener via JNI, triggers recomposition instantly
 - **System accent color & high contrast**: Reactive OS accent color and high contrast detection via JNI
@@ -79,6 +81,7 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.core-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.aot-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jbr:<version>")  // or -jni
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jewel:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-material2:<version>")
@@ -97,9 +100,10 @@ dependencies {
 
 | Library | Description |
 |---------|-------------|
-| `nucleus.core-runtime` | Platform detection, executable type, single instance, deep links |
+| `nucleus.core-runtime` | Platform detection, executable type, single instance, deep links, app metadata (`NucleusApp`) |
 | `nucleus.aot-runtime` | AOT cache mode detection (includes core-runtime) |
-| `nucleus.updater-runtime` | Auto-update engine with download progress, SHA-512 verification, and custom HTTP client support |
+| `nucleus.updater-runtime` | Auto-update engine with download progress, SHA-512 verification, update level detection, post-update events, and custom HTTP client support |
+| `nucleus.taskbar-progress` | Native taskbar/dock progress bar and attention requests (Windows ITaskbarList3, macOS NSDockTile, Linux D-Bus) |
 | `nucleus.decorated-window-jbr` | Custom title bar with native window controls — JBR backend (requires JetBrains Runtime) |
 | `nucleus.decorated-window-jni` | Custom title bar with native window controls — JNI backend (any JVM, GraalVM compatible) |
 | `nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) integration for decorated windows |
