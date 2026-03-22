@@ -46,7 +46,9 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import net.coobird.thumbnailator.Thumbnails
-import java.awt.AlphaComposite
+import net.coobird.thumbnailator.filters.Canvas
+import net.coobird.thumbnailator.geometry.Positions
+import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -62,7 +64,6 @@ import javax.imageio.ImageIO
 import javax.inject.Inject
 import kotlin.io.path.isExecutable
 import kotlin.io.path.isRegularFile
-import kotlin.math.min
 
 /**
  * Gradle task that packages a pre-built app-image (from jpackage) using electron-builder.
@@ -1010,22 +1011,13 @@ abstract class AbstractElectronBuilderPackageTask
             source: BufferedImage,
             width: Int,
             height: Int,
-        ): BufferedImage {
-            val scale = min(width.toDouble() / source.width, height.toDouble() / source.height)
-            val targetWidth = (source.width * scale).toInt().coerceAtLeast(1)
-            val targetHeight = (source.height * scale).toInt().coerceAtLeast(1)
-            val scaled = resizeIcon(source, targetWidth, targetHeight)
-
-            val canvas = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-            val graphics = canvas.createGraphics()
-            graphics.composite = AlphaComposite.Src
-            graphics.fillRect(0, 0, width, height)
-            val x = (width - targetWidth) / 2
-            val y = (height - targetHeight) / 2
-            graphics.drawImage(scaled, x, y, null)
-            graphics.dispose()
-            return canvas
-        }
+        ): BufferedImage =
+            Thumbnails.of(source)
+                .size(width, height)
+                .keepAspectRatio(true)
+                .addFilter(Canvas(width, height, Positions.CENTER, true, Color(0, 0, 0, 0)))
+                .imageType(BufferedImage.TYPE_INT_ARGB)
+                .asBufferedImage()
 
         private fun ensureLinuxExecutableAlias(appDir: File) {
             if (currentOS != OS.Linux) return
