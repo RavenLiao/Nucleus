@@ -75,6 +75,7 @@ import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.nativehttp.NativeHttpClient
 import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
+import io.github.kdroidfilter.nucleus.updater.UpdateLevel
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
 import io.github.kdroidfilter.nucleus.window.macOSLargeCornerRadius
@@ -355,7 +356,14 @@ fun NucleusContent() {
     LaunchedEffect(Unit) {
         when (val result = updater.checkForUpdates()) {
             is UpdateResult.Available -> {
-                updateStatus = "Update available: v${result.info.version}"
+                val levelLabel =
+                    when (result.level) {
+                        UpdateLevel.MAJOR -> "Major"
+                        UpdateLevel.MINOR -> "Minor"
+                        UpdateLevel.PATCH -> "Patch"
+                        UpdateLevel.PRE_RELEASE -> "Pre-release"
+                    }
+                updateStatus = "$levelLabel update available: v${result.info.version}"
                 updater.downloadUpdate(result.info).collect { progress ->
                     downloadProgress = progress.percent
                     if (progress.file != null) {

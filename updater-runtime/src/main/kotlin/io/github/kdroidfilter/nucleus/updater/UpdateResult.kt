@@ -5,6 +5,7 @@ import io.github.kdroidfilter.nucleus.updater.exception.UpdateException
 sealed class UpdateResult {
     data class Available(
         val info: UpdateInfo,
+        val level: UpdateLevel,
     ) : UpdateResult()
 
     data object NotAvailable : UpdateResult()

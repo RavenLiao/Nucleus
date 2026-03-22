@@ -97,6 +97,36 @@ class VersionTest {
     }
 
     @Test
+    fun `levelFrom detects major update`() {
+        val level = Version.fromString("2.0.0").levelFrom(Version.fromString("1.5.3"))
+        assertEquals(UpdateLevel.MAJOR, level)
+    }
+
+    @Test
+    fun `levelFrom detects minor update`() {
+        val level = Version.fromString("1.3.0").levelFrom(Version.fromString("1.2.5"))
+        assertEquals(UpdateLevel.MINOR, level)
+    }
+
+    @Test
+    fun `levelFrom detects patch update`() {
+        val level = Version.fromString("1.2.4").levelFrom(Version.fromString("1.2.3"))
+        assertEquals(UpdateLevel.PATCH, level)
+    }
+
+    @Test
+    fun `levelFrom detects pre-release update`() {
+        val level = Version.fromString("1.2.3-beta.2").levelFrom(Version.fromString("1.2.3-beta.1"))
+        assertEquals(UpdateLevel.PRE_RELEASE, level)
+    }
+
+    @Test
+    fun `levelFrom release over pre-release is pre-release level`() {
+        val level = Version.fromString("1.2.3").levelFrom(Version.fromString("1.2.3-beta.1"))
+        assertEquals(UpdateLevel.PRE_RELEASE, level)
+    }
+
+    @Test
     fun `whitespace in version string is trimmed`() {
         val v = Version.fromString("  1.2.3  ")
         assertEquals(1, v.major)

@@ -22,6 +22,14 @@ data class Version(
             if (meta.isNotEmpty()) append("-$meta")
         }
 
+    fun levelFrom(other: Version): UpdateLevel =
+        when {
+            major != other.major -> UpdateLevel.MAJOR
+            minor != other.minor -> UpdateLevel.MINOR
+            patch != other.patch -> UpdateLevel.PATCH
+            else -> UpdateLevel.PRE_RELEASE
+        }
+
     companion object {
         private val SEMVER_REGEXP = """^(\d+)(?:\.(\d*))?(?:\.(\d*))?(?:-(.*))?${'$'}""".toRegex()
 

@@ -22,6 +22,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import kotlin.coroutines.cancellation.CancellationException
 
 class NucleusUpdater(
     private val config: UpdaterConfig,
@@ -48,6 +49,8 @@ class NucleusUpdater(
                 doCheckForUpdates()
             } catch (e: UpdateException) {
                 UpdateResult.Error(e)
+            } catch (e: CancellationException) {
+                throw e
             } catch (
                 @Suppress("TooGenericExceptionCaught") e: Exception,
             ) {
@@ -110,6 +113,9 @@ class NucleusUpdater(
 
                 emit(DownloadProgress(bytesDownloaded, totalBytes, PERCENT_MAX, finalFile))
             } catch (e: UpdateException) {
+                tempFile.delete()
+                throw e
+            } catch (e: CancellationException) {
                 tempFile.delete()
                 throw e
             } catch (
@@ -211,7 +217,9 @@ class NucleusUpdater(
                     ),
             )
 
-        return UpdateResult.Available(updateInfo)
+        val level = remoteVersion.levelFrom(currentVersion)
+
+        return UpdateResult.Available(updateInfo, level)
     }
 
     private fun resolveExecutableType(): ExecutableType {
