@@ -52,6 +52,7 @@
 - **Prevent reflection fallback crash in native image** — When the JNI library is loaded, return its result directly without falling through to reflection-based `sun.awt.AWTAccessor` access, which triggers `IllegalAccessException` under JPMS in native image.
 - **Rethrow `CancellationException` in updater** — Prevent coroutine scope leaks when update operations are cancelled.
 - **npm 11 compatibility** — Multiple fixes for `ECOMPROMISED` errors in parallel builds: isolated npm prefix, separate npmrc files, ensure npm prefix lib directory exists.
+- **Fix Jewel decorated window border on Linux light mode** — Use subtle semi-transparent border (`Color(0x12FFFFFF)`) on Linux instead of opaque Jewel `borders.normal` color. On GNOME/KDE, the window border now blends with the native window chrome in light mode instead of showing an obtrusive gray outline.
 
 ### Breaking Changes
 
