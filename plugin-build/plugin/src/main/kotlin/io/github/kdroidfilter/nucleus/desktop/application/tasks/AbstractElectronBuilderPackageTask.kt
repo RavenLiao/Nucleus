@@ -1038,14 +1038,29 @@ abstract class AbstractElectronBuilderPackageTask
             if (currentOS != OS.Linux) return
 
             val launcherName = packageName.get()
-            val launcher = appDir.resolve("bin").resolve(launcherName)
-            if (!launcher.isFile) {
+
+            // jpackage layout: bin/{packageName}
+            val jpackageLauncher = appDir.resolve("bin").resolve(launcherName)
+
+            // GraalVM native image layout: executable directly in appDir/
+            // The binary name may differ from packageName (e.g. imageName), so
+            // look for any executable file in appDir root.
+            val graalvmLauncher = if (!jpackageLauncher.isFile) {
+                appDir.listFiles()?.firstOrNull { it.isFile && it.canExecute() }
+            } else {
+                null
+            }
+
+            val launcher = jpackageLauncher.takeIf { it.isFile } ?: graalvmLauncher
+            if (launcher == null) {
                 logger.warn(
-                    "Expected launcher not found at ${launcher.absolutePath}. " +
+                    "Expected launcher not found at ${jpackageLauncher.absolutePath}. " +
                         "Skipping Linux executable alias creation.",
                 )
                 return
             }
+
+            val relativePath = launcher.relativeTo(appDir).path
 
             val aliasName = launcherName.toNpmPackageName()
             val aliasFile = appDir.resolve(aliasName)
@@ -1063,7 +1078,7 @@ abstract class AbstractElectronBuilderPackageTask
                   esac
                 done
                 DIR="$(cd "$(dirname "$SCRIPT")" && pwd)"
-                exec "$DIR/bin/$$launcherName" "$@"
+                exec "$DIR/$$relativePath" "$@"
                 """.trimIndent() + "\n"
 
             aliasFile.writeText(script)
