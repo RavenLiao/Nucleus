@@ -728,6 +728,7 @@ private fun JvmApplicationContext.configureElectronBuilderPackageTask(
     )
 
     packageTask.packageName.set(packageNameProvider)
+    packageTask.executableName.set(packageNameProvider)
     packageTask.packageVersion.set(packageVersionFor(packageTask.targetFormat))
     packageTask.linuxIconFile.set(
         app.nativeDistributions.linux.iconFile
