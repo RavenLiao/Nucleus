@@ -1085,7 +1085,7 @@ abstract class AbstractElectronBuilderPackageTask
             val packageJson = File(outputDir, "package.json")
             if (packageJson.exists()) return
 
-            val normalizedName = packageName.get().toNpmPackageName()
+            val normalizedName = (executableName.orNull ?: packageName.get()).toNpmPackageName()
             val normalizedVersion = packageVersion.orNull?.takeIf { it.isNotBlank() } ?: "1.0.0"
             val normalizedDescription =
                 distributions.description?.takeIf { it.isNotBlank() }

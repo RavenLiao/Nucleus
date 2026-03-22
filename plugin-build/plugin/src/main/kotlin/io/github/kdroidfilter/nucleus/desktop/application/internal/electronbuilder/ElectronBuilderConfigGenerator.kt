@@ -54,7 +54,8 @@ internal class ElectronBuilderConfigGenerator {
         val yaml = StringBuilder()
 
         // --- Common settings ---
-        appendIfNotNull(yaml, "productName", distributions.packageName)
+        appendIfNotNull(yaml, "productName", distributions.packageName ?: executableName
+            ?: error("No productName or executableName available for electron-builder config"))
         // On macOS, appId must match the CFBundleIdentifier from the app's Info.plist,
         // otherwise productbuild will fail to find the component package during PKG creation.
         val appId =

@@ -735,7 +735,11 @@ private fun JvmApplicationContext.configureElectronBuilderPackageTask(
                 OS.Linux -> dist.linux.packageName
                 OS.Windows -> dist.windows.packageName
                 OS.MacOS -> dist.macOS.packageName
-            } ?: dist.packageName ?: project.name
+            } ?: dist.packageName
+            ?: error(
+                "No packageName configured for ${currentOS.name}. " +
+                    "Set nativeDistributions { packageName = \"...\" } or the platform-specific packageName.",
+            )
         },
     )
     packageTask.packageVersion.set(packageVersionFor(packageTask.targetFormat))
