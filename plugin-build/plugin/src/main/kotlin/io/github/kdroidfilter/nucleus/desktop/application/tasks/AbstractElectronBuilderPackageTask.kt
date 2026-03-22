@@ -1163,7 +1163,7 @@ abstract class AbstractElectronBuilderPackageTask
          * for parallel-safe builds. Called only after electron-builder finishes.
          */
         private fun cleanupBuildTemporaries(outputDir: File) {
-            for (dirName in listOf(".npm-cache", ".electron-builder-cache", ".app-image")) {
+            for (dirName in listOf(".npm-cache", ".npm-prefix", ".electron-builder-cache", ".app-image")) {
                 val dir = File(outputDir, dirName)
                 if (dir.isDirectory) {
                     dir.deleteRecursively()
@@ -1275,11 +1275,13 @@ private fun copyAppImage(
  * Returns an env map that isolates npm and electron-builder caches to subdirectories
  * of [outputDir]. This prevents EPERM/EBUSY errors on Windows when multiple
  * electron-builder tasks run in parallel and compete for shared caches (npx cache,
- * NSIS downloads, etc.).
+ * NSIS downloads, etc.). The prefix is also isolated to avoid npm 11+ ECOMPROMISED
+ * errors caused by concurrent npx invocations sharing the global prefix.
  */
 private fun isolatedCacheEnv(outputDir: File): Map<String, String> =
     mapOf(
         "NPM_CONFIG_CACHE" to File(outputDir, ".npm-cache").absolutePath,
+        "NPM_CONFIG_PREFIX" to File(outputDir, ".npm-prefix").absolutePath,
         "ELECTRON_BUILDER_CACHE" to File(outputDir, ".electron-builder-cache").absolutePath,
     )
 
