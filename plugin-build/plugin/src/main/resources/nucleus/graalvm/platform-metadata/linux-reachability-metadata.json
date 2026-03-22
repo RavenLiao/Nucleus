@@ -16,6 +16,22 @@
             "type": "com.sun.swing.internal.plaf.synth.resources.synth"
         },
         {
+            "type": "java.util.ArrayList",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "add",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                },
+                {
+                    "name": "clear",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
             "type": "java.awt.Component",
             "jniAccessible": true,
             "fields": [
