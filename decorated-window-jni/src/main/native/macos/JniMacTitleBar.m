@@ -116,7 +116,9 @@ static void notifyMenuBarOffsetChanged(NSWindow *window, float offset) {
 // during fullscreen, mirroring JBR's AWTButtonsView.
 // Propagates mouseEntered:/mouseExited: to all button subviews so AppKit
 // activates the grouped traffic-light hover state (colored icons on hover).
-@interface NucleusButtonsView : NSView
+@interface NucleusButtonsView : NSView {
+    BOOL _dispatching;
+}
 @end
 
 @implementation NucleusButtonsView
@@ -137,17 +139,23 @@ static void notifyMenuBarOffsetChanged(NSWindow *window, float offset) {
 }
 
 - (void)mouseEntered:(NSEvent *)event {
+    if (_dispatching) return;
+    _dispatching = YES;
     [super mouseEntered:event];
     for (NSView *btn in self.subviews) {
         [btn mouseEntered:event];
     }
+    _dispatching = NO;
 }
 
 - (void)mouseExited:(NSEvent *)event {
+    if (_dispatching) return;
+    _dispatching = YES;
     [super mouseExited:event];
     for (NSView *btn in self.subviews) {
         [btn mouseExited:event];
     }
+    _dispatching = NO;
 }
 
 @end
