@@ -2,8 +2,12 @@
 
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.FileAssociation
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.GraalvmSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.PackagingBackend
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistListValue
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistMapValue
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistStringValue
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractElectronBuilderPackageTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractNotarizationTask
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractUnpackDefaultApplicationResourcesTask
@@ -755,6 +759,38 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             "default-icon-mac.icns"
         }
 
+    // Capture file associations at configuration time for the Info.plist
+    val plistFileAssociations: Set<FileAssociation> = app.nativeDistributions.macOS.fileAssociations.toSet()
+
+    // Build a mapping from icon File -> unique name inside Resources/ (avoids collisions)
+    val fileAssociationIconMapping: Map<File, File> = run {
+        val icons = plistFileAssociations.mapNotNull { it.iconFile }.distinct()
+        if (icons.isEmpty()) return@run emptyMap()
+        val usedNames = mutableSetOf(plistIconFileName)
+        val mapping = mutableMapOf<File, File>()
+        for (icon in icons) {
+            if (!icon.exists()) continue
+            val name =
+                if (usedNames.add(icon.name)) {
+                    icon.name
+                } else {
+                    val nameWithoutExtension = icon.nameWithoutExtension
+                    val extension = icon.extension
+                    var uniqueName = icon.name
+                    for (n in 1UL..ULong.MAX_VALUE) {
+                        val candidate = "$nameWithoutExtension ($n).$extension"
+                        if (usedNames.add(candidate)) {
+                            uniqueName = candidate
+                            break
+                        }
+                    }
+                    uniqueName
+                }
+            mapping[icon] = File(name)
+        }
+        mapping
+    }
+
     val generateInfoPlist =
         tasks.register<DefaultTask>(
             taskNameAction = "generate",
@@ -772,6 +808,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             inputs.property("minSystemVersion", plistMinSystemVersion)
             inputs.property("copyright", plistCopyright ?: "")
             inputs.property("iconFileName", plistIconFileName)
+            inputs.property("fileAssociations", plistFileAssociations.toString())
 
             doLast {
                 val plist = InfoPlistBuilder()
@@ -791,6 +828,29 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
                 }
 
                 plist[PlistKeys.CFBundleIconFile] = plistIconFileName
+
+                if (plistFileAssociations.isNotEmpty()) {
+                    plist[PlistKeys.CFBundleDocumentTypes] =
+                        plistFileAssociations
+                            .groupBy { it.mimeType to it.description }
+                            .map { (key, extensions) ->
+                                val (mimeType, description) = key
+                                val iconPath = extensions
+                                    .firstNotNullOfOrNull { it.iconFile }
+                                    ?.let { fileAssociationIconMapping[it]?.name }
+                                InfoPlistMapValue(
+                                    PlistKeys.CFBundleTypeRole to InfoPlistStringValue("Editor"),
+                                    PlistKeys.CFBundleTypeExtensions to
+                                        InfoPlistListValue(extensions.map { InfoPlistStringValue(it.extension) }),
+                                    PlistKeys.CFBundleTypeIconFile to
+                                        InfoPlistStringValue(iconPath ?: plistIconFileName),
+                                    PlistKeys.CFBundleTypeMIMETypes to InfoPlistStringValue(mimeType),
+                                    PlistKeys.CFBundleTypeName to InfoPlistStringValue(description),
+                                    PlistKeys.CFBundleTypeOSTypes to
+                                        InfoPlistListValue(InfoPlistStringValue("****")),
+                                )
+                            }
+                }
 
                 plistFile
                     .get()
@@ -829,6 +889,34 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             into(appBundleDir.map { it.dir("Resources") })
         }
 
+    // Copy file association icons into Resources/ with unique names
+    val copyFileAssociationIcons =
+        if (fileAssociationIconMapping.isNotEmpty()) {
+            tasks.register<DefaultTask>(
+                taskNameAction = "copy",
+                taskNameObject = "graalvmFileAssociationIcons",
+            ) {
+                description = "Copy file association icons into .app bundle Resources"
+                dependsOn(cleanAppBundle)
+                for (iconFile in fileAssociationIconMapping.keys) {
+                    inputs.file(iconFile)
+                }
+                outputs.dir(appBundleDir.map { it.dir("Resources") })
+
+                doLast {
+                    val resourcesDir = appBundleDir.get().dir("Resources").asFile
+                    resourcesDir.mkdirs()
+                    for ((sourceIcon, targetName) in fileAssociationIconMapping) {
+                        if (sourceIcon.exists()) {
+                            sourceIcon.copyTo(File(resourcesDir, targetName.name), overwrite = true)
+                        }
+                    }
+                }
+            }
+        } else {
+            null
+        }
+
     val codesignBundle =
         tasks.register<Exec>(
             taskNameAction = "codesign",
@@ -836,6 +924,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
         ) {
             description = "Ad-hoc sign the entire .app bundle"
             dependsOn(codesignDylibs, copyBinary, fixRpath, copyInfoPlist, copyJawtToLib, copySkikoLib, copyIcon)
+            copyFileAssociationIcons?.let { dependsOn(it) }
             val bundleDir = appTmpDir.map { it.dir("graalvm/output/${appBundleName.get()}") }
             commandLine("codesign", "--force", "--deep", "--sign", "-", bundleDir.get().asFile.absolutePath)
         }
@@ -857,6 +946,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             copyInfoPlist,
             copyIcon,
         )
+        copyFileAssociationIcons?.let { dependsOn(it) }
     }
 }
 
