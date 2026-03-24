@@ -1,0 +1,13 @@
+{
+    "_meta": {
+        "description": "Sentry error tracking SDK",
+        "matchPackages": [
+            "io.sentry"
+        ]
+    },
+    "resources": [
+        {
+            "glob": "sentry-debug-meta.properties"
+        }
+    ]
+}

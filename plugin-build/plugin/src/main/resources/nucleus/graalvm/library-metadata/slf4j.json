@@ -1,0 +1,62 @@
+{
+    "_meta": {
+        "description": "SLF4J logging facade",
+        "matchPackages": [
+            "org.slf4j"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "org.slf4j.Logger",
+            "methods": [
+                {
+                    "name": "debug",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Throwable"
+                    ]
+                },
+                {
+                    "name": "info",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Throwable"
+                    ]
+                },
+                {
+                    "name": "trace",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Throwable"
+                    ]
+                },
+                {
+                    "name": "warn",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Throwable"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "org.slf4j.LoggerFactory",
+            "methods": [
+                {
+                    "name": "getLogger",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "org.slf4j.simple.SimpleServiceProvider"
+        }
+    ],
+    "resources": [
+        {
+            "glob": "org/slf4j/impl/StaticLoggerBinder.class"
+        }
+    ]
+}

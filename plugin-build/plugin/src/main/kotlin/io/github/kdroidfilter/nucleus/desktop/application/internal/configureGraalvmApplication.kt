@@ -112,19 +112,31 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
 
             args = app.args
 
+            // Capture all values at configuration time to avoid serializing
+            // JvmApplicationContext into the configuration cache.
+            val resolvedTargetDir: File =
+                if (nativeImageConfigDir.isPresent) {
+                    nativeImageConfigDir.get().asFile
+                } else {
+                    project.layout.projectDirectory
+                        .dir("graalvm")
+                        .asFile
+                }
+            val resolvedAgentDir: File = agentTempDir.get().asFile
+            val resolvedPlatform: String =
+                when (currentOS) {
+                    OS.Windows -> "windows"
+                    OS.MacOS -> "macos"
+                    OS.Linux -> "linux"
+                }
+            val resolvedMainClass: String? = mainClassName
+            val resolvedRepoDirsFile: File = appTmpDir.get().file("graalvm/metadataRepoDirs.txt").asFile
+            val resolvedStaticDir: File = appTmpDir.get().dir("graalvm/staticAnalysis").asFile
+            val resolvedLibraryMetadataDir: File = appTmpDir.get().dir("graalvm/libraryMetadata").asFile
+
             // After the agent finishes, merge results into the real config
             doLast {
-                val targetDir =
-                    if (nativeImageConfigDir.isPresent) {
-                        nativeImageConfigDir.get().asFile
-                    } else {
-                        project.layout.projectDirectory
-                            .dir("src/main/resources/META-INF/native-image")
-                            .asFile
-                    }
-                val agentDir = agentTempDir.get().asFile
-
-                mergeReachabilityMetadata(agentDir, targetDir)
+                mergeReachabilityMetadata(resolvedAgentDir, resolvedTargetDir)
 
                 // Also merge individual config files the agent may produce
                 listOf(
@@ -135,23 +147,31 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     "serialization-config.json",
                 ).forEach { fileName ->
                     mergeJsonArrayConfig(
-                        agentFile = File(agentDir, fileName),
-                        targetFile = File(targetDir, fileName),
+                        agentFile = File(resolvedAgentDir, fileName),
+                        targetFile = File(resolvedTargetDir, fileName),
                     )
                 }
 
-                // Deduplicate: remove entries already provided by library JARs,
-                // plugin platform metadata (L3), and native-image.properties resource patterns.
+                // Deduplicate: remove entries already provided by library JARs (L1),
+                // plugin platform metadata (L3), Oracle repo (L2), static analysis,
+                // and native-image.properties resource patterns.
                 val runtimeClasspath = classpath?.files ?: emptySet()
-                val platform =
-                    when (currentOS) {
-                        OS.Windows -> "windows"
-                        OS.MacOS -> "macos"
-                        OS.Linux -> "linux"
-                    }
-                deduplicateAgainstLibraryMetadata(runtimeClasspath, targetDir, platform, mainClassName)
 
-                logger.lifecycle("Native-image agent config merged into: $targetDir")
+                // Collect extra metadata directories: Oracle repo (L2), static analysis, library metadata (L1)
+                val extraDirs = mutableListOf<File>()
+                if (resolvedRepoDirsFile.exists()) {
+                    resolvedRepoDirsFile.readLines().filter { it.isNotBlank() }.forEach { extraDirs.add(File(it)) }
+                }
+                if (resolvedStaticDir.isDirectory) {
+                    extraDirs.add(resolvedStaticDir)
+                }
+                if (resolvedLibraryMetadataDir.isDirectory) {
+                    extraDirs.add(resolvedLibraryMetadataDir)
+                }
+
+                deduplicateAgainstLibraryMetadata(runtimeClasspath, resolvedTargetDir, resolvedPlatform, resolvedMainClass, extraDirs)
+
+                logger.lifecycle("Native-image agent config merged into: $resolvedTargetDir")
             }
         }
 
@@ -419,6 +439,115 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                 }
             }
 
+    // ── Static bytecode analysis ──
+    // Scans all runtime classpath JARs to auto-detect reflection, JNI, and resource
+    // metadata that can be discovered statically (Class.forName, ServiceLoader,
+    // native methods, etc.). Output is passed as an additional config directory.
+
+    val staticMetadataDir = appTmpDir.map { it.dir("graalvm/staticAnalysis") }
+
+    val analyzeStaticMetadata =
+        project.tasks
+            .register(
+                "analyzeGraalvmStaticMetadata",
+                AnalyzeStaticMetadataTask::class.java,
+            ).apply {
+                configure { task ->
+                    task.description =
+                        "Statically analyze bytecode to detect GraalVM reflection/JNI/resource metadata"
+                    task.group = NUCLEUS_TASK_GROUP
+                    task.outputDir.set(staticMetadataDir)
+                    if (runtimeCfg != null) {
+                        task.runtimeClasspath.from(runtimeCfg)
+                    }
+                    // Include the project's own compiled classes (not just dependency JARs)
+                    // KMP projects use jvmMainClasses, standard JVM uses main sourceSet
+                    val jvmMainClasses =
+                        project.tasks.findByName("jvmMainClasses")
+                            ?: project.tasks.findByName("compileKotlinJvm")
+                            ?: project.tasks.findByName("compileKotlin")
+                    if (jvmMainClasses != null) {
+                        task.dependsOn(jvmMainClasses)
+                    }
+                    project.tasks.findByName("compileJava")?.let { task.dependsOn(it) }
+                    // Add class output directories
+                    for (dirPath in listOf(
+                        "classes/kotlin/jvm/main",
+                        "classes/kotlin/main",
+                        "classes/java/main",
+                    )) {
+                        val classDir = project.layout.buildDirectory.dir(dirPath)
+                        task.runtimeClasspath.from(classDir)
+                    }
+                }
+            }
+
+    // ── Per-library metadata filtering (L1) ──
+    // Reads per-library JSON files from the plugin JAR, includes only those whose
+    // matchPackages are found on the runtime classpath, and merges into a single output.
+
+    val libraryMetadataDir = appTmpDir.map { it.dir("graalvm/libraryMetadata") }
+
+    val filterLibraryMetadata =
+        project.tasks
+            .register(
+                "filterGraalvmLibraryMetadata",
+                FilterLibraryMetadataTask::class.java,
+            ).apply {
+                configure { task ->
+                    task.description =
+                        "Filter and merge per-library GraalVM metadata based on runtime classpath"
+                    task.group = NUCLEUS_TASK_GROUP
+                    task.outputDir.set(libraryMetadataDir)
+                    if (runtimeCfg != null) {
+                        task.runtimeClasspath.from(runtimeCfg)
+                    }
+                }
+            }
+
+    // ── Cleanup manual metadata ──
+    // Removes entries from the project's reachability-metadata.json that are already
+    // covered by L1 (library JARs), L2 (Oracle repo), L3 (platform), or static analysis.
+
+    project.tasks
+        .register(
+            "cleanupGraalvmMetadata",
+            CleanupGraalvmMetadataTask::class.java,
+        ).apply {
+            configure { task ->
+                task.description =
+                    "Remove entries from manual reachability-metadata.json that are already managed by Nucleus"
+                task.group = NUCLEUS_TASK_GROUP
+                task.dependsOn(resolveReachabilityMetadata)
+                task.dependsOn(analyzeStaticMetadata)
+                task.dependsOn(filterLibraryMetadata)
+
+                if (runtimeCfg != null) {
+                    task.runtimeClasspath.from(runtimeCfg)
+                }
+                task.metadataRepoDirsFile.set(project.layout.file(metadataRepoDirsFile.map { it.asFile }))
+                task.staticAnalysisDir.from(staticMetadataDir)
+                task.staticAnalysisDir.from(libraryMetadataDir)
+                task.platformName.set(
+                    when (currentOS) {
+                        OS.Windows -> "windows"
+                        OS.MacOS -> "macos"
+                        OS.Linux -> "linux"
+                    },
+                )
+                task.mainClass.set(mainClassName ?: "")
+                task.configDir.set(
+                    if (nativeImageConfigDir.isPresent) {
+                        nativeImageConfigDir.get().asFile
+                    } else {
+                        project.layout.projectDirectory
+                            .dir("graalvm")
+                            .asFile
+                    },
+                )
+            }
+        }
+
     // ── nativeImageCompile ──
 
     val nativeImageCompile =
@@ -431,6 +560,8 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             dependsOn(packageUberJar)
             dependsOn(generatePlatformMetadata)
             dependsOn(resolveReachabilityMetadata)
+            dependsOn(analyzeStaticMetadata)
+            dependsOn(filterLibraryMetadata)
             compileStubs?.let { dependsOn(it) }
             generateWindowsResources?.let { dependsOn(it) }
 
@@ -500,22 +631,33 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
 
                     // Pass the native-image configuration directory so reflection/JNI/resource
                     // metadata is picked up even when it is not bundled inside the uber JAR.
+                    // Default: "graalvm/" at project root (NOT in resources to avoid bundling in app)
                     val configDir =
                         if (nativeImageConfigDir.isPresent) {
                             nativeImageConfigDir.get().asFile
                         } else {
                             project.layout.projectDirectory
-                                .dir("src/main/resources/META-INF/native-image")
+                                .dir("graalvm")
                                 .asFile
                         }
                     if (configDir.exists()) {
                         add("-H:ConfigurationFileDirectories=$configDir")
                     }
 
+                    // Include per-library metadata (L1), filtered by runtime classpath
+                    add("-H:ConfigurationFileDirectories=${libraryMetadataDir.get().asFile}")
+
                     // Include platform-specific AWT/Java2D metadata
                     // Always add — the directory is created by generateGraalvmPlatformMetadata
                     // which runs before this task via dependsOn.
                     add("-H:ConfigurationFileDirectories=${platformMetadataDir.get().asFile}")
+
+                    // Include statically-analyzed metadata (reflection, JNI, resources
+                    // detected from bytecode scanning of runtime classpath JARs)
+                    val staticDir = staticMetadataDir.get().asFile
+                    if (staticDir.exists()) {
+                        add("-H:ConfigurationFileDirectories=$staticDir")
+                    }
 
                     // Include metadata from Oracle Reachability Metadata Repository
                     val dirsFile = metadataRepoDirsFile.get().asFile

@@ -1,0 +1,128 @@
+{
+    "_meta": {
+        "description": "Kotlin runtime and coroutines core/channels/flow/scheduling/swing"
+    },
+    "reflection": [
+        {
+            "type": "kotlin.SafePublicationLazyImpl"
+        },
+        {
+            "type": "kotlin.coroutines.SafeContinuation"
+        },
+        {
+            "type": "kotlin.jvm.functions.Function0",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "invoke",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "kotlin.reflect.jvm.internal.ReflectionFactoryImpl"
+        },
+        {
+            "type": "kotlinx.coroutines.AwaitAll"
+        },
+        {
+            "type": "kotlinx.coroutines.AwaitAll$AwaitAllNode"
+        },
+        {
+            "type": "kotlinx.coroutines.CancellableContinuationImpl"
+        },
+        {
+            "type": "kotlinx.coroutines.CancelledContinuation"
+        },
+        {
+            "type": "kotlinx.coroutines.CompletedExceptionally"
+        },
+        {
+            "type": "kotlinx.coroutines.DispatchedCoroutine"
+        },
+        {
+            "type": "kotlinx.coroutines.EventLoopImplBase"
+        },
+        {
+            "type": "kotlinx.coroutines.InvokeOnCancelling"
+        },
+        {
+            "type": "kotlinx.coroutines.JobSupport"
+        },
+        {
+            "type": "kotlinx.coroutines.JobSupport$Finishing"
+        },
+        {
+            "type": "kotlinx.coroutines.channels.BufferedChannel"
+        },
+        {
+            "type": "kotlinx.coroutines.flow.ChannelAsFlow"
+        },
+        {
+            "type": "kotlinx.coroutines.flow.StateFlowImpl"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.ConcurrentLinkedListNode"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.DispatchedContinuation"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.LimitedDispatcher"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.LockFreeLinkedListNode"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.LockFreeTaskQueue"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.LockFreeTaskQueueCore"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.Segment"
+        },
+        {
+            "type": "kotlinx.coroutines.internal.ThreadSafeHeap"
+        },
+        {
+            "type": "kotlinx.coroutines.scheduling.CoroutineScheduler"
+        },
+        {
+            "type": "kotlinx.coroutines.scheduling.CoroutineScheduler$Worker"
+        },
+        {
+            "type": "kotlinx.coroutines.scheduling.WorkQueue"
+        },
+        {
+            "type": "kotlinx.coroutines.selects.SelectImplementation"
+        },
+        {
+            "type": "kotlinx.coroutines.swing.SwingDispatcherFactory",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "kotlinx.coroutines.sync.MutexImpl"
+        },
+        {
+            "type": "kotlinx.coroutines.sync.SemaphoreAndMutexImpl"
+        },
+        {
+            "type": "kotlinx.coroutines.test.internal.TestMainDispatcher$NonConcurrentlyModifiable"
+        },
+        {
+            "type": "kotlinx.coroutines.test.internal.TestMainDispatcherFactory",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        }
+    ]
+}

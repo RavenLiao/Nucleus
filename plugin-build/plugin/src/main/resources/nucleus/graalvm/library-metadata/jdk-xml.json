@@ -1,0 +1,34 @@
+{
+    "_meta": {
+        "description": "JDK XML: TransformerFactory, DocumentBuilderFactory"
+    },
+    "reflection": [
+        {
+            "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        }
+    ],
+    "resources": [
+        {
+            "module": "java.xml",
+            "glob": "com/sun/org/apache/xml/internal/serializer/*.properties"
+        },
+        {
+            "bundle": "com.sun.org.apache.xml.internal.serializer.XMLEntities"
+        }
+    ]
+}

@@ -1,0 +1,114 @@
+{
+    "_meta": {
+        "description": "JDK management: HotSpotDiagnosticMXBean, VMOption, VMManagement"
+    },
+    "reflection": [
+        {
+            "type": "com.sun.management.HotSpotDiagnosticMXBean",
+            "methods": [
+                {
+                    "name": "getVMOption",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.sun.management.VMOption",
+            "methods": [
+                {
+                    "name": "getValue",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "com.sun.management.VMOption$Origin",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "ATTACH_ON_DEMAND"
+                },
+                {
+                    "name": "CONFIG_FILE"
+                },
+                {
+                    "name": "DEFAULT"
+                },
+                {
+                    "name": "ENVIRON_VAR"
+                },
+                {
+                    "name": "ERGONOMIC"
+                },
+                {
+                    "name": "MANAGEMENT"
+                },
+                {
+                    "name": "OTHER"
+                },
+                {
+                    "name": "VM_CREATION"
+                }
+            ]
+        },
+        {
+            "type": "com.sun.management.internal.Flag",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Object",
+                        "boolean",
+                        "boolean",
+                        "com.sun.management.VMOption$Origin"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.management.ManagementFactory",
+            "methods": [
+                {
+                    "name": "getPlatformMXBean",
+                    "parameterTypes": [
+                        "java.lang.Class"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.management.VMManagementImpl",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "compTimeMonitoringSupport"
+                },
+                {
+                    "name": "currentThreadCpuTimeSupport"
+                },
+                {
+                    "name": "objectMonitorUsageSupport"
+                },
+                {
+                    "name": "otherThreadCpuTimeSupport"
+                },
+                {
+                    "name": "remoteDiagnosticCommandsSupport"
+                },
+                {
+                    "name": "synchronizerUsageSupport"
+                },
+                {
+                    "name": "threadAllocatedMemorySupport"
+                },
+                {
+                    "name": "threadContentionMonitoringSupport"
+                }
+            ]
+        }
+    ]
+}

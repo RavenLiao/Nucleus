@@ -1,0 +1,28 @@
+{
+    "_meta": {
+        "description": "JDK text resources, CLDR calendar/timezone bundles"
+    },
+    "reflection": [
+        {
+            "type": "sun.text.resources.FormatData"
+        },
+        {
+            "type": "sun.text.resources.JavaTimeSupplementary"
+        },
+        {
+            "type": "sun.text.resources.cldr.FormatData"
+        },
+        {
+            "type": "sun.util.resources.cldr.CalendarData"
+        },
+        {
+            "type": "sun.util.resources.cldr.TimeZoneNames"
+        },
+        {
+            "type": "sun.util.resources.cldr.TimeZoneNames_en"
+        },
+        {
+            "type": "sun.util.resources.cldr.TimeZoneNames_en_US"
+        }
+    ]
+}

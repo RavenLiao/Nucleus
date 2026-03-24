@@ -1,0 +1,16 @@
+{
+    "_meta": {
+        "description": "Android SDK compat stubs (Build, Build.VERSION)",
+        "matchPackages": [
+            "android.os"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "android.os.Build"
+        },
+        {
+            "type": "android.os.Build$VERSION"
+        }
+    ]
+}

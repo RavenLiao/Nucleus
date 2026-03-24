@@ -1,0 +1,86 @@
+{
+    "_meta": {
+        "description": "JNA (Java Native Access) core JNI requirements",
+        "matchPackages": [
+            "com.sun.jna"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "java.lang.String",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allPublicConstructors": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Boolean",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Byte",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Character",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Short",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Integer",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Long",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Float",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "java.lang.Double",
+            "jniAccessible": true,
+            "allPublicMethods": true,
+            "allDeclaredFields": true
+        },
+        {
+            "type": "com.sun.jna.Pointer",
+            "allPublicMethods": true,
+            "allPublicConstructors": true
+        },
+        {
+            "type": "com.sun.jna.Structure",
+            "allPublicMethods": true
+        },
+        {
+            "type": "com.sun.jna.Callback",
+            "allPublicMethods": true
+        },
+        {
+            "type": "com.sun.jna.CallbackReference",
+            "allPublicMethods": true
+        },
+        {
+            "type": "com.sun.jna.Native",
+            "allPublicMethods": true
+        }
+    ]
+}

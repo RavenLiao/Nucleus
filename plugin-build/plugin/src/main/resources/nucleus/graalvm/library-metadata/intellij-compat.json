@@ -1,0 +1,13 @@
+{
+    "_meta": {
+        "description": "IntelliJ platform compat (Logger)",
+        "matchPackages": [
+            "com.intellij"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "com.intellij.openapi.diagnostic.Logger"
+        }
+    ]
+}

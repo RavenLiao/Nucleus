@@ -1,0 +1,576 @@
+{
+    "_meta": {
+        "description": "JDK core: primitives, wrappers, I/O, NIO, reflection, RMI, URL, collections, launcher"
+    },
+    "reflection": [
+        {
+            "type": "boolean[]",
+            "jniAccessible": true
+        },
+        {
+            "type": "byte[]",
+            "jniAccessible": true
+        },
+        {
+            "type": "byte[][]"
+        },
+        {
+            "type": "char[]"
+        },
+        {
+            "type": "java.io.InputStream"
+        },
+        {
+            "type": "java.io.OutputStream",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "flush",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "write",
+                    "parameterTypes": [
+                        "byte[]",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.io.PrintStream",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "println",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.io.Reader"
+        },
+        {
+            "type": "java.lang.Boolean",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "boolean"
+                    ]
+                },
+                {
+                    "name": "booleanValue",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getBoolean",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Byte",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "byte"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Character",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "char"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Class",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getComponentType",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Double",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "double"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Enum",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "name",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Float",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "float"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Integer",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Long",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "long"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Number"
+        },
+        {
+            "type": "java.lang.Object",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "toString",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.lang.RuntimeException",
+            "jniAccessible": true
+        },
+        {
+            "type": "java.lang.Short",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                },
+                {
+                    "name": "value"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "short"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.String",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "byte[]"
+                    ]
+                },
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "byte[]",
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "getBytes",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getBytes",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "toCharArray",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "toLowerCase",
+                    "parameterTypes": [
+                        "java.util.Locale"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.String[]"
+        },
+        {
+            "type": "java.lang.Throwable",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "printStackTrace",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "toString",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.lang.Void",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "TYPE"
+                }
+            ]
+        },
+        {
+            "type": "java.lang.foreign.MemorySegment[]"
+        },
+        {
+            "type": "java.lang.invoke.MethodHandle"
+        },
+        {
+            "type": "java.lang.invoke.MethodHandles"
+        },
+        {
+            "type": "java.lang.invoke.MethodHandles$Lookup"
+        },
+        {
+            "type": "java.lang.invoke.MethodType"
+        },
+        {
+            "type": "java.lang.reflect.Method",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getParameterTypes",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getReturnType",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "isDefault",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.net.StandardSocketOptions"
+        },
+        {
+            "type": "java.net.URL"
+        },
+        {
+            "type": "java.nio.Buffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "position",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.ByteBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.CharBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.DoubleBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.FloatBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.IntBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.LongBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.ShortBuffer",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "array",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "arrayOffset",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.nio.file.Files"
+        },
+        {
+            "type": "java.rmi.MarshalledObject"
+        },
+        {
+            "type": "java.rmi.Remote"
+        },
+        {
+            "type": "java.util.ArrayList",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                },
+                {
+                    "name": "add",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.HashMap",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "containsKey",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                },
+                {
+                    "name": "put",
+                    "parameterTypes": [
+                        "java.lang.Object",
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.Iterator",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "hasNext",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "next",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": "java.util.List"
+        },
+        {
+            "type": "java.util.Locale",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "forLanguageTag",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.Locale[]"
+        },
+        {
+            "type": "java.util.concurrent.ScheduledThreadPoolExecutor"
+        },
+        {
+            "type": "sun.launcher.LauncherHelper",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "isStaticMain"
+                },
+                {
+                    "name": "noArgMain"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "getApplicationClass",
+                    "parameterTypes": []
+                }
+            ]
+        }
+    ],
+    "resources": [
+        {
+            "bundle": "sun.util.logging.resources.logging"
+        },
+        {
+            "module": "java.base",
+            "glob": "jdk/internal/icu/impl/data/icudt*/*.nrm"
+        },
+        {
+            "module": "java.logging",
+            "glob": "sun/util/logging/resources/*.properties"
+        }
+    ]
+}

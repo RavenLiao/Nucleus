@@ -1,0 +1,13 @@
+{
+    "_meta": {
+        "description": "kotlinx.io buffer tracking",
+        "matchPackages": [
+            "kotlinx.io"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "kotlinx.io.RefCountingCopyTracker"
+        }
+    ]
+}

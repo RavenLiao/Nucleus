@@ -1,0 +1,33 @@
+{
+    "_meta": {
+        "description": "Compose Desktop UI: ComposeWindow, ComposeDialog, DnD"
+    },
+    "reflection": [
+        {
+            "type": "androidx.compose.ui.awt.ComposeDialog"
+        },
+        {
+            "type": "androidx.compose.ui.awt.ComposeWindow"
+        },
+        {
+            "type": "androidx.compose.ui.awt.ComposeWindowPanel"
+        },
+        {
+            "type": "androidx.compose.ui.awt.JLayeredPaneWithTransparencyHack"
+        },
+        {
+            "type": "androidx.compose.ui.draganddrop.DragAndDropEvent",
+            "fields": [
+                {
+                    "name": "nativeEvent"
+                }
+            ]
+        },
+        {
+            "type": "androidx.compose.ui.scene.ComposeSceneMediator$InvisibleComponent"
+        },
+        {
+            "type": "androidx.compose.ui.scene.skia.WindowSkiaLayerComponent$contentComponent$1"
+        }
+    ]
+}

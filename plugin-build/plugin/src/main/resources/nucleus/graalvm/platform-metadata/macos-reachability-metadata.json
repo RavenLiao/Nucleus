@@ -787,6 +787,12 @@
             "jniAccessible": true,
             "methods": [
                 {
+                    "name": "deliverKeyEvent",
+                    "parameterTypes": [
+                        "sun.lwawt.macosx.NSEvent"
+                    ]
+                },
+                {
                     "name": "deliverMouseEvent",
                     "parameterTypes": [
                         "sun.lwawt.macosx.NSEvent"
@@ -900,6 +906,16 @@
                         "double",
                         "int"
                     ]
+                },
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "short",
+                        "java.lang.String",
+                        "java.lang.String"
+                    ]
                 }
             ]
         },
@@ -935,6 +951,10 @@
     "resources": [
         {
             "bundle": "com.apple.laf.resources.aqua"
+        },
+        {
+            "module": "java.desktop",
+            "glob": "com/apple/laf/resources/*.properties"
         },
         {
             "bundle": "sun.awt.resources.awtosx"

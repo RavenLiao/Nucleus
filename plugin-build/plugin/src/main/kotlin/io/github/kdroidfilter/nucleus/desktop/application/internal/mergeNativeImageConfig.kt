@@ -219,6 +219,7 @@ internal fun deduplicateAgainstLibraryMetadata(
     targetDir: File,
     platformName: String? = null,
     mainClass: String? = null,
+    extraMetadataDirs: List<File> = emptyList(),
 ) {
     val targetFile = File(targetDir, "reachability-metadata.json")
     if (!targetFile.exists()) return
@@ -275,6 +276,19 @@ internal fun deduplicateAgainstLibraryMetadata(
         if (stream != null) {
             val text = stream.bufferedReader().use { it.readText() }
             collectLibraryMetadata(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+        }
+    }
+
+    // Include extra metadata directories (Oracle repo, static analysis, etc.)
+    for (dir in extraMetadataDirs) {
+        if (!dir.isDirectory) continue
+        val metadataFile = File(dir, "reachability-metadata.json")
+        if (metadataFile.exists()) {
+            try {
+                collectLibraryMetadata(slurper, metadataFile.readText(), libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+            } catch (_: Exception) {
+                // Skip unreadable metadata files
+            }
         }
     }
 
