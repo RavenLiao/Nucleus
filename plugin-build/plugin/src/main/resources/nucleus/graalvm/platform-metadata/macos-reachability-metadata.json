@@ -787,6 +787,12 @@
             "jniAccessible": true,
             "methods": [
                 {
+                    "name": "deliverKeyEvent",
+                    "parameterTypes": [
+                        "sun.lwawt.macosx.NSEvent"
+                    ]
+                },
+                {
                     "name": "deliverMouseEvent",
                     "parameterTypes": [
                         "sun.lwawt.macosx.NSEvent"
@@ -899,6 +905,16 @@
                         "double",
                         "double",
                         "int"
+                    ]
+                },
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "short",
+                        "java.lang.String",
+                        "java.lang.String"
                     ]
                 }
             ]

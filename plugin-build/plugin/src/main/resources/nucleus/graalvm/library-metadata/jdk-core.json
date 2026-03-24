@@ -249,6 +249,33 @@
             "jniAccessible": true,
             "methods": [
                 {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "byte[]"
+                    ]
+                },
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "byte[]",
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "getBytes",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "getBytes",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "toCharArray",
+                    "parameterTypes": []
+                },
+                {
                     "name": "toLowerCase",
                     "parameterTypes": [
                         "java.util.Locale"
@@ -442,6 +469,10 @@
             "type": "java.util.ArrayList",
             "jniAccessible": true,
             "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                },
                 {
                     "name": "<init>",
                     "parameterTypes": [
