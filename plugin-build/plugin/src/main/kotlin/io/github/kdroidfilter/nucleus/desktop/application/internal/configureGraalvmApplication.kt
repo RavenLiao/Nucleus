@@ -459,6 +459,11 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
 
             executable = nativeImageExe.get()
 
+            // Control the minos in LC_BUILD_VERSION at link time
+            if (currentOS == OS.MacOS) {
+                environment("MACOSX_DEPLOYMENT_TARGET", graalvm.macOS.minimumSystemVersion.get())
+            }
+
             doFirst {
                 outputDir.mkdirs()
             }
@@ -717,13 +722,46 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             commandLine("bash", "-c", "strip -x '${macosDir.get().asFile.absolutePath}'/*.dylib")
         }
 
+    // Patch LC_BUILD_VERSION on all Mach-O binaries and dylibs so that:
+    // - minos matches minimumSystemVersion (e.g. 12.0) for backward compatibility
+    // - sdk matches macOsSdkVersion (e.g. 26.0) to enable Liquid Glass
+    val patchMinVersion = graalvm.macOS.minimumSystemVersion
+    val patchSdkVersion = graalvm.macOS.macOsSdkVersion
+    val patchBuildVersion =
+        tasks.register<DefaultTask>(
+            taskNameAction = "patch",
+            taskNameObject = "graalvmBuildVersion",
+        ) {
+            description = "Patch LC_BUILD_VERSION on native binary and dylibs via vtool"
+            dependsOn(copyBinary, stripDylibs, copyJawtToLib, copySkikoLib)
+
+            inputs.property("minVersion", patchMinVersion)
+            inputs.property("sdkVersion", patchSdkVersion)
+
+            doLast {
+                val minVer = patchMinVersion.get()
+                val sdkVer = patchSdkVersion.get()
+                val macosDir = appBundleDir.get().dir("MacOS").asFile
+                val libDir = appBundleDir.get().dir("MacOS/lib").asFile
+
+                // Patch all Mach-O files: main binary + dylibs in MacOS/ and MacOS/lib/
+                sequenceOf(macosDir, libDir)
+                    .filter { it.isDirectory }
+                    .flatMap { dir -> dir.listFiles()?.asSequence() ?: emptySequence() }
+                    .filter { it.isFile && (it.extension == "dylib" || it.canExecute()) }
+                    .forEach { file ->
+                        patchMachOBuildVersion(file, minVer, sdkVer, logger)
+                    }
+            }
+        }
+
     val codesignDylibs =
         tasks.register<Exec>(
             taskNameAction = "codesign",
             taskNameObject = "graalvmDylibs",
         ) {
             description = "Re-sign dylibs after stripping (ad-hoc)"
-            dependsOn(stripDylibs)
+            dependsOn(patchBuildVersion)
             val macosDir = appBundleDir.map { it.dir("MacOS") }
             commandLine("bash", "-c", "codesign --force --sign - '${macosDir.get().asFile.absolutePath}'/*.dylib")
         }
@@ -734,7 +772,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             taskNameObject = "graalvmRpath",
         ) {
             description = "Add @executable_path rpath to native image"
-            dependsOn(copyBinary)
+            dependsOn(patchBuildVersion)
             val binary = appBundleDir.map { it.file("MacOS/${imageName.get()}") }
             commandLine("install_name_tool", "-add_rpath", "@executable_path/.", binary.get().asFile.absolutePath)
             isIgnoreExitValue = true
@@ -944,6 +982,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             copyJawtToLib,
             copySkikoLib,
             stripDylibs,
+            patchBuildVersion,
             codesignDylibs,
             codesignBundle,
             fixRpath,

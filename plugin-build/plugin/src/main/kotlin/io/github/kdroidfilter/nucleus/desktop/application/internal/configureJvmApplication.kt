@@ -915,13 +915,14 @@ private fun JvmApplicationContext.configureRunTask(
         val sdkVersion = app.nativeDistributions.macOS.macOsSdkVersion
         if (sdkVersion != null) {
             val javaHome = app.javaHome
+            val minVersion = app.nativeDistributions.macOS.minimumSystemVersion ?: "10.13"
             // Run via a patched copy of the java binary (like ComposeDarwinUi).
             // We can't change JavaExec.executable or javaLauncher due to Gradle 9.4
             // finalization/validation, so we run the process manually in doFirst
             // and skip the JavaExec action.
             exec.doFirst {
                 val je = it as JavaExec
-                val patchedJava = getOrCreatePatchedJvm(javaHome, sdkVersion, je.logger)
+                val patchedJava = getOrCreatePatchedJvm(javaHome, minVersion, sdkVersion, je.logger)
                 val cmd = mutableListOf(patchedJava)
                 je.jvmArgs?.let { cmd.addAll(it) }
                 cmd.add("-cp")
@@ -1075,6 +1076,7 @@ private fun sandboxingJvmArgs(resourcesPath: String): List<String> =
  */
 private fun getOrCreatePatchedJvm(
     javaHome: String,
+    minVersion: String,
     sdkVersion: String,
     logger: org.gradle.api.logging.Logger,
 ): String {
@@ -1095,10 +1097,11 @@ private fun getOrCreatePatchedJvm(
     val patched = java.io.File(cacheDir, "bin/java")
     val stampFile = java.io.File(cacheDir, ".source_hash")
 
-    // Include sdkVersion in the cache key so changing the DSL property invalidates the cache
+    // Include minVersion+sdkVersion in the cache key so changing DSL properties invalidates the cache
     val sourceHash =
         javaBin.inputStream().use { stream ->
             java.security.MessageDigest.getInstance("SHA-256").let { md ->
+                md.update(minVersion.toByteArray())
                 md.update(sdkVersion.toByteArray())
                 @Suppress("MagicNumber")
                 val buf = ByteArray(8192)
@@ -1113,7 +1116,7 @@ private fun getOrCreatePatchedJvm(
         return patched.absolutePath
     }
 
-    logger.lifecycle("Patching JVM binary for macOS SDK $sdkVersion (Liquid Glass)...")
+    logger.lifecycle("Patching JVM binary: minos=$minVersion sdk=$sdkVersion (Liquid Glass)...")
     cacheDir.resolve("bin").mkdirs()
 
     // Mirror JAVA_HOME/lib so @loader_path/../lib resolves correctly
@@ -1136,7 +1139,7 @@ private fun getOrCreatePatchedJvm(
             "vtool",
             "-set-build-version",
             "macos",
-            "11.0",
+            minVersion,
             sdkVersion,
             "-tool",
             "ld",

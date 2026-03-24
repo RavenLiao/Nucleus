@@ -47,6 +47,7 @@ abstract class GraalvmMacOSSettings
     ) {
         val cStubsSrc: RegularFileProperty = objects.fileProperty()
         val minimumSystemVersion: Property<String> = objects.notNullProperty("12.0")
+        val macOsSdkVersion: Property<String> = objects.notNullProperty("26.0")
     }
 
 /**

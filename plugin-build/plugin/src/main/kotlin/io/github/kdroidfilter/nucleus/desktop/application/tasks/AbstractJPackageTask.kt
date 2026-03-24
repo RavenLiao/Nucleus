@@ -595,9 +595,10 @@ abstract class AbstractJPackageTask
             // Patch the jpackage launcher's LC_BUILD_VERSION to claim the configured
             // macOS SDK version, enabling SDK-gated AppKit features (e.g. Liquid Glass).
             macOsSdkVersion.orNull?.let { sdkVersion ->
+                val minVersion = macMinimumSystemVersion.orNull ?: "10.13"
                 val launcher = appDir.resolve("Contents/MacOS/${packageName.get()}")
                 if (launcher.exists()) {
-                    patchMachOSdkVersion(launcher, sdkVersion)
+                    patchMachOSdkVersion(launcher, minVersion, sdkVersion)
                 }
             }
 
@@ -673,6 +674,7 @@ abstract class AbstractJPackageTask
 
         private fun patchMachOSdkVersion(
             binary: File,
+            minVersion: String,
             sdkVersion: String,
         ) {
             val vtool = File("/usr/bin/vtool")
@@ -683,21 +685,20 @@ abstract class AbstractJPackageTask
                 )
                 return
             }
-            logger.lifecycle("Patching ${binary.name} LC_BUILD_VERSION to macOS SDK $sdkVersion")
+            logger.lifecycle("Patching ${binary.name} LC_BUILD_VERSION: minos=$minVersion sdk=$sdkVersion")
             // Remove existing code signature (vtool cannot modify signed binaries)
             runExternalTool(
                 tool = File("/usr/bin/codesign"),
                 args = listOf("--remove-signature", binary.absolutePath),
                 checkExitCodeIsNormal = false,
             )
-            // Set build version: min deployment 11.0, SDK sdkVersion
             runExternalTool(
                 tool = vtool,
                 args =
                     listOf(
                         "-set-build-version",
                         "macos",
-                        "11.0",
+                        minVersion,
                         sdkVersion,
                         "-tool",
                         "ld",
