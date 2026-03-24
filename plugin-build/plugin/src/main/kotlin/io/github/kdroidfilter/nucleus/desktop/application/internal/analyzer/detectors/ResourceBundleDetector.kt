@@ -8,6 +8,9 @@ import org.objectweb.asm.Opcodes
 
 /**
  * Detects `ResourceBundle.getBundle("literal")` calls and produces resource bundle entries.
+ *
+ * Tracks string constants through local variable ASTORE/ALOAD pairs to handle
+ * patterns where the bundle name is stored in a variable before the getBundle call.
  */
 internal object ResourceBundleDetector {
 
@@ -24,10 +27,27 @@ internal object ResourceBundleDetector {
                     exceptions: Array<out String>?,
                 ): MethodVisitor =
                     object : MethodVisitor(Opcodes.ASM9) {
-                        private var lastStringConstant: String? = null
+                        private var stackString: String? = null
+                        private val localStrings = mutableMapOf<Int, String>()
 
                         override fun visitLdcInsn(value: Any?) {
-                            lastStringConstant = value as? String
+                            stackString = value as? String
+                        }
+
+                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
+                            when (opcode) {
+                                Opcodes.ASTORE -> {
+                                    val str = stackString
+                                    if (str != null) {
+                                        localStrings[varIndex] = str
+                                    }
+                                    stackString = null
+                                }
+                                Opcodes.ALOAD -> {
+                                    stackString = localStrings[varIndex]
+                                }
+                                else -> stackString = null
+                            }
                         }
 
                         override fun visitMethodInsn(
@@ -40,19 +60,17 @@ internal object ResourceBundleDetector {
                             if (opcode == Opcodes.INVOKESTATIC &&
                                 owner == "java/util/ResourceBundle" &&
                                 name == "getBundle" &&
-                                lastStringConstant != null
+                                stackString != null
                             ) {
-                                patterns.add(ResourcePattern(bundle = lastStringConstant))
+                                patterns.add(ResourcePattern(bundle = stackString))
                             }
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitInsn(opcode: Int) {
-                            lastStringConstant = null
-                        }
-
-                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
-                            lastStringConstant = null
+                            if (opcode != Opcodes.DUP && opcode != Opcodes.DUP2) {
+                                stackString = null
+                            }
                         }
 
                         override fun visitFieldInsn(
@@ -61,19 +79,19 @@ internal object ResourceBundleDetector {
                             name: String,
                             descriptor: String,
                         ) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitIntInsn(opcode: Int, operand: Int) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitTypeInsn(opcode: Int, type: String) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitJumpInsn(opcode: Int, label: org.objectweb.asm.Label) {
-                            lastStringConstant = null
+                            // Don't clear — conditional getBundle patterns
                         }
                     }
             },

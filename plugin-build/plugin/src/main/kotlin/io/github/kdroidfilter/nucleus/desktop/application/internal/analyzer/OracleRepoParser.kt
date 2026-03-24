@@ -12,7 +12,8 @@ import java.io.File
  */
 internal object OracleRepoParser {
 
-    private val slurper = JsonSlurper()
+    // Instantiate locally per call — JsonSlurper is not thread-safe
+    private fun slurper() = JsonSlurper()
 
     /**
      * Parses all config files in a metadata directory.
@@ -53,7 +54,7 @@ internal object OracleRepoParser {
     fun parseResourceConfig(file: File): Set<ResourcePattern> {
         val patterns = mutableSetOf<ResourcePattern>()
         @Suppress("UNCHECKED_CAST")
-        val root = slurper.parseText(file.readText()) as? Map<String, Any?> ?: return emptySet()
+        val root = slurper().parseText(file.readText()) as? Map<String, Any?> ?: return emptySet()
 
         // Handle old format: resources.includes
         @Suppress("UNCHECKED_CAST")
@@ -100,7 +101,7 @@ internal object OracleRepoParser {
      */
     fun parseReachabilityMetadata(file: File): AnalysisResult {
         @Suppress("UNCHECKED_CAST")
-        val root = slurper.parseText(file.readText()) as? Map<String, Any?> ?: return AnalysisResult()
+        val root = slurper().parseText(file.readText()) as? Map<String, Any?> ?: return AnalysisResult()
 
         @Suppress("UNCHECKED_CAST")
         val reflectionArray = root["reflection"] as? List<Map<String, Any?>> ?: emptyList()
@@ -166,7 +167,7 @@ internal object OracleRepoParser {
 
     @Suppress("UNCHECKED_CAST")
     private fun parseTypeArray(file: File): List<ParsedType> {
-        val array = slurper.parseText(file.readText()) as? List<Map<String, Any?>> ?: return emptyList()
+        val array = slurper().parseText(file.readText()) as? List<Map<String, Any?>> ?: return emptyList()
         return array.mapNotNull { map -> parseTypeMap(map).takeIf { it.name.isNotEmpty() } }
     }
 
