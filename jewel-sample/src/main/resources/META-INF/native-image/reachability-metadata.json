@@ -1,8 +1,9 @@
 {
-    "reflection": [
-        
-    ],
     "resources": [
+        {
+            "module": "java.desktop",
+            "glob": "com/apple/laf/resources/aqua_fr_IL.properties"
+        },
         {
             "glob": "messages/JewelIntUIBundle.properties"
         },
