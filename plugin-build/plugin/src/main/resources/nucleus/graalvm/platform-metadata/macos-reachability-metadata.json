@@ -112,7 +112,16 @@
             "jniAccessible": true
         },
         {
-            "type": "com.sun.jna.CallbackProxy"
+            "type": "com.sun.jna.CallbackProxy",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "callback",
+                    "parameterTypes": [
+                        "java.lang.Object[]"
+                    ]
+                }
+            ]
         },
         {
             "type": "com.sun.jna.CallbackReference",

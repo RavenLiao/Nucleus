@@ -1,5 +1,6 @@
 android-compat.json
 compose-ui.json
+filekit.json
 intellij-compat.json
 jdk-awt.json
 jdk-core.json

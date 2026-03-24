@@ -211,6 +211,9 @@
             "type": "java.lang.Number"
         },
         {
+            "type": "java.lang.Object[]"
+        },
+        {
             "type": "java.lang.Object",
             "jniAccessible": true,
             "methods": [
@@ -240,6 +243,18 @@
                     "name": "<init>",
                     "parameterTypes": [
                         "short"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.UnsatisfiedLinkError",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.lang.String"
                     ]
                 }
             ]

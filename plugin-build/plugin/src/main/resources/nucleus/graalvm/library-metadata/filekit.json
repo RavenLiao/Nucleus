@@ -1,0 +1,42 @@
+{
+    "_meta": {
+        "description": "FileKit file dialog library (VinceGlb)",
+        "matchPackages": [
+            "io.github.vinceglb.filekit"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.awt.AwtFileSaver$saveFile$2$dialog$2"
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.Foundation$initRunnableSupport$callback$1",
+            "methods": [
+                {
+                    "name": "callback",
+                    "parameterTypes": [
+                        "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.ID",
+                        "java.lang.String",
+                        "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.ID"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.ID",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
+            "type": {
+                "proxy": [
+                    "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.FoundationLibrary"
+                ]
+            }
+        }
+    ]
+}
