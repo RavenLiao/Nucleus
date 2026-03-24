@@ -198,7 +198,7 @@ internal object OracleRepoParser {
             allDeclaredFields = map["allDeclaredFields"] == true,
             allDeclaredMethods = map["allDeclaredMethods"] == true,
             allDeclaredConstructors = map["allDeclaredConstructors"] == true,
-            allPublicFields = map["allPublicFields"] == true || map["allPublicMethods"] == true,
+            allPublicFields = map["allPublicFields"] == true,
             allPublicMethods = map["allPublicMethods"] == true,
             allPublicConstructors = map["allPublicConstructors"] == true,
             unsafeAllocated = map["unsafeAllocated"] == true,

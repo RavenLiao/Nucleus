@@ -14,7 +14,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
-import org.gradle.work.DisableCachingByDefault
 import java.io.File
 
 /**
@@ -25,7 +24,6 @@ import java.io.File
  * The output directory contains a `reachability-metadata.json` file in the
  * standard GraalVM format, ready to be passed as `-H:ConfigurationFileDirectories=`.
  */
-@DisableCachingByDefault(because = "Output depends on classpath content which may change between builds")
 abstract class AnalyzeStaticMetadataTask : DefaultTask() {
 
     /** The runtime classpath JARs to analyze. */

@@ -126,12 +126,15 @@ internal object ClassForNameDetector {
                         }
 
                         override fun visitEnd() {
-                            // If this method calls any class loading method, add all candidate
-                            // class name literals as reflection entries (covers cases where
-                            // the string is loaded from elsewhere in the same method)
+                            // If this method has class loading calls with unresolved string args,
+                            // add candidate class names — but only those that weren't already
+                            // directly matched. Apply stricter validation to reduce false positives
+                            // from log messages or SQL queries that resemble FQCNs.
                             if (hasClassLoadingCall) {
                                 for (name in candidateClassNames) {
-                                    entries.add(ReflectionEntry(type = name))
+                                    if (isStrictClassName(name)) {
+                                        entries.add(ReflectionEntry(type = name))
+                                    }
                                 }
                             }
                         }
@@ -181,6 +184,7 @@ internal object ClassForNameDetector {
 
 /**
  * Basic validation that a string looks like a fully qualified class name.
+ * Used for direct Class.forName argument tracking.
  */
 internal fun isValidClassName(name: String): Boolean {
     if (name.isBlank() || name.length < 3) return false
@@ -190,5 +194,26 @@ internal fun isValidClassName(name: String): Boolean {
     val cleaned = name.removePrefix("[").removePrefix("L").removeSuffix(";")
     return cleaned.split('.').all { segment ->
         segment.isNotEmpty() && (segment[0].isJavaIdentifierStart() || segment[0] == '$')
+    }
+}
+
+/**
+ * Stricter validation for candidate class names used in the fallback `visitEnd()` path.
+ * Requires at least 2 dot-separated segments, all segments must be valid Java identifiers,
+ * and the string must not contain characters unusual in class names.
+ */
+private fun isStrictClassName(name: String): Boolean {
+    if (!isValidClassName(name)) return false
+    // Must have at least 2 dots (e.g., "com.example.ClassName")
+    val dotCount = name.count { it == '.' }
+    if (dotCount < 2) return false
+    // No characters that appear in sentences but not in class names
+    if (name.any { it in "=:;,!?(){}[]<>\"'@#%&*+/\\" }) return false
+    // Every segment must be a valid Java identifier (no numbers starting a segment, no hyphens)
+    val cleaned = name.removePrefix("[").removePrefix("L").removeSuffix(";")
+    return cleaned.split('.').all { segment ->
+        segment.isNotEmpty() &&
+            segment[0].isJavaIdentifierStart() &&
+            segment.all { ch -> ch.isJavaIdentifierPart() }
     }
 }

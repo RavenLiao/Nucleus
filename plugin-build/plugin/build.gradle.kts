@@ -207,7 +207,11 @@ tasks.withType<Test> {
     systemProperty("test.analysis.libraries", testAnalysisLibraries.asPath)
     systemProperty("test.oracle.repo.zip", testOracleRepo.singleFile.absolutePath)
     systemProperty("test.zayit.libraries", testZayitLibraries.asPath)
-    systemProperty("test.zayit.metadata.dir", "/Users/elie/IdeaProjects/Zayit/SeforimApp/src/main/resources-macos/META-INF/native-image")
+    // Zayit metadata dir: set via local property or env var, falls back to empty (tests use assumeTrue)
+    val zayitMetadataDir = providers.gradleProperty("test.zayit.metadata.dir")
+        .orElse(providers.environmentVariable("ZAYIT_METADATA_DIR"))
+        .orElse("")
+    systemProperty("test.zayit.metadata.dir", zayitMetadataDir.get())
 }
 
 java {

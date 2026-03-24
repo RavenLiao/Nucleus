@@ -134,10 +134,8 @@ internal object NativeMethodDetector {
                     signature: String?,
                     value: Any?,
                 ): FieldVisitor? {
-                    // Include non-private instance fields (native code accesses these via GetFieldID)
-                    if (access and Opcodes.ACC_PRIVATE == 0 ||
-                        access and Opcodes.ACC_STATIC == 0
-                    ) {
+                    // Include non-private fields (native code accesses these via GetFieldID/GetStaticFieldID)
+                    if (access and Opcodes.ACC_PRIVATE == 0) {
                         fields.add(name)
                     }
                     return null

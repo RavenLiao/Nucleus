@@ -31,6 +31,10 @@ internal object ProxyDetector {
                     object : MethodVisitor(Opcodes.ASM9) {
                         private val recentClasses = mutableListOf<String>()
 
+                        override fun visitCode() {
+                            recentClasses.clear()
+                        }
+
                         override fun visitLdcInsn(value: Any?) {
                             if (value is Type && value.sort == Type.OBJECT) {
                                 recentClasses.add(value.className)
@@ -53,13 +57,6 @@ internal object ProxyDetector {
                                 }
                             }
                             recentClasses.clear()
-                        }
-
-                        override fun visitInsn(opcode: Int) {
-                            // Don't clear on ANEWARRAY or similar — keep collecting
-                            if (opcode !in Opcodes.AASTORE..Opcodes.AASTORE) {
-                                // Only clear on unrelated instructions
-                            }
                         }
                     }
             },
