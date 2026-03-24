@@ -9,6 +9,12 @@ import org.objectweb.asm.Opcodes
 /**
  * Detects `getResource("literal")` and `getResourceAsStream("literal")` calls
  * and produces resource glob entries.
+ *
+ * Tracks string constants through local variable ASTORE/ALOAD pairs to handle:
+ * ```java
+ * String path = "/config/app.properties";
+ * this.getClass().getResourceAsStream(path);
+ * ```
  */
 internal object ResourceAccessDetector {
 
@@ -32,10 +38,27 @@ internal object ResourceAccessDetector {
                     exceptions: Array<out String>?,
                 ): MethodVisitor =
                     object : MethodVisitor(Opcodes.ASM9) {
-                        private var lastStringConstant: String? = null
+                        private var stackString: String? = null
+                        private val localStrings = mutableMapOf<Int, String>()
 
                         override fun visitLdcInsn(value: Any?) {
-                            lastStringConstant = value as? String
+                            stackString = value as? String
+                        }
+
+                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
+                            when (opcode) {
+                                Opcodes.ASTORE -> {
+                                    val str = stackString
+                                    if (str != null) {
+                                        localStrings[varIndex] = str
+                                    }
+                                    stackString = null
+                                }
+                                Opcodes.ALOAD -> {
+                                    stackString = localStrings[varIndex]
+                                }
+                                else -> stackString = null
+                            }
                         }
 
                         override fun visitMethodInsn(
@@ -48,22 +71,20 @@ internal object ResourceAccessDetector {
                             if (opcode == Opcodes.INVOKEVIRTUAL &&
                                 owner in RESOURCE_OWNERS &&
                                 name in RESOURCE_METHODS &&
-                                lastStringConstant != null
+                                stackString != null
                             ) {
-                                val path = normalizeResourcePath(lastStringConstant!!)
+                                val path = normalizeResourcePath(stackString!!)
                                 if (path.isNotEmpty()) {
                                     patterns.add(ResourcePattern(glob = path))
                                 }
                             }
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitInsn(opcode: Int) {
-                            lastStringConstant = null
-                        }
-
-                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
-                            lastStringConstant = null
+                            if (opcode != Opcodes.DUP && opcode != Opcodes.DUP2) {
+                                stackString = null
+                            }
                         }
 
                         override fun visitFieldInsn(
@@ -72,19 +93,19 @@ internal object ResourceAccessDetector {
                             name: String,
                             descriptor: String,
                         ) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitIntInsn(opcode: Int, operand: Int) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitTypeInsn(opcode: Int, type: String) {
-                            lastStringConstant = null
+                            stackString = null
                         }
 
                         override fun visitJumpInsn(opcode: Int, label: org.objectweb.asm.Label) {
-                            lastStringConstant = null
+                            // Don't clear — conditional resource access patterns
                         }
                     }
             },

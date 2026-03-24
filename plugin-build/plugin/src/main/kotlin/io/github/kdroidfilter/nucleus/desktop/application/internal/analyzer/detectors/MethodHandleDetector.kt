@@ -6,10 +6,22 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 
 /**
  * Detects `MethodHandles.Lookup.findVirtual/findStatic/findGetter/findSetter` calls
- * with string literal method/field names and produces reflection entries.
+ * with traceable target class and string literal method/field names.
+ *
+ * Typical bytecode pattern:
+ * ```
+ * LDC Type com/example/Foo     // target class
+ * LDC "methodName"             // member name
+ * ... MethodType args ...
+ * INVOKEVIRTUAL Lookup.findVirtual
+ * ```
+ *
+ * The detector tracks both the most recent class type (from `LDC Type`) and string
+ * constant to resolve the target class and member name.
  */
 internal object MethodHandleDetector {
 
@@ -39,11 +51,56 @@ internal object MethodHandleDetector {
                     exceptions: Array<out String>?,
                 ): MethodVisitor =
                     object : MethodVisitor(Opcodes.ASM9) {
+                        // Track the most recent class type from LDC (e.g., LDC Type com/example/Foo)
+                        private var lastClassType: String? = null
+                        // Track local variable slots that hold class types
+                        private val localClassTypes = mutableMapOf<Int, String>()
                         private var lastStringConstant: String? = null
+                        private val localStrings = mutableMapOf<Int, String>()
+
+                        override fun visitCode() {
+                            lastClassType = null
+                            localClassTypes.clear()
+                            lastStringConstant = null
+                            localStrings.clear()
+                        }
 
                         override fun visitLdcInsn(value: Any?) {
-                            if (value is String) {
-                                lastStringConstant = value
+                            when (value) {
+                                is Type -> {
+                                    if (value.sort == Type.OBJECT) {
+                                        lastClassType = value.className
+                                    }
+                                    lastStringConstant = null
+                                }
+                                is String -> {
+                                    lastStringConstant = value
+                                }
+                                else -> {
+                                    lastStringConstant = null
+                                }
+                            }
+                        }
+
+                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
+                            when (opcode) {
+                                Opcodes.ASTORE -> {
+                                    if (lastClassType != null) {
+                                        localClassTypes[varIndex] = lastClassType!!
+                                    }
+                                    if (lastStringConstant != null) {
+                                        localStrings[varIndex] = lastStringConstant!!
+                                    }
+                                    lastClassType = null
+                                    lastStringConstant = null
+                                }
+                                Opcodes.ALOAD -> {
+                                    lastClassType = localClassTypes[varIndex] ?: lastClassType
+                                    lastStringConstant = localStrings[varIndex]
+                                }
+                                else -> {
+                                    lastStringConstant = null
+                                }
                             }
                         }
 
@@ -57,23 +114,23 @@ internal object MethodHandleDetector {
                             if (opcode == Opcodes.INVOKEVIRTUAL &&
                                 owner == "java/lang/invoke/MethodHandles\$Lookup"
                             ) {
+                                val targetClass = lastClassType
                                 val memberName = lastStringConstant
-                                if (memberName != null) {
+
+                                if (targetClass != null) {
                                     when {
-                                        name in FIND_METHOD_NAMES -> {
-                                            // We can't easily determine the target class from bytecode
-                                            // Only record if we have a valid member name
+                                        name in FIND_METHOD_NAMES && memberName != null -> {
                                             entries.add(
                                                 ReflectionEntry(
-                                                    type = "?",
+                                                    type = targetClass,
                                                     methods = setOf(MethodSignature(memberName)),
                                                 ),
                                             )
                                         }
-                                        name in FIND_FIELD_NAMES -> {
+                                        name in FIND_FIELD_NAMES && memberName != null -> {
                                             entries.add(
                                                 ReflectionEntry(
-                                                    type = "?",
+                                                    type = targetClass,
                                                     fields = setOf(memberName),
                                                 ),
                                             )
@@ -81,7 +138,7 @@ internal object MethodHandleDetector {
                                         name == "findConstructor" -> {
                                             entries.add(
                                                 ReflectionEntry(
-                                                    type = "?",
+                                                    type = targetClass,
                                                     methods = setOf(MethodSignature("<init>")),
                                                 ),
                                             )
@@ -89,15 +146,14 @@ internal object MethodHandleDetector {
                                     }
                                 }
                             }
+                            lastClassType = null
                             lastStringConstant = null
                         }
 
                         override fun visitInsn(opcode: Int) {
-                            lastStringConstant = null
-                        }
-
-                        override fun visitVarInsn(opcode: Int, varIndex: Int) {
-                            lastStringConstant = null
+                            if (opcode != Opcodes.DUP && opcode != Opcodes.DUP2) {
+                                lastStringConstant = null
+                            }
                         }
 
                         override fun visitFieldInsn(
@@ -118,14 +174,13 @@ internal object MethodHandleDetector {
                         }
 
                         override fun visitJumpInsn(opcode: Int, label: org.objectweb.asm.Label) {
-                            lastStringConstant = null
+                            // Don't clear — conditional patterns
                         }
                     }
             },
             0,
         )
 
-        // Filter out entries with unknown target class
-        return entries.filter { it.type != "?" }.toSet()
+        return entries
     }
 }

@@ -53,10 +53,11 @@ internal data class AnalysisResult(
     val serviceLoaderEntries: Set<ReflectionEntry> = emptySet(),
 ) {
     /**
-     * All reflection entries including service loader implementations.
+     * All reflection entries including service loader implementations,
+     * merged by type so each type appears only once with combined methods/fields/flags.
      */
     val allReflectionEntries: Set<ReflectionEntry>
-        get() = reflectionEntries + serviceLoaderEntries
+        get() = mergeReflectionEntries(reflectionEntries + serviceLoaderEntries)
 
     /**
      * Merges this result with another.
@@ -69,3 +70,28 @@ internal data class AnalysisResult(
             serviceLoaderEntries = serviceLoaderEntries + other.serviceLoaderEntries,
         )
 }
+
+/**
+ * Merges reflection entries that share the same type into a single entry
+ * with combined methods, fields, and the union of boolean flags.
+ * This prevents duplicate type entries in the output JSON.
+ */
+internal fun mergeReflectionEntries(entries: Set<ReflectionEntry>): Set<ReflectionEntry> =
+    entries.groupBy { it.type }
+        .map { (_, group) ->
+            group.reduce { acc, e ->
+                ReflectionEntry(
+                    type = acc.type,
+                    allDeclaredFields = acc.allDeclaredFields || e.allDeclaredFields,
+                    allDeclaredMethods = acc.allDeclaredMethods || e.allDeclaredMethods,
+                    allDeclaredConstructors = acc.allDeclaredConstructors || e.allDeclaredConstructors,
+                    allPublicFields = acc.allPublicFields || e.allPublicFields,
+                    allPublicMethods = acc.allPublicMethods || e.allPublicMethods,
+                    allPublicConstructors = acc.allPublicConstructors || e.allPublicConstructors,
+                    unsafeAllocated = acc.unsafeAllocated || e.unsafeAllocated,
+                    methods = acc.methods + e.methods,
+                    fields = acc.fields + e.fields,
+                )
+            }
+        }
+        .toSet()
