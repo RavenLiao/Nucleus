@@ -7,12 +7,31 @@ import java.util.jar.JarFile
  * Scans JAR entries to detect resources that GraalVM native-image needs to include:
  * - Native libraries (.so, .dll, .dylib, .jnilib)
  * - Properties files at root or known paths (excluding META-INF)
- * - Text resources in analysis/NLP resource directories (stopwords, etc.)
+ * - Text resources in known framework resource directories (Lucene, ICU4J, etc.)
  */
 internal object JarResourceDetector {
     private val NATIVE_LIB_EXTENSIONS = setOf("so", "dll", "dylib", "jnilib", "a")
 
     private val RESOURCE_EXTENSIONS = setOf("properties", "txt", "xml", "json", "cfg", "conf")
+
+    // NLP/analysis directory names specific enough to avoid false positives
+    private val ANALYSIS_PATH_SEGMENTS =
+        arrayOf(
+            "/stopwords/",
+            "/dictionaries/",
+            "/snowball/",
+            "/hunspell/",
+            "/charfilter/",
+            "/stemmer/",
+        )
+
+    // Framework prefixes known to contain runtime-loaded resources
+    private val FRAMEWORK_RESOURCE_PREFIXES =
+        arrayOf(
+            "org/apache/lucene/",
+            "com/ibm/icu/impl/data/",
+            "opennlp/",
+        )
 
     fun detect(jarFile: JarFile): Set<ResourcePattern> {
         val patterns = mutableSetOf<ResourcePattern>()
@@ -42,7 +61,7 @@ internal object JarResourceDetector {
                     patterns.add(ResourcePattern(glob = name))
                 }
 
-                // Text/config resources in analysis directories (Lucene stopwords, etc.)
+                // Text/config resources in known framework or NLP analysis directories
                 ext in RESOURCE_EXTENSIONS && isAnalysisResourcePath(name) -> {
                     patterns.add(ResourcePattern(glob = name))
                 }
@@ -53,12 +72,15 @@ internal object JarResourceDetector {
     }
 
     /**
-     * Heuristic: resources in paths that look like NLP/analysis framework resource directories.
+     * Checks whether the path belongs to a known framework resource directory
+     * or contains a specific NLP/analysis directory segment.
+     *
+     * Avoids generic substrings like "/resources/" or "/data/" that would match
+     * arbitrary Java package paths (e.g. `com/company/data/Service.xml`).
      */
-    private fun isAnalysisResourcePath(name: String): Boolean =
-        name.contains("/analysis/") ||
-            name.contains("/resources/") ||
-            name.contains("/data/") ||
-            name.contains("/dictionaries/") ||
-            name.contains("/stopwords/")
+    private fun isAnalysisResourcePath(name: String): Boolean {
+        if (FRAMEWORK_RESOURCE_PREFIXES.any { name.startsWith(it) }) return true
+        if (ANALYSIS_PATH_SEGMENTS.any { name.contains(it) }) return true
+        return false
+    }
 }
