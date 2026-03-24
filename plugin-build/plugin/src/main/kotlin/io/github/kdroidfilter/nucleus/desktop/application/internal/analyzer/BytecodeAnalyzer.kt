@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer
 
 import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.detectors.ClassForNameDetector
+import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.detectors.JarResourceDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.detectors.KotlinSerializableDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.detectors.MethodHandleDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.detectors.NativeMethodDetector
@@ -30,6 +31,9 @@ internal object BytecodeAnalyzer {
         val resourcePatterns = mutableSetOf<ResourcePattern>()
         val serviceLoaderEntries = mutableSetOf<ReflectionEntry>()
         val jniReferencedTypes = mutableSetOf<String>()
+        val jniFieldTypes = mutableSetOf<String>()
+        // Index: internal class name (com/foo/Bar) -> class bytes, for second-pass JNI callback resolution
+        val classBytesIndex = mutableMapOf<String, ByteArray>()
 
         JarFile(jarPath).use { jar ->
             // Service loader detection (scans META-INF/services/)
@@ -37,7 +41,10 @@ internal object BytecodeAnalyzer {
             serviceLoaderEntries.addAll(serviceResult.reflectionEntries)
             resourcePatterns.addAll(serviceResult.resourcePatterns)
 
-            // Scan all .class files
+            // JAR resource detection (native libs, properties, analysis resources)
+            resourcePatterns.addAll(JarResourceDetector.detect(jar))
+
+            // Pass 1: scan all .class files
             for (entry in jar.entries()) {
                 if (!entry.name.endsWith(".class") || entry.name.startsWith("META-INF/")) continue
 
@@ -47,32 +54,26 @@ internal object BytecodeAnalyzer {
                     continue
                 }
 
-                // Native method detection -> JNI entries + referenced types
+                // Index by internal class name for second-pass lookup
+                val internalName = entry.name.removeSuffix(".class")
+                classBytesIndex[internalName] = classBytes
+
+                // Native method detection -> JNI entries + referenced types + field types
                 val nativeResult = NativeMethodDetector.detectWithReferences(classBytes)
                 jniEntries.addAll(nativeResult.jniEntries)
                 jniReferencedTypes.addAll(nativeResult.referencedTypes)
+                jniFieldTypes.addAll(nativeResult.jniClassFieldTypes)
 
-                // Class.forName detection -> reflection entries
-                reflectionEntries.addAll(ClassForNameDetector.detect(classBytes))
-
-                // Reflection API detection (getMethod, getDeclaredField, .class, etc.)
-                reflectionEntries.addAll(ReflectionApiDetector.detect(classBytes))
-
-                // ResourceBundle.getBundle detection
-                resourcePatterns.addAll(ResourceBundleDetector.detect(classBytes))
-
-                // getResource/getResourceAsStream detection
-                resourcePatterns.addAll(ResourceAccessDetector.detect(classBytes))
-
-                // MethodHandle lookup detection
-                reflectionEntries.addAll(MethodHandleDetector.detect(classBytes))
-
-                // Proxy.newProxyInstance detection
-                reflectionEntries.addAll(ProxyDetector.detect(classBytes))
+                analyzeClassBytes(classBytes, jniEntries, reflectionEntries, resourcePatterns, jniReferencedTypes)
             }
+
+            // Pass 2: resolve JNI callback types — both field types AND parameter/return types
+            // of native methods are potential callback targets called from native code
+            val allJniCallbackCandidates = jniFieldTypes + jniReferencedTypes
+            resolveJniCallbackTypes(allJniCallbackCandidates, classBytesIndex, jniEntries)
         }
 
-        // Add JNI-referenced types (from native method signatures) as JNI entries
+        // Add remaining JNI-referenced types that weren't resolved as callbacks
         for (refType in jniReferencedTypes) {
             if (jniEntries.none { it.type == refType }) {
                 jniEntries.add(JniEntry(type = refType))
@@ -98,6 +99,8 @@ internal object BytecodeAnalyzer {
         val resourcePatterns = mutableSetOf<ResourcePattern>()
         val serviceLoaderEntries = mutableSetOf<ReflectionEntry>()
         val jniReferencedTypes = mutableSetOf<String>()
+        val jniFieldTypes = mutableSetOf<String>()
+        val classBytesIndex = mutableMapOf<String, ByteArray>()
 
         // Scan META-INF/services/ in class directories
         val servicesDir = File(dir, "META-INF/services")
@@ -119,7 +122,7 @@ internal object BytecodeAnalyzer {
             }
         }
 
-        // Scan all .class files recursively
+        // Pass 1: scan all .class files recursively
         dir.walkTopDown()
             .filter { it.isFile && it.extension == "class" }
             .forEach { classFile ->
@@ -128,8 +131,21 @@ internal object BytecodeAnalyzer {
                 } catch (_: Exception) {
                     return@forEach
                 }
+
+                val relativePath = classFile.relativeTo(dir).path.removeSuffix(".class")
+                classBytesIndex[relativePath] = classBytes
+
+                val nativeResult = NativeMethodDetector.detectWithReferences(classBytes)
+                jniEntries.addAll(nativeResult.jniEntries)
+                jniReferencedTypes.addAll(nativeResult.referencedTypes)
+                jniFieldTypes.addAll(nativeResult.jniClassFieldTypes)
+
                 analyzeClassBytes(classBytes, jniEntries, reflectionEntries, resourcePatterns, jniReferencedTypes)
             }
+
+        // Pass 2: resolve JNI callback types
+        val allJniCallbackCandidates = jniFieldTypes + jniReferencedTypes
+        resolveJniCallbackTypes(allJniCallbackCandidates, classBytesIndex, jniEntries)
 
         for (refType in jniReferencedTypes) {
             if (jniEntries.none { it.type == refType }) {
@@ -171,16 +187,41 @@ internal object BytecodeAnalyzer {
         return merged
     }
 
+    /**
+     * Resolves JNI callback types: for each type found as a field in a JNI class,
+     * scan that class to extract all non-private methods/fields as JNI-accessible entries.
+     */
+    private fun resolveJniCallbackTypes(
+        jniFieldTypes: Set<String>,
+        classBytesIndex: Map<String, ByteArray>,
+        jniEntries: MutableSet<JniEntry>,
+    ) {
+        for (typeName in jniFieldTypes) {
+            // Skip JDK types and types already fully covered
+            if (typeName.startsWith("java.") || typeName.startsWith("javax.")) continue
+            if (jniEntries.any { it.type == typeName && it.methods.isNotEmpty() }) continue
+
+            // Look up the class bytes by internal name (com/foo/Bar)
+            val internalName = typeName.replace('.', '/')
+            val classBytes = classBytesIndex[internalName] ?: continue
+
+            val callbackEntry = NativeMethodDetector.extractJniCallbackEntry(classBytes)
+            if (callbackEntry != null && (callbackEntry.methods.isNotEmpty() || callbackEntry.fields.isNotEmpty())) {
+                // Remove any existing bare entry and replace with the detailed one
+                jniEntries.removeAll { it.type == typeName }
+                jniEntries.add(callbackEntry)
+            }
+        }
+    }
+
     private fun analyzeClassBytes(
         classBytes: ByteArray,
-        jniEntries: MutableSet<JniEntry>,
+        @Suppress("UNUSED_PARAMETER") jniEntries: MutableSet<JniEntry>,
         reflectionEntries: MutableSet<ReflectionEntry>,
         resourcePatterns: MutableSet<ResourcePattern>,
-        jniReferencedTypes: MutableSet<String>,
+        @Suppress("UNUSED_PARAMETER") jniReferencedTypes: MutableSet<String>,
     ) {
-        val nativeResult = NativeMethodDetector.detectWithReferences(classBytes)
-        jniEntries.addAll(nativeResult.jniEntries)
-        jniReferencedTypes.addAll(nativeResult.referencedTypes)
+        // Note: NativeMethodDetector is now called separately by the caller (pass 1)
         reflectionEntries.addAll(ClassForNameDetector.detect(classBytes))
         reflectionEntries.addAll(ReflectionApiDetector.detect(classBytes))
         resourcePatterns.addAll(ResourceBundleDetector.detect(classBytes))

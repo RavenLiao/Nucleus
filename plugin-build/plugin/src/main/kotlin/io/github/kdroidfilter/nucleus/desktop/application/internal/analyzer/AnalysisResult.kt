@@ -23,6 +23,7 @@ internal data class JniEntry(
     val type: String,
     val methods: Set<MethodSignature> = emptySet(),
     val fields: Set<String> = emptySet(),
+    val jniAccessible: Boolean = false,
 )
 
 /**

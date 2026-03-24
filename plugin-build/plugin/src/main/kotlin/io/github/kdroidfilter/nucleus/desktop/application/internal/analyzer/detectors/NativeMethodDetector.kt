@@ -4,6 +4,7 @@ import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.JniE
 import io.github.kdroidfilter.nucleus.desktop.application.internal.analyzer.MethodSignature
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
@@ -19,6 +20,8 @@ internal object NativeMethodDetector {
     data class NativeMethodResult(
         val jniEntries: Set<JniEntry>,
         val referencedTypes: Set<String>,
+        /** Field types of classes that have native methods (potential JNI callback types). */
+        val jniClassFieldTypes: Set<String>,
     )
 
     fun detect(classBytes: ByteArray): Set<JniEntry> =
@@ -27,6 +30,8 @@ internal object NativeMethodDetector {
     fun detectWithReferences(classBytes: ByteArray): NativeMethodResult {
         val entries = mutableMapOf<String, MutableSet<MethodSignature>>()
         val referencedTypes = mutableSetOf<String>()
+        val fieldTypes = mutableSetOf<String>()
+        var hasNativeMethods = false
         val reader = ClassReader(classBytes)
         reader.accept(
             object : ClassVisitor(Opcodes.ASM9) {
@@ -43,6 +48,19 @@ internal object NativeMethodDetector {
                     className = name.replace('/', '.')
                 }
 
+                override fun visitField(
+                    access: Int,
+                    name: String,
+                    descriptor: String,
+                    signature: String?,
+                    value: Any?,
+                ): FieldVisitor? {
+                    // Collect field types — we'll use them if this class has native methods
+                    val fieldType = Type.getType(descriptor)
+                    collectObjectTypes(fieldType, fieldTypes)
+                    return null
+                }
+
                 override fun visitMethod(
                     access: Int,
                     name: String,
@@ -51,6 +69,7 @@ internal object NativeMethodDetector {
                     exceptions: Array<out String>?,
                 ): MethodVisitor? {
                     if (access and Opcodes.ACC_NATIVE != 0) {
+                        hasNativeMethods = true
                         val argTypes = Type.getArgumentTypes(descriptor)
                         val retType = Type.getReturnType(descriptor)
                         val paramTypes = argTypes.map { asmTypeToJavaName(it) }
@@ -59,7 +78,6 @@ internal object NativeMethodDetector {
                             .getOrPut(className) { mutableSetOf() }
                             .add(MethodSignature(name, paramTypes))
 
-                        // Extract all object types from the signature — these are JNI-accessible
                         for (t in argTypes) {
                             collectObjectTypes(t, referencedTypes)
                         }
@@ -71,8 +89,75 @@ internal object NativeMethodDetector {
             ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG,
         )
 
+        // Only report field types if this class actually has native methods
+        val jniFieldTypes = if (hasNativeMethods) fieldTypes else emptySet()
+
         val jniEntries = entries.map { (type, methods) -> JniEntry(type = type, methods = methods) }.toSet()
-        return NativeMethodResult(jniEntries, referencedTypes)
+        return NativeMethodResult(jniEntries, referencedTypes, jniFieldTypes)
+    }
+
+    /**
+     * Scans a class to extract all non-private methods and fields, producing a JNI entry
+     * with `jniAccessible` semantics. Used for types referenced as fields in JNI classes
+     * (these are callback types called from native code).
+     */
+    fun extractJniCallbackEntry(classBytes: ByteArray): JniEntry? {
+        var className = ""
+        val methods = mutableSetOf<MethodSignature>()
+        val fields = mutableSetOf<String>()
+
+        val reader = ClassReader(classBytes)
+        reader.accept(
+            object : ClassVisitor(Opcodes.ASM9) {
+                override fun visit(
+                    version: Int,
+                    access: Int,
+                    name: String,
+                    signature: String?,
+                    superName: String?,
+                    interfaces: Array<out String>?,
+                ) {
+                    className = name.replace('/', '.')
+                }
+
+                override fun visitField(
+                    access: Int,
+                    name: String,
+                    descriptor: String,
+                    signature: String?,
+                    value: Any?,
+                ): FieldVisitor? {
+                    // Include non-private instance fields (native code accesses these via GetFieldID)
+                    if (access and Opcodes.ACC_PRIVATE == 0 ||
+                        access and Opcodes.ACC_STATIC == 0
+                    ) {
+                        fields.add(name)
+                    }
+                    return null
+                }
+
+                override fun visitMethod(
+                    access: Int,
+                    name: String,
+                    descriptor: String,
+                    signature: String?,
+                    exceptions: Array<out String>?,
+                ): MethodVisitor? {
+                    // Include non-private non-static methods (native code calls these via CallMethod)
+                    // Also include <init> constructors
+                    if (name == "<clinit>") return null
+                    if (access and Opcodes.ACC_PRIVATE != 0 && name != "<init>") return null
+
+                    val paramTypes = Type.getArgumentTypes(descriptor).map { asmTypeToJavaName(it) }
+                    methods.add(MethodSignature(name, paramTypes))
+                    return null
+                }
+            },
+            ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG,
+        )
+
+        if (className.isEmpty()) return null
+        return JniEntry(type = className, methods = methods, fields = fields, jniAccessible = true)
     }
 
     /**
@@ -82,7 +167,6 @@ internal object NativeMethodDetector {
         when (type.sort) {
             Type.OBJECT -> into.add(type.className)
             Type.ARRAY -> collectObjectTypes(type.elementType, into)
-            // Primitive types are not needed
         }
     }
 }

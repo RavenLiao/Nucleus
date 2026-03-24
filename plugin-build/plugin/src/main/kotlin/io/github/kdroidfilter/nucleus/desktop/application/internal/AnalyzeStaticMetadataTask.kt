@@ -126,6 +126,7 @@ private fun ReflectionEntry.toJsonMap(): Map<String, Any?> {
 
 private fun JniEntry.toJsonMap(): Map<String, Any?> {
     val map = mutableMapOf<String, Any?>("type" to type)
+    if (jniAccessible) map["jniAccessible"] = true
     if (methods.isNotEmpty()) {
         map["methods"] = methods.sortedBy { it.name }.map { it.toJsonMap() }
     }
