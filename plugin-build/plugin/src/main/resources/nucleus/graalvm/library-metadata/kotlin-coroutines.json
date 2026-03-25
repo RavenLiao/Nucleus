@@ -7,6 +7,9 @@
             "type": "kotlin.SafePublicationLazyImpl"
         },
         {
+            "type": "kotlinx.atomicfu.AtomicLong"
+        },
+        {
             "type": "kotlin.coroutines.SafeContinuation"
         },
         {

@@ -2115,6 +2115,16 @@
             "type": "sun.awt.windows.WCanvasPeer"
         },
         {
+            "type": "sun.awt.windows.WClipboard",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "lostSelectionOwnershipImpl",
+                    "parameterTypes": []
+                }
+            ]
+        },
+        {
             "type": "sun.awt.windows.WComponentPeer",
             "jniAccessible": true,
             "fields": [

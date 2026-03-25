@@ -28,6 +28,9 @@
         },
         {
             "type": "androidx.compose.ui.scene.skia.WindowSkiaLayerComponent$contentComponent$1"
+        },
+        {
+            "type": "androidx.compose.ui.awt.SwingInteropViewGroup"
         }
     ]
 }

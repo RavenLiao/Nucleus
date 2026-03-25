@@ -48,6 +48,9 @@
         },
         {
             "type": "io.ktor.utils.io.pool.DefaultPool"
+        },
+        {
+            "type": "io.ktor.client.plugins.logging.HttpClientCallLogger"
         }
     ]
 }

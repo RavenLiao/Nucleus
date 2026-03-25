@@ -1,5 +1,9 @@
 android-compat.json
+coil.json
+compose-mediaplayer.json
 compose-ui.json
+compose-webview-wry.json
+composetray.json
 filekit.json
 intellij-compat.json
 jdk-awt.json
@@ -11,9 +15,13 @@ jdk-management.json
 jdk-text-resources.json
 jdk-xml.json
 jna.json
+jna-platform-win32.json
+knotify.json
 kotlin-coroutines.json
 kotlinx-io.json
 ktor.json
+platformtools.json
 sentry.json
 skia-skiko.json
 slf4j.json
+sqlite-jdbc.json

@@ -37,6 +37,68 @@
                     "io.github.vinceglb.filekit.dialogs.platform.mac.foundation.FoundationLibrary"
                 ]
             }
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.util.GuidFixed$CLSID",
+            "allDeclaredFields": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.util.GuidFixed$IID",
+            "allDeclaredFields": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.ModalWindow",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.FileDialog",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.FileOpenDialog",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.FileSaveDialog",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.FileOperation",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.ShellItem",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.ShellItemArray",
+            "allDeclaredMethods": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.ShTypes$COMDLG_FILTERSPEC",
+            "allDeclaredFields": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.windows.jna.ShTypes$PROPERTYKEY",
+            "allDeclaredFields": true,
+            "allDeclaredConstructors": true
+        },
+        {
+            "type": {
+                "proxy": [
+                    "io.github.vinceglb.filekit.dialogs.platform.windows.jna.Shell32"
+                ]
+            }
         }
     ]
 }
