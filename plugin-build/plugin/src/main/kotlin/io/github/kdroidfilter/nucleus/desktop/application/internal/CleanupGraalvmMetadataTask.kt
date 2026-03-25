@@ -72,6 +72,7 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
 
         // Collect baseline entries from all managed sources
         val libraryEntries = mutableMapOf<String, MutableMap<String, MutableMap<String, Any?>>>()
+        val libraryProxies = mutableSetOf<String>()
         val libraryResourceJsons = mutableSetOf<String>()
         val libraryResourceGlobs = mutableListOf<Pair<String?, String>>()
         val includeResourcePatterns = mutableListOf<Regex>()
@@ -89,7 +90,7 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
                         ) {
                             val text = jar.getInputStream(entry).bufferedReader().readText()
                             val before = countBaselineTypes(libraryEntries)
-                            collectBaseline(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+                            collectBaseline(slurper, text, libraryEntries, libraryProxies, libraryResourceJsons, libraryResourceGlobs)
                             l1Count += countBaselineTypes(libraryEntries) - before
                         }
 
@@ -132,6 +133,7 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
                         slurper,
                         newFormatFile.readText(),
                         libraryEntries,
+                        libraryProxies,
                         libraryResourceJsons,
                         libraryResourceGlobs,
                     )
@@ -187,7 +189,7 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
         if (stream != null) {
             val text = stream.bufferedReader().use { it.readText() }
             val before = countBaselineTypes(libraryEntries)
-            collectBaseline(slurper, text, libraryEntries, libraryResourceJsons, libraryResourceGlobs)
+            collectBaseline(slurper, text, libraryEntries, libraryProxies, libraryResourceJsons, libraryResourceGlobs)
             l3Count = countBaselineTypes(libraryEntries) - before
         }
 
@@ -201,6 +203,7 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
                     slurper,
                     staticFile.readText(),
                     libraryEntries,
+                    libraryProxies,
                     libraryResourceJsons,
                     libraryResourceGlobs,
                 )
@@ -249,6 +252,16 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
             val before = targetArray.size
 
             targetArray.removeAll { projectEntry ->
+                // Handle proxy entries: {"type": {"proxy": [...]}}
+                val proxyKey = proxyKey(projectEntry)
+                if (proxyKey != null) {
+                    if (proxyKey in libraryProxies) {
+                        removedEntries.add("  [$projectSection proxy] $proxyKey")
+                        return@removeAll true
+                    }
+                    return@removeAll false
+                }
+
                 val typeName = projectEntry["type"] as? String ?: return@removeAll false
 
                 // Check same section first, then cross-section
@@ -319,10 +332,19 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
 
     private fun countBaselineTypes(entries: Map<String, Map<String, MutableMap<String, Any?>>>): Int = entries.values.sumOf { it.size }
 
+    /** Extract a canonical key for proxy entries, or null if not a proxy. */
+    @Suppress("UNCHECKED_CAST")
+    private fun proxyKey(entry: Map<String, Any?>): String? {
+        val typeValue = entry["type"] as? Map<String, Any?> ?: return null
+        val proxyList = typeValue["proxy"] as? List<String> ?: return null
+        return proxyList.sorted().joinToString(",")
+    }
+
     private fun collectBaseline(
         slurper: JsonSlurper,
         jsonText: String,
         libraryEntries: MutableMap<String, MutableMap<String, MutableMap<String, Any?>>>,
+        libraryProxies: MutableSet<String>,
         libraryResourceJsons: MutableSet<String>,
         libraryResourceGlobs: MutableList<Pair<String?, String>>,
     ) {
@@ -334,6 +356,12 @@ abstract class CleanupGraalvmMetadataTask : DefaultTask() {
             val entries = root[section] as? List<Map<String, Any?>> ?: continue
             val sectionMap = libraryEntries.getOrPut(section) { mutableMapOf() }
             for (e in entries) {
+                // Handle proxy entries
+                val pk = proxyKey(e)
+                if (pk != null) {
+                    libraryProxies.add(pk)
+                    continue
+                }
                 val typeName = e["type"] as? String ?: continue
                 val existing = sectionMap[typeName]
                 if (existing == null) {
