@@ -108,6 +108,16 @@ internal object KotlinSerializableDetector {
                         methods = methods,
                     ),
                 )
+                // Emit Companion.serializer() entry for navigation-compose and similar
+                // frameworks that reflectively call serializer() on the Companion object
+                if ("Companion" in fields) {
+                    entries.add(
+                        ReflectionEntry(
+                            type = "$className\$Companion",
+                            methods = setOf(MethodSignature("serializer")),
+                        ),
+                    )
+                }
             }
         }
     }
