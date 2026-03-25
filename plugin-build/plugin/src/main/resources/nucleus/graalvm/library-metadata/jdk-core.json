@@ -4,8 +4,32 @@
     },
     "reflection": [
         {
+            "type": "boolean"
+        },
+        {
             "type": "boolean[]",
             "jniAccessible": true
+        },
+        {
+            "type": "byte"
+        },
+        {
+            "type": "double"
+        },
+        {
+            "type": "float"
+        },
+        {
+            "type": "int"
+        },
+        {
+            "type": "long"
+        },
+        {
+            "type": "short"
+        },
+        {
+            "type": "void"
         },
         {
             "type": "byte[]",
@@ -48,6 +72,12 @@
                         "java.lang.String"
                     ]
                 }
+            ]
+        },
+        {
+            "type": "java.io.IOException",
+            "methods": [
+                {"name": "<init>", "parameterTypes": ["java.lang.String"]}
             ]
         },
         {
@@ -557,6 +587,12 @@
             "type": "java.util.concurrent.ScheduledThreadPoolExecutor"
         },
         {
+            "type": "sun.util.resources.LocaleNames"
+        },
+        {
+            "type": "sun.util.resources.cldr.LocaleNames"
+        },
+        {
             "type": "sun.launcher.LauncherHelper",
             "jniAccessible": true,
             "fields": [
@@ -582,6 +618,14 @@
         {
             "module": "java.base",
             "glob": "jdk/internal/icu/impl/data/icudt*/*.nrm"
+        },
+        {
+            "module": "java.base",
+            "glob": "jdk/internal/icu/impl/data/icudt*/*.icu"
+        },
+        {
+            "module": "java.base",
+            "glob": "sun/net/idn/uidna.spp"
         },
         {
             "module": "java.logging",

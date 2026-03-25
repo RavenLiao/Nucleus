@@ -1,0 +1,17 @@
+{
+    "_meta": {
+        "description": "KDroid PlatformTools (clipboard, etc.)",
+        "matchPackages": [
+            "io.github.kdroidfilter.platformtools"
+        ]
+    },
+    "reflection": [
+        {
+            "type": {
+                "proxy": [
+                    "io.github.kdroidfilter.platformtools.clipboardmanager.windows.User32Extended"
+                ]
+            }
+        }
+    ]
+}

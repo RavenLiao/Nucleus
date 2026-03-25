@@ -1,0 +1,16 @@
+{
+    "_meta": {
+        "description": "Coil image loading library",
+        "matchPackages": [
+            "coil3"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "coil3.RealImageLoader"
+        },
+        {
+            "type": "coil3.compose.internal.DeferredDispatchCoroutineDispatcher"
+        }
+    ]
+}

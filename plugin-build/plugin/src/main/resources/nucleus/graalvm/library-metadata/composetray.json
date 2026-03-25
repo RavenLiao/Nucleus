@@ -1,0 +1,48 @@
+{
+    "_meta": {
+        "description": "ComposeTray system tray library",
+        "matchPackages": [
+            "com.kdroid.composetray"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "com.kdroid.composetray.lib.windows.StdCallCallback",
+            "methods": [
+                {
+                    "name": "invoke",
+                    "parameterTypes": [
+                        "com.kdroid.composetray.lib.windows.WindowsNativeTrayMenuItem"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.kdroid.composetray.lib.windows.WindowsNativeTrayMenuItem",
+            "fields": [
+                {"name": "cb"},
+                {"name": "checked"},
+                {"name": "disabled"},
+                {"name": "icon_path"},
+                {"name": "submenu"},
+                {"name": "text"}
+            ],
+            "methods": [
+                {"name": "<init>", "parameterTypes": []}
+            ]
+        },
+        {
+            "type": "com.kdroid.composetray.lib.windows.WindowsNativeTrayMenuItem[]"
+        },
+        {
+            "type": "com.kdroid.composetray.lib.windows.WindowsTrayManager$initializeNativeMenuItem$1$callback$1"
+        },
+        {
+            "type": {
+                "proxy": [
+                    "com.kdroid.composetray.lib.windows.WindowsNativeTrayLibrary"
+                ]
+            }
+        }
+    ]
+}

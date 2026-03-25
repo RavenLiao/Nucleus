@@ -67,6 +67,12 @@
             ]
         },
         {
+            "type": "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA256",
+            "methods": [
+                {"name": "<init>", "parameterTypes": ["javax.crypto.KDFParameters"]}
+            ]
+        },
+        {
             "type": "com.sun.crypto.provider.HmacCore$HmacSHA256",
             "methods": [
                 {
@@ -101,6 +107,18 @@
         },
         {
             "type": "java.security.interfaces.RSAPublicKey"
+        },
+        {
+            "type": "sun.security.provider.JavaKeyStore$DualFormatJKS",
+            "methods": [
+                {"name": "<init>", "parameterTypes": []}
+            ]
+        },
+        {
+            "type": "sun.security.provider.JavaKeyStore$JKS",
+            "methods": [
+                {"name": "<init>", "parameterTypes": []}
+            ]
         },
         {
             "type": "sun.security.pkcs12.PKCS12KeyStore",
