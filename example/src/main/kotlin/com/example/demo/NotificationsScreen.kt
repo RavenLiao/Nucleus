@@ -97,7 +97,7 @@ private fun createSampleImage(): String {
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Suppress("FunctionNaming", "LongMethod")
+@Suppress("FunctionNaming", "LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun NotificationsScreen() {
     // -- State --
@@ -140,11 +140,12 @@ fun NotificationsScreen() {
             val now = java.util.Calendar.getInstance()
             now.add(java.util.Calendar.MINUTE, 1)
             NotificationTrigger.Calendar(
-                dateComponents = DateComponents(
-                    hour = now.get(java.util.Calendar.HOUR_OF_DAY),
-                    minute = now.get(java.util.Calendar.MINUTE),
-                    second = 0,
-                ),
+                dateComponents =
+                    DateComponents(
+                        hour = now.get(java.util.Calendar.HOUR_OF_DAY),
+                        minute = now.get(java.util.Calendar.MINUTE),
+                        second = 0,
+                    ),
             )
         } else {
             NotificationTrigger.TimeInterval(
@@ -177,60 +178,65 @@ fun NotificationsScreen() {
                 setOf(
                     NotificationCategory(
                         identifier = CATEGORY_MESSAGE,
-                        actions = listOf(
-                            TextInputNotificationAction(
-                                identifier = ACTION_REPLY,
-                                title = "Reply",
-                                options = setOf(ActionOption.FOREGROUND),
-                                textInputButtonTitle = "Send",
-                                textInputPlaceholder = "Type your reply...",
+                        actions =
+                            listOf(
+                                TextInputNotificationAction(
+                                    identifier = ACTION_REPLY,
+                                    title = "Reply",
+                                    options = setOf(ActionOption.FOREGROUND),
+                                    textInputButtonTitle = "Send",
+                                    textInputPlaceholder = "Type your reply...",
+                                ),
+                                NotificationAction(identifier = ACTION_MARK_READ, title = "Mark as Read"),
+                                NotificationAction(
+                                    identifier = ACTION_DELETE,
+                                    title = "Delete",
+                                    options = setOf(ActionOption.DESTRUCTIVE),
+                                ),
                             ),
-                            NotificationAction(identifier = ACTION_MARK_READ, title = "Mark as Read"),
-                            NotificationAction(
-                                identifier = ACTION_DELETE,
-                                title = "Delete",
-                                options = setOf(ActionOption.DESTRUCTIVE),
-                            ),
-                        ),
                         options = setOf(CategoryOption.CUSTOM_DISMISS_ACTION),
                     ),
                     NotificationCategory(
                         identifier = CATEGORY_REMINDER,
-                        actions = listOf(
-                            NotificationAction(identifier = ACTION_SNOOZE, title = "Snooze 5 min"),
-                            NotificationAction(
-                                identifier = ACTION_DONE,
-                                title = "Done",
-                                options = setOf(ActionOption.FOREGROUND),
+                        actions =
+                            listOf(
+                                NotificationAction(identifier = ACTION_SNOOZE, title = "Snooze 5 min"),
+                                NotificationAction(
+                                    identifier = ACTION_DONE,
+                                    title = "Done",
+                                    options = setOf(ActionOption.FOREGROUND),
+                                ),
                             ),
-                        ),
                     ),
                 ),
             )
 
             // Delegate
-            NotificationCenter.setDelegate(object : NotificationCenterDelegate {
-                override fun willPresent(notification: DeliveredNotification) =
-                    setOf(PresentationOption.BANNER, PresentationOption.SOUND, PresentationOption.LIST)
+            NotificationCenter.setDelegate(
+                object : NotificationCenterDelegate {
+                    override fun willPresent(notification: DeliveredNotification) =
+                        setOf(PresentationOption.BANNER, PresentationOption.SOUND, PresentationOption.LIST)
 
-                override fun didReceive(response: NotificationResponse) {
-                    val desc = when (response.actionIdentifier) {
-                        ACTION_REPLY -> "Reply: \"${response.userText}\""
-                        ACTION_MARK_READ -> "Marked as read"
-                        ACTION_DELETE -> "Deleted"
-                        ACTION_SNOOZE -> "Snoozed"
-                        ACTION_DONE -> "Done"
-                        NotificationAction.DEFAULT_ACTION_IDENTIFIER -> "Tapped notification"
-                        NotificationAction.DISMISS_ACTION_IDENTIFIER -> "Dismissed"
-                        else -> "Action: ${response.actionIdentifier}"
+                    override fun didReceive(response: NotificationResponse) {
+                        val desc =
+                            when (response.actionIdentifier) {
+                                ACTION_REPLY -> "Reply: \"${response.userText}\""
+                                ACTION_MARK_READ -> "Marked as read"
+                                ACTION_DELETE -> "Deleted"
+                                ACTION_SNOOZE -> "Snoozed"
+                                ACTION_DONE -> "Done"
+                                NotificationAction.DEFAULT_ACTION_IDENTIFIER -> "Tapped notification"
+                                NotificationAction.DISMISS_ACTION_IDENTIFIER -> "Dismissed"
+                                else -> "Action: ${response.actionIdentifier}"
+                            }
+                        log("[${response.notification.identifier}] $desc")
                     }
-                    log("[${response.notification.identifier}] $desc")
-                }
 
-                override fun openSettings(notification: DeliveredNotification?) {
-                    log("Open settings requested")
-                }
-            })
+                    override fun openSettings(notification: DeliveredNotification?) {
+                        log("Open settings requested")
+                    }
+                },
+            )
 
             setupDone = true
             log("Ready! 2 categories registered (message: 3 actions, reminder: 2 actions)")
@@ -247,11 +253,12 @@ fun NotificationsScreen() {
             Text("Notifications", style = MaterialTheme.typography.headlineMedium)
             Text(
                 text = if (NotificationCenter.isAvailable) "Native library loaded" else "Not available",
-                color = if (NotificationCenter.isAvailable) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
+                color =
+                    if (NotificationCenter.isAvailable) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -306,14 +313,15 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Alice",
-                                    subtitle = "Project Nucleus",
-                                    body = "Hey! Have you seen the latest build?",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_MESSAGE,
-                                    threadIdentifier = "conversation-alice",
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Alice",
+                                        subtitle = "Project Nucleus",
+                                        body = "Hey! Have you seen the latest build?",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_MESSAGE,
+                                        threadIdentifier = "conversation-alice",
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - message with actions") }
@@ -327,14 +335,15 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Bob",
-                                    subtitle = "Project Nucleus",
-                                    body = "Looks great! Merging now.",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_MESSAGE,
-                                    threadIdentifier = "conversation-bob",
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Bob",
+                                        subtitle = "Project Nucleus",
+                                        body = "Looks great! Merging now.",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_MESSAGE,
+                                        threadIdentifier = "conversation-bob",
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - grouped in bob thread") }
@@ -352,12 +361,13 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Reminder",
-                                    body = "Team standup in 5 minutes",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_REMINDER,
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Reminder",
+                                        body = "Team standup in 5 minutes",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_REMINDER,
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - reminder") }
@@ -375,19 +385,21 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Photo from Alice",
-                                    body = "Check out this screenshot!",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_MESSAGE,
-                                    threadIdentifier = "conversation-alice",
-                                    attachments = listOf(
-                                        NotificationAttachment(
-                                            identifier = "image-$id",
-                                            url = sampleImagePath,
-                                        ),
+                                content =
+                                    NotificationContent(
+                                        title = "Photo from Alice",
+                                        body = "Check out this screenshot!",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_MESSAGE,
+                                        threadIdentifier = "conversation-alice",
+                                        attachments =
+                                            listOf(
+                                                NotificationAttachment(
+                                                    identifier = "image-$id",
+                                                    url = sampleImagePath,
+                                                ),
+                                            ),
                                     ),
-                                ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - with image attachment") }
@@ -405,11 +417,12 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Background sync complete",
-                                    body = "12 items updated",
-                                    interruptionLevel = InterruptionLevel.PASSIVE,
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Background sync complete",
+                                        body = "12 items updated",
+                                        interruptionLevel = InterruptionLevel.PASSIVE,
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - passive (no sound, no wake)") }
@@ -423,13 +436,14 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Deployment finishing",
-                                    body = "Production deploy requires approval",
-                                    sound = NotificationSound.Default,
-                                    interruptionLevel = InterruptionLevel.TIME_SENSITIVE,
-                                    categoryIdentifier = CATEGORY_REMINDER,
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Deployment finishing",
+                                        body = "Production deploy requires approval",
+                                        sound = NotificationSound.Default,
+                                        interruptionLevel = InterruptionLevel.TIME_SENSITIVE,
+                                        categoryIdentifier = CATEGORY_REMINDER,
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - time sensitive") }
@@ -444,13 +458,14 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Critical Alert!",
-                                    body = "Server is down - immediate action required",
-                                    sound = NotificationSound.DefaultCritical,
-                                    interruptionLevel = InterruptionLevel.CRITICAL,
-                                    categoryIdentifier = CATEGORY_REMINDER,
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Critical Alert!",
+                                        body = "Server is down - immediate action required",
+                                        sound = NotificationSound.DefaultCritical,
+                                        interruptionLevel = InterruptionLevel.CRITICAL,
+                                        categoryIdentifier = CATEGORY_REMINDER,
+                                    ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - critical") }
@@ -471,20 +486,24 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "Calendar reminder",
-                                    body = "Fires at ${now.get(java.util.Calendar.HOUR_OF_DAY)}:" +
-                                        "${"%02d".format(now.get(java.util.Calendar.MINUTE))}",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_REMINDER,
-                                ),
-                                trigger = NotificationTrigger.Calendar(
-                                    dateComponents = DateComponents(
-                                        hour = now.get(java.util.Calendar.HOUR_OF_DAY),
-                                        minute = now.get(java.util.Calendar.MINUTE),
-                                        second = 0,
+                                content =
+                                    NotificationContent(
+                                        title = "Calendar reminder",
+                                        body =
+                                            "Fires at ${now.get(java.util.Calendar.HOUR_OF_DAY)}:" +
+                                                "${"%02d".format(now.get(java.util.Calendar.MINUTE))}",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_REMINDER,
                                     ),
-                                ),
+                                trigger =
+                                    NotificationTrigger.Calendar(
+                                        dateComponents =
+                                            DateComponents(
+                                                hour = now.get(java.util.Calendar.HOUR_OF_DAY),
+                                                minute = now.get(java.util.Calendar.MINUTE),
+                                                second = 0,
+                                            ),
+                                    ),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - calendar trigger (next minute)") }
                     },
@@ -496,12 +515,13 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = "replaceable",
-                                content = NotificationContent(
-                                    title = "Download progress",
-                                    body = "Updated at ${java.time.LocalTime.now().withNano(0)}",
-                                    sound = NotificationSound.Default,
-                                    categoryIdentifier = CATEGORY_REMINDER,
-                                ),
+                                content =
+                                    NotificationContent(
+                                        title = "Download progress",
+                                        body = "Updated at ${java.time.LocalTime.now().withNano(0)}",
+                                        sound = NotificationSound.Default,
+                                        categoryIdentifier = CATEGORY_REMINDER,
+                                    ),
                                 trigger = NotificationTrigger.TimeInterval(interval = IMMEDIATE_DELAY),
                             ),
                         ) { error -> log(error ?: "Sent 'replaceable' - same ID replaces previous") }
@@ -515,17 +535,19 @@ fun NotificationsScreen() {
                         NotificationCenter.add(
                             NotificationRequest(
                                 identifier = id,
-                                content = NotificationContent(
-                                    title = "UserInfo demo",
-                                    body = "Check event log for data",
-                                    sound = NotificationSound.Default,
-                                    userInfo = mapOf(
-                                        "userId" to "42",
-                                        "action" to "purchase",
-                                        "amount" to "19.99",
-                                        "currency" to "USD",
+                                content =
+                                    NotificationContent(
+                                        title = "UserInfo demo",
+                                        body = "Check event log for data",
+                                        sound = NotificationSound.Default,
+                                        userInfo =
+                                            mapOf(
+                                                "userId" to "42",
+                                                "action" to "purchase",
+                                                "amount" to "19.99",
+                                                "currency" to "USD",
+                                            ),
                                     ),
-                                ),
                                 trigger = makeTrigger(),
                             ),
                         ) { error -> log(error ?: "Sent '$id' - with userInfo {userId=42, action=purchase, ...}") }
@@ -609,13 +631,14 @@ fun NotificationsScreen() {
                 InterruptionLevel.entries.forEach { l ->
                     OutlinedButton(
                         onClick = { level = l },
-                        colors = if (l == level) {
-                            ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            )
-                        } else {
-                            ButtonDefaults.outlinedButtonColors()
-                        },
+                        colors =
+                            if (l == level) {
+                                ButtonDefaults.outlinedButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                )
+                            } else {
+                                ButtonDefaults.outlinedButtonColors()
+                            },
                     ) { Text(l.name) }
                 }
             }
@@ -627,17 +650,18 @@ fun NotificationsScreen() {
                     NotificationCenter.add(
                         NotificationRequest(
                             identifier = id,
-                            content = NotificationContent(
-                                title = title,
-                                subtitle = subtitle,
-                                body = body,
-                                sound = if (useSound) NotificationSound.Default else null,
-                                badge = if (useBadge) badgeCount.toInt() else null,
-                                categoryIdentifier = CATEGORY_MESSAGE,
-                                interruptionLevel = level,
-                                threadIdentifier = "custom",
-                                userInfo = mapOf("counter" to notifCounter.toString()),
-                            ),
+                            content =
+                                NotificationContent(
+                                    title = title,
+                                    subtitle = subtitle,
+                                    body = body,
+                                    sound = if (useSound) NotificationSound.Default else null,
+                                    badge = if (useBadge) badgeCount.toInt() else null,
+                                    categoryIdentifier = CATEGORY_MESSAGE,
+                                    interruptionLevel = level,
+                                    threadIdentifier = "custom",
+                                    userInfo = mapOf("counter" to notifCounter.toString()),
+                                ),
                             trigger = makeTrigger(),
                         ),
                     ) { error ->
@@ -774,7 +798,10 @@ private fun SettingsCard(s: NotificationSettings) {
 }
 
 @Composable
-private fun NotificationListCard(title: String, content: @Composable () -> Unit) {
+private fun NotificationListCard(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleSmall)

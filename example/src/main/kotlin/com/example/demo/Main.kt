@@ -172,10 +172,11 @@ fun main(args: Array<String>) {
                     CompositionLocalProvider(
                         LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                     ) {
-                        val tabs = buildList {
-                            addAll(listOf("Nucleus", "Gallery", "Taskbar"))
-                            if (Platform.Current == Platform.MacOS) add("Notifications")
-                        }
+                        val tabs =
+                            buildList {
+                                addAll(listOf("Nucleus", "Gallery", "Taskbar"))
+                                if (Platform.Current == Platform.MacOS) add("Notifications")
+                            }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
                         MaterialTitleBar(modifier = Modifier.newFullscreenControls().macOSLargeCornerRadius()) { _ ->
