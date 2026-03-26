@@ -599,18 +599,17 @@ static void dbusmenu_handle_method(
         const gchar *event_id = NULL;
         g_variant_get(params, "(i&s@vu)", &id, &event_id, NULL, NULL);
 
-        if (g_strcmp0(event_id, "clicked") == 0) {
-            /* Forward click to Kotlin */
-            int attached = 0;
-            JNIEnv *env = get_env(&attached);
-            if (env && ensure_callback_ids(env)) {
-                jstring j_path = (*env)->NewStringUTF(env, srv->object_path);
-                (*env)->CallStaticVoidMethod(env, g_bridge_class, g_on_event_method, j_path, (jint)id);
-                if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
-                (*env)->DeleteLocalRef(env, j_path);
-            }
-            release_env(attached);
+        /* Forward all events to Kotlin (clicked, hovered, opened, closed) */
+        int attached = 0;
+        JNIEnv *env = get_env(&attached);
+        if (env && ensure_callback_ids(env)) {
+            jstring j_path = (*env)->NewStringUTF(env, srv->object_path);
+            (*env)->CallStaticVoidMethod(env, g_bridge_class, g_on_event_method,
+                j_path, (jint)id);
+            if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
+            (*env)->DeleteLocalRef(env, j_path);
         }
+        release_env(attached);
         g_dbus_method_invocation_return_value(invocation, NULL);
 
     } else if (g_strcmp0(method, "AboutToShow") == 0) {
@@ -871,6 +870,20 @@ Java_io_github_kdroidfilter_nucleus_launcher_linux_NativeLinuxLauncherBridge_nat
     pthread_mutex_lock(&g_state_mutex);
     DbusmenuServer *srv = find_server(path);
     if (srv) {
+        /* Clear all items and emit LayoutUpdated so the DE removes the menu */
+        for (int i = 0; i < srv->item_count; i++) free_menu_item(&srv->items[i]);
+        srv->item_count = 0;
+        srv->revision++;
+
+        GDBusConnection *conn = get_connection();
+        if (conn) {
+            GError *err = NULL;
+            g_dbus_connection_emit_signal(conn, NULL, path, DBUSMENU_INTERFACE,
+                "LayoutUpdated", g_variant_new("(ui)", srv->revision, 0), &err);
+            if (err) g_error_free(err);
+            g_dbus_connection_flush_sync(conn, NULL, NULL);
+        }
+
         /* Stop thread */
         if (srv->running && srv->loop) {
             g_main_loop_quit(srv->loop);
@@ -884,9 +897,6 @@ Java_io_github_kdroidfilter_nucleus_launcher_linux_NativeLinuxLauncherBridge_nat
             g_dbus_connection_unregister_object(g_conn, srv->registration_id);
         }
         if (srv->node_info) g_dbus_node_info_unref(srv->node_info);
-
-        /* Free items */
-        for (int i = 0; i < srv->item_count; i++) free_menu_item(&srv->items[i]);
         g_free(srv->object_path);
 
         /* Compact the server array */
