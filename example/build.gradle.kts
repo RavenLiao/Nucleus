@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":taskbar-progress"))
     implementation(project(":notification-macos"))
     implementation(project(":notification-linux"))
+    implementation(project(":notification-windows"))
     implementation(project(":launcher-linux"))
     implementation(project(":launcher-macos"))
     implementation(project(":graalvm-runtime"))

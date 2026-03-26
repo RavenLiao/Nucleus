@@ -9,6 +9,7 @@ A multi-module Gradle plugin and runtime library toolkit for shipping production
 - `updater-runtime` - Auto-update engine (GitHub/S3), SHA-512 verification, progress tracking, update level detection, post-update events
 - `freedesktop-icons` - Type-safe freedesktop Icon Naming Specification constants (shared by notification-linux and launcher-linux)
 - `notification-linux` - Freedesktop Desktop Notifications API via JNI (D-Bus org.freedesktop.Notifications)
+- `notification-windows` - Windows Toast Notifications API via JNI (WinRT)
 - `launcher-linux` - Unity Launcher API via JNI (badge, progress, urgency, quicklist via com.canonical.Unity.LauncherEntry + com.canonical.dbusmenu)
 - `taskbar-progress` - Native taskbar/dock progress bar and attention requests (Windows ITaskbarList3, macOS NSDockTile, Linux delegates to launcher-linux)
 - `darkmode-detector` - Reactive OS dark mode detection via JNI

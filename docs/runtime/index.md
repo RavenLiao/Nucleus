@@ -11,6 +11,7 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Updater Runtime | `io.github.kdroidfilter:nucleus.updater-runtime` | Auto-update library with update level detection and post-update events (includes core-runtime) |
 | Taskbar Progress | `io.github.kdroidfilter:nucleus.taskbar-progress` | Native taskbar/dock progress bar and attention requests (Windows, macOS, Linux) |
 | Notification (macOS) | `io.github.kdroidfilter:nucleus.notification-macos` | macOS UserNotifications API — local notifications, actions, badges via JNI |
+| Notification (Windows) | `io.github.kdroidfilter:nucleus.notification-windows` | Windows Toast Notifications API — rich toasts, buttons, progress bars via JNI (WinRT) |
 | Notification (Linux) | `io.github.kdroidfilter:nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI (D-Bus) |
 | Launcher (Linux) | `io.github.kdroidfilter:nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI (D-Bus) |
 | Launcher (macOS) | `io.github.kdroidfilter:nucleus.launcher-macos` | macOS dock context menu — custom items, submenus, click callbacks via JNI |
@@ -37,6 +38,7 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
     implementation("io.github.kdroidfilter:nucleus.notification-macos:<version>")
+    implementation("io.github.kdroidfilter:nucleus.notification-windows:<version>")
     implementation("io.github.kdroidfilter:nucleus.notification-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-macos:<version>")
@@ -61,7 +63,7 @@ dependencies {
 
 When ProGuard is enabled in a release build, the Nucleus Gradle plugin **automatically includes** the required rules for all Nucleus runtime libraries (`default-compose-desktop-rules.pro`). No manual configuration is needed.
 
-Libraries that use JNI (`decorated-window`, `darkmode-detector`, `system-color`, `energy-manager`, `native-ssl`, `notification-macos`, `notification-linux`, `launcher-linux`) require `-keep` rules for their native bridge classes — these are handled by the plugin automatically.
+Libraries that use JNI (`decorated-window`, `darkmode-detector`, `system-color`, `energy-manager`, `native-ssl`, `notification-macos`, `notification-windows`, `notification-linux`, `launcher-linux`) require `-keep` rules for their native bridge classes — these are handled by the plugin automatically.
 
 ### Overriding the ProGuard configuration
 

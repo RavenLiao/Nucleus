@@ -96,6 +96,13 @@ jobs:
           pattern: 'notification-linux-*'
           merge-multiple: true
 
+      - name: Download notification-windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: notification-windows/src/main/resources/nucleus/native/
+          pattern: 'notification-windows*'
+          merge-multiple: true
+
       - name: Download launcher-linux artifacts
         uses: actions/download-artifact@v4
         with:

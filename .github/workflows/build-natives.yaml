@@ -142,6 +142,27 @@ jobs:
           path: taskbar-progress/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build notification-windows Windows DLLs
+        shell: cmd
+        run: call notification-windows\src\main\native\windows\build.bat
+
+      - name: Verify notification-windows Windows natives
+        shell: bash
+        run: |
+          for f in \
+            notification-windows/src/main/resources/nucleus/native/win32-x64/nucleus_notification_windows.dll \
+            notification-windows/src/main/resources/nucleus/native/win32-aarch64/nucleus_notification_windows.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload notification-windows Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-windows
+          path: notification-windows/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:

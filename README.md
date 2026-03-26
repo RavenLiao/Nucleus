@@ -94,6 +94,7 @@ Use them independently or together — each module is published to Maven Central
 | **Decorated Window Material 3** | `nucleus.decorated-window-material3` | Material 3 integration for decorated windows and dialogs |
 | **Freedesktop Icons** | `nucleus.freedesktop-icons` | Type-safe [freedesktop icon naming](https://specifications.freedesktop.org/icon-naming/latest/) constants |
 | **Notification Linux** | `nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI |
+| **Notification Windows** | `nucleus.notification-windows` | Windows Toast Notifications API via JNI (WinRT) |
 | **Launcher Linux** | `nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI |
 | **Taskbar Progress** | `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |
 | **System Color** | `nucleus.system-color` | Reactive system accent color & high contrast detection via JNI |

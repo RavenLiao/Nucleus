@@ -175,7 +175,10 @@ fun main(args: Array<String>) {
                         val tabs =
                             buildList {
                                 addAll(listOf("Nucleus", "Gallery", "Taskbar"))
-                                if (Platform.Current == Platform.MacOS || Platform.Current == Platform.Linux) {
+                                if (Platform.Current == Platform.MacOS ||
+                                    Platform.Current == Platform.Linux ||
+                                    Platform.Current == Platform.Windows
+                                ) {
                                     add("Notifications")
                                 }
                                 if (Platform.Current == Platform.Linux || Platform.Current == Platform.MacOS) {
@@ -310,6 +313,7 @@ fun main(args: Array<String>) {
                                 when (Platform.Current) {
                                     Platform.MacOS -> NotificationsScreen()
                                     Platform.Linux -> LinuxNotificationsScreen()
+                                    Platform.Windows -> WindowsNotificationsScreen()
                                     else -> {}
                                 }
                             }
