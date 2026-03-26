@@ -17,7 +17,6 @@
 #include <jni.h>
 #include <gio/gio.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -534,9 +533,6 @@ static void dbusmenu_handle_method(
     (void)conn; (void)sender; (void)iface;
     DbusmenuServer *srv = (DbusmenuServer *)user_data;
 
-    fprintf(stderr, "[dbusmenu] %s called on %s\n", method, object_path);
-    fflush(stderr);
-
     if (!srv) {
         g_dbus_method_invocation_return_error(invocation, G_DBUS_ERROR,
             G_DBUS_ERROR_FAILED, "Server not found for %s", object_path);
@@ -551,16 +547,12 @@ static void dbusmenu_handle_method(
         if (prop_names) g_variant_unref(prop_names);
 
         pthread_mutex_lock(&g_state_mutex);
-        fprintf(stderr, "[dbusmenu] GetLayout: parent=%d depth=%d items=%d\n",
-            parent_id, depth, srv->item_count);
         GVariant *layout = build_layout(srv, parent_id, depth);
         guint32 rev = srv->revision;
         pthread_mutex_unlock(&g_state_mutex);
 
         g_dbus_method_invocation_return_value(invocation,
             g_variant_new("(u@(ia{sv}av))", rev, layout));
-        fprintf(stderr, "[dbusmenu] GetLayout: returned rev=%u\n", rev);
-        fflush(stderr);
 
     } else if (g_strcmp0(method, "GetGroupProperties") == 0) {
         GVariant *ids_var = NULL;
@@ -623,24 +615,15 @@ static void dbusmenu_handle_method(
         g_variant_get(params, "(i&s@vu)", &id, &event_id, &data, &timestamp);
         if (data) g_variant_unref(data);
 
-        fprintf(stderr, "[dbusmenu] Event: id=%d eventId=%s ts=%u\n",
-            id, event_id ? event_id : "(null)", timestamp);
-        fflush(stderr);
-
         /* Forward all events to Kotlin (clicked, hovered, opened, closed) */
         int attached = 0;
         JNIEnv *env = get_env(&attached);
         if (env && ensure_callback_ids(env)) {
-            fprintf(stderr, "[dbusmenu] Forwarding to JVM...\n");
-            fflush(stderr);
             jstring j_path = (*env)->NewStringUTF(env, srv->object_path);
             (*env)->CallStaticVoidMethod(env, g_bridge_class, g_on_event_method,
                 j_path, (jint)id);
             if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
             (*env)->DeleteLocalRef(env, j_path);
-        } else {
-            fprintf(stderr, "[dbusmenu] Failed to get JNI env or callback IDs\n");
-            fflush(stderr);
         }
         release_env(attached);
         g_dbus_method_invocation_return_value(invocation, NULL);
@@ -659,8 +642,6 @@ static void dbusmenu_handle_method(
         JNIEnv *env = get_env(&attached);
 
         while (g_variant_iter_next(iter, "(i&s@vu)", &id, &event_id, &data, &timestamp)) {
-            fprintf(stderr, "[dbusmenu] EventGroup item: id=%d event=%s\n", id, event_id);
-            fflush(stderr);
             if (data) g_variant_unref(data);
 
             if (env && ensure_callback_ids(env)) {
@@ -683,13 +664,9 @@ static void dbusmenu_handle_method(
     } else if (g_strcmp0(method, "AboutToShow") == 0) {
         gint32 about_id = 0;
         g_variant_get(params, "(i)", &about_id);
-        fprintf(stderr, "[dbusmenu] AboutToShow: id=%d\n", about_id);
-        fflush(stderr);
         g_dbus_method_invocation_return_value(invocation, g_variant_new("(b)", FALSE));
 
     } else if (g_strcmp0(method, "AboutToShowGroup") == 0) {
-        fprintf(stderr, "[dbusmenu] AboutToShowGroup\n");
-        fflush(stderr);
         GVariantBuilder updates, errors;
         g_variant_builder_init(&updates, G_VARIANT_TYPE("ai"));
         g_variant_builder_init(&errors, G_VARIANT_TYPE("ai"));
@@ -697,8 +674,6 @@ static void dbusmenu_handle_method(
             g_variant_new("(aiai)", &updates, &errors));
 
     } else {
-        fprintf(stderr, "[dbusmenu] Unknown method: %s\n", method);
-        fflush(stderr);
         g_dbus_method_invocation_return_error(invocation, G_DBUS_ERROR,
             G_DBUS_ERROR_UNKNOWN_METHOD, "Unknown method: %s", method);
     }
@@ -741,13 +716,9 @@ static void *dbusmenu_thread_func(void *arg) {
             srv->ready = -1;
         } else {
             srv->ready = 1;
-            fprintf(stderr, "[dbusmenu] Registered object at %s (id=%u)\n", srv->object_path, srv->registration_id);
-            fflush(stderr);
         }
     } else {
         srv->ready = -1;
-        fprintf(stderr, "[dbusmenu] Registration failed (no conn or node_info)\n");
-        fflush(stderr);
     }
 
     GMainLoop *loop = g_main_loop_new(ctx, FALSE);
@@ -813,14 +784,8 @@ Java_io_github_kdroidfilter_nucleus_launcher_linux_NativeLinuxLauncherBridge_nat
     DbusmenuServer *srv = find_server(object_path);
     int is_new = (srv == NULL);
 
-    fprintf(stderr, "[dbusmenu] nativeSetMenu: path=%s is_new=%d count=%d servers=%d\n",
-        object_path, is_new, (int)count, g_server_count);
-    fflush(stderr);
-
     if (is_new) {
         if (g_server_count >= MAX_SERVERS) {
-            fprintf(stderr, "[dbusmenu] nativeSetMenu: MAX_SERVERS reached\n");
-            fflush(stderr);
             pthread_mutex_unlock(&g_state_mutex);
             (*env)->ReleaseIntArrayElements(env, j_ids, ids, JNI_ABORT);
             (*env)->ReleaseIntArrayElements(env, j_parent_ids, parent_ids, JNI_ABORT);
@@ -960,13 +925,8 @@ Java_io_github_kdroidfilter_nucleus_launcher_linux_NativeLinuxLauncherBridge_nat
     const char *path = (*env)->GetStringUTFChars(env, j_object_path, NULL);
     if (!path) return;
 
-    fprintf(stderr, "[dbusmenu] nativeDestroyMenu: path=%s\n", path);
-    fflush(stderr);
-
     pthread_mutex_lock(&g_state_mutex);
     DbusmenuServer *srv = find_server(path);
-    fprintf(stderr, "[dbusmenu] nativeDestroyMenu: found=%d servers=%d\n", srv != NULL, g_server_count);
-    fflush(stderr);
     if (srv) {
         /* Clear all items and emit LayoutUpdated so the DE removes the menu */
         for (int i = 0; i < srv->item_count; i++) free_menu_item(&srv->items[i]);

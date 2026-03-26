@@ -7,7 +7,10 @@ A multi-module Gradle plugin and runtime library toolkit for shipping production
 - `core-runtime` - Executable type detection, single instance, deep links, platform detection, app metadata (`NucleusApp`)
 - `aot-runtime` - AOT cache mode detection for JDK 25+ (Project Leyden)
 - `updater-runtime` - Auto-update engine (GitHub/S3), SHA-512 verification, progress tracking, update level detection, post-update events
-- `taskbar-progress` - Native taskbar/dock progress bar and attention requests (Windows ITaskbarList3, macOS NSDockTile, Linux D-Bus)
+- `freedesktop-icons` - Type-safe freedesktop Icon Naming Specification constants (shared by notification-linux and launcher-linux)
+- `notification-linux` - Freedesktop Desktop Notifications API via JNI (D-Bus org.freedesktop.Notifications)
+- `launcher-linux` - Unity Launcher API via JNI (badge, progress, urgency, quicklist via com.canonical.Unity.LauncherEntry + com.canonical.dbusmenu)
+- `taskbar-progress` - Native taskbar/dock progress bar and attention requests (Windows ITaskbarList3, macOS NSDockTile, Linux delegates to launcher-linux)
 - `darkmode-detector` - Reactive OS dark mode detection via JNI
 - `system-color` - Reactive system accent color and high contrast detection via JNI
 - `energy-manager` - Energy efficiency & screen-awake APIs

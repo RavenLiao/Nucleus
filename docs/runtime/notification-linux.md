@@ -13,7 +13,7 @@ dependencies {
 }
 ```
 
-Depends on `core-runtime` (compile-only) for `NativeLibraryLoader`.
+Depends on `core-runtime` (compile-only) for `NativeLibraryLoader` and `freedesktop-icons` (transitive) for typesafe icon names.
 
 ## Quick Start
 
@@ -26,9 +26,9 @@ val id = LinuxNotificationCenter.notify(
         appName = "My App",
         summary = "Hello!",
         body = "Welcome to Nucleus.",
-        appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
+        appIcon = FreedesktopIcon.Status.DIALOG_INFORMATION,
         hints = NotificationHints(
-            imagePath = NotificationIcon.Status.DIALOG_INFORMATION,
+            imagePath = FreedesktopIcon.Status.DIALOG_INFORMATION,
             soundName = NotificationSound.Notification.DIALOG_INFORMATION,
         ),
     )
@@ -113,7 +113,7 @@ LinuxNotificationCenter.addListener(object : LinuxNotificationListener {
 |---|---|---|---|
 | `appName` | `String` | `""` | Application name (informational). |
 | `replacesId` | `Int` | `0` | If non-zero, atomically replaces the notification with this ID. |
-| `appIcon` | `NotificationIcon?` | `null` | Typesafe icon (see [Icons](#icons)). |
+| `appIcon` | `FreedesktopIcon?` | `null` | Typesafe icon (see [Icons](#icons)). |
 | `summary` | `String` | *(required)* | Single-line notification title. |
 | `body` | `String` | `""` | Multi-line body text. Supports [limited markup](#body-markup). |
 | `actions` | `List<NotificationAction>` | `emptyList()` | Interactive action buttons. |
@@ -145,7 +145,7 @@ All properties are optional. `null` means the hint is not sent.
 | `category` | `String?` | Notification category (see [Categories](#categories)). |
 | `desktopEntry` | `String?` | Desktop file name without `.desktop` suffix. Helps the daemon identify the app. |
 | `imageData` | `ImageData?` | Raw pixel data (see [ImageData](#imagedata)). |
-| `imagePath` | `NotificationIcon?` | Typesafe icon (see [Icons](#icons)). Takes priority over `appIcon`. |
+| `imagePath` | `FreedesktopIcon?` | Typesafe icon (see [Icons](#icons)). Takes priority over `appIcon`. |
 | `actionIcons` | `Boolean?` | If `true`, action keys are interpreted as icon names. |
 | `soundFile` | `String?` | Absolute path to a sound file (see [Sounds](#sounds)). |
 | `soundName` | `NotificationSound?` | Typesafe sound (see [Sounds](#sounds)). |
@@ -217,47 +217,17 @@ Received in `LinuxNotificationListener.onClosed`.
 
 ## Icons
 
-Icons are typesafe via the `NotificationIcon` sealed interface. All 338 standard names from the [freedesktop Icon Naming Specification](https://specifications.freedesktop.org/icon-naming/latest/) are available as enum constants, grouped by context.
-
-### `NotificationIcon`
+Icons are typesafe via the `FreedesktopIcon` sealed interface from the shared [`freedesktop-icons`](freedesktop-icons.md) module. All 338 standard names from the [freedesktop Icon Naming Specification](https://specifications.freedesktop.org/icon-naming/latest/) are available as enum constants.
 
 ```kotlin
-// Standard icon from the spec (typesafe)
-NotificationIcon.Status.DIALOG_INFORMATION
-NotificationIcon.Status.MAIL_UNREAD
-NotificationIcon.Device.PRINTER
-NotificationIcon.Emote.FACE_SMILE
+import io.github.kdroidfilter.nucleus.freedesktop.icons.FreedesktopIcon
 
-// Custom icon name, file path, or URI
-NotificationIcon.Custom("my-app-icon")
-NotificationIcon.Custom("/home/user/icon.png")
-NotificationIcon.Custom("file:///home/user/icon.png")
-
-// Country flag (ISO 3166-1 alpha-2)
-NotificationIcon.flag("fr")  // → "flag-fr"
+FreedesktopIcon.Status.DIALOG_INFORMATION
+FreedesktopIcon.Device.PRINTER
+FreedesktopIcon.Custom("my-app-icon")
 ```
 
-### Icon Contexts
-
-| Enum | Count | Examples |
-|---|---|---|
-| `NotificationIcon.Status` | 57 | `DIALOG_INFORMATION`, `DIALOG_WARNING`, `DIALOG_ERROR`, `MAIL_UNREAD`, `BATTERY_LOW`, `NETWORK_ERROR`, `SOFTWARE_UPDATE_AVAILABLE`, `WEATHER_CLEAR` |
-| `NotificationIcon.Action` | 94 | `DOCUMENT_SAVE`, `EDIT_COPY`, `MAIL_SEND`, `MEDIA_PLAYBACK_START`, `SYSTEM_SHUTDOWN`, `ZOOM_IN` |
-| `NotificationIcon.Device` | 27 | `PRINTER`, `PHONE`, `CAMERA_PHOTO`, `COMPUTER`, `DRIVE_HARDDISK`, `NETWORK_WIRELESS` |
-| `NotificationIcon.Emblem` | 13 | `DOWNLOADS`, `FAVORITE`, `IMPORTANT`, `SHARED`, `SYNCHRONIZED` |
-| `NotificationIcon.Emote` | 21 | `FACE_SMILE`, `FACE_SAD`, `FACE_COOL`, `FACE_ANGRY`, `FACE_WINK` |
-| `NotificationIcon.Application` | 20 | `UTILITIES_TERMINAL`, `SYSTEM_FILE_MANAGER`, `ACCESSORIES_TEXT_EDITOR` |
-| `NotificationIcon.Category` | 19 | `APPLICATIONS_GAMES`, `APPLICATIONS_INTERNET`, `PREFERENCES_SYSTEM` |
-| `NotificationIcon.MimeType` | 15 | `TEXT_HTML`, `IMAGE_X_GENERIC`, `VIDEO_X_GENERIC`, `APPLICATION_X_EXECUTABLE` |
-| `NotificationIcon.Place` | 9 | `FOLDER`, `USER_HOME`, `USER_TRASH`, `NETWORK_SERVER` |
-| `NotificationIcon.Animation` | 1 | `PROCESS_WORKING` |
-
-Icon names are **cross-desktop** — they are resolved from the active icon theme (Adwaita, Breeze, Papirus, Yaru, etc.) on GNOME, KDE, XFCE, and any freedesktop-compliant environment.
-
-!!! tip "Browse all available icons"
-    Run `gtk4-icon-browser` or `gtk3-icon-browser` to visually browse all icons in your current theme.
-
-    Full specification: [freedesktop Icon Naming Specification](https://specifications.freedesktop.org/icon-naming/latest/)
+See [Freedesktop Icons](freedesktop-icons.md) for the full list of icon contexts and usage examples.
 
 ### Image Priority
 
@@ -418,7 +388,7 @@ val id = LinuxNotificationCenter.notify(
         appName = "My Messenger",
         summary = "Alice",
         body = "<b>Project Nucleus</b>\nHey! Have you seen the latest build?",
-        appIcon = NotificationIcon.Status.MAIL_UNREAD,
+        appIcon = FreedesktopIcon.Status.MAIL_UNREAD,
         actions = listOf(
             NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
             NotificationAction("reply", "Reply"),
@@ -427,7 +397,7 @@ val id = LinuxNotificationCenter.notify(
         hints = NotificationHints(
             urgency = Urgency.NORMAL,
             category = "im.received",
-            imagePath = NotificationIcon.Status.MAIL_UNREAD,
+            imagePath = FreedesktopIcon.Status.MAIL_UNREAD,
             soundName = NotificationSound.Notification.MESSAGE_NEW_INSTANT,
             desktopEntry = "my-messenger",
         ),
@@ -441,11 +411,11 @@ LinuxNotificationCenter.notify(
         appName = "My Messenger",
         summary = "Alice (2 messages)",
         body = "Hey! Have you seen the latest build?\n<i>Also, lunch?</i>",
-        appIcon = NotificationIcon.Status.MAIL_UNREAD,
+        appIcon = FreedesktopIcon.Status.MAIL_UNREAD,
         hints = NotificationHints(
             urgency = Urgency.NORMAL,
             category = "im.received",
-            imagePath = NotificationIcon.Status.MAIL_UNREAD,
+            imagePath = FreedesktopIcon.Status.MAIL_UNREAD,
         ),
     )
 )
