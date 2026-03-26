@@ -87,6 +87,13 @@ jobs:
           pattern: 'notification-linux-*'
           merge-multiple: true
 
+      - name: Download launcher-linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: launcher-linux/src/main/resources/nucleus/native/
+          pattern: 'launcher-linux-*'
+          merge-multiple: true
+
       - name: Verify all natives present
         run: |
           EXPECTED=(
@@ -126,12 +133,12 @@ jobs:
             "taskbar-progress/src/main/resources/nucleus/native/win32-aarch64/nucleus_taskbar_progress.dll"
             "taskbar-progress/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_taskbar_progress.dylib"
             "taskbar-progress/src/main/resources/nucleus/native/darwin-x64/libnucleus_taskbar_progress.dylib"
-            "taskbar-progress/src/main/resources/nucleus/native/linux-x64/libnucleus_taskbar_progress.so"
-            "taskbar-progress/src/main/resources/nucleus/native/linux-aarch64/libnucleus_taskbar_progress.so"
             "notification-macos/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_notification.dylib"
             "notification-macos/src/main/resources/nucleus/native/darwin-x64/libnucleus_notification.dylib"
             "notification-linux/src/main/resources/nucleus/native/linux-x64/libnucleus_notification_linux.so"
             "notification-linux/src/main/resources/nucleus/native/linux-aarch64/libnucleus_notification_linux.so"
+            "launcher-linux/src/main/resources/nucleus/native/linux-x64/libnucleus_launcher_linux.so"
+            "launcher-linux/src/main/resources/nucleus/native/linux-aarch64/libnucleus_launcher_linux.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do

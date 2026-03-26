@@ -34,6 +34,7 @@ class EnergyManagerTest {
     // ── Linux tests ──────────────────────────────────────────────────
 
     @Test
+    @kotlin.test.Ignore("Requires elevated privileges (nice/ioprio) not available on CI runners")
     fun `thread efficiency mode changes nice and ioprio on dedicated thread`() {
         assumeLinux()
         assertTrue(EnergyManager.isAvailable(), "Energy manager not available")
@@ -88,6 +89,7 @@ class EnergyManagerTest {
         }
 
     @Test
+    @kotlin.test.Ignore("Requires elevated privileges (nice/ioprio) not available on CI runners")
     fun `thread efficiency mode does not affect other threads`() {
         assumeLinux()
         assertTrue(EnergyManager.isAvailable())

@@ -1,5 +1,7 @@
 package io.github.kdroidfilter.nucleus.notification.linux
 
+import io.github.kdroidfilter.nucleus.freedesktop.icons.FreedesktopIcon
+
 /**
  * Raw image data to embed directly in a notification.
  *
@@ -84,7 +86,7 @@ data class NotificationAction(
  * @property category      Notification type category (e.g. `"email.arrived"`, `"im.received"`).
  * @property desktopEntry  The desktop file name (without `.desktop` suffix) for the calling application.
  * @property imageData     Raw image data to display in the notification.
- * @property imagePath     Icon name or file URI for the notification image (see [NotificationIcon]).
+ * @property imagePath     Icon name or file URI for the notification image (see [FreedesktopIcon]).
  *                         Takes priority over [Notification.appIcon] per the spec.
  * @property actionIcons   If `true`, action keys are interpreted as icon names.
  * @property soundFile     Path to a sound file to play.
@@ -100,7 +102,7 @@ data class NotificationHints(
     val category: String? = null,
     val desktopEntry: String? = null,
     val imageData: ImageData? = null,
-    val imagePath: NotificationIcon? = null,
+    val imagePath: FreedesktopIcon? = null,
     val actionIcons: Boolean? = null,
     val soundFile: String? = null,
     val soundName: NotificationSound? = null,
@@ -116,7 +118,7 @@ data class NotificationHints(
  *
  * @property appName       Application name (informational, may be shown by the server).
  * @property replacesId    If non-zero, atomically replaces the notification with this ID.
- * @property appIcon       Application icon (see [NotificationIcon]). On GNOME Shell, prefer
+ * @property appIcon       Application icon (see [FreedesktopIcon]). On GNOME Shell, prefer
  *                         [NotificationHints.imagePath] which is more reliably displayed.
  * @property summary       Single-line summary text (required).
  * @property body          Optional multi-line body; may contain limited markup:
@@ -130,7 +132,7 @@ data class NotificationHints(
 data class Notification(
     val appName: String = "",
     val replacesId: Int = 0,
-    val appIcon: NotificationIcon? = null,
+    val appIcon: FreedesktopIcon? = null,
     val summary: String,
     val body: String = "",
     val actions: List<NotificationAction> = emptyList(),

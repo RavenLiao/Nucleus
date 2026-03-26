@@ -14,10 +14,8 @@ val publishVersion =
         ?: "1.0.0"
 
 dependencies {
+    api(project(":freedesktop-icons"))
     compileOnly(project(":core-runtime"))
-    api(project(":launcher-linux"))
-    testImplementation(project(":core-runtime"))
-    testImplementation(kotlin("test"))
 }
 
 java {
@@ -33,58 +31,40 @@ kotlin {
 
 val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
 
-val buildNativeMacOs by tasks.registering(Exec::class) {
-    description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
+val buildNativeLinux by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into a Linux shared library"
     group = "build"
     val hasPrebuilt =
         nativeResourceDir
-            .dir("darwin-aarch64")
-            .file("libnucleus_taskbar_progress.dylib")
+            .dir("linux-x64")
+            .file("libnucleus_launcher_linux.so")
             .asFile
             .exists()
-    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
-    val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
+    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
     inputs.dir(nativeDir)
     outputs.dir(nativeResourceDir)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }
 
-val buildNativeWindows by tasks.registering(Exec::class) {
-    description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
-    group = "build"
-    val hasPrebuilt =
-        nativeResourceDir
-            .dir("win32-x64")
-            .file("nucleus_taskbar_progress.dll")
-            .asFile
-            .exists()
-    enabled = Os.isFamily(Os.FAMILY_WINDOWS) && !hasPrebuilt
-
-    val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
-    inputs.dir(nativeDir)
-    outputs.dir(nativeResourceDir)
-    workingDir(nativeDir)
-    commandLine("cmd", "/c", nativeDir.file("build.bat").asFile.absolutePath)
-}
-
 tasks.processResources {
-    dependsOn(buildNativeMacOs, buildNativeWindows)
+    dependsOn(buildNativeLinux)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeMacOs, buildNativeWindows)
+        dependsOn(buildNativeLinux)
     }
 }
 
 mavenPublishing {
-    coordinates("io.github.kdroidfilter", "nucleus.taskbar-progress", publishVersion)
+    coordinates("io.github.kdroidfilter", "nucleus.launcher-linux", publishVersion)
 
     pom {
-        name.set("Nucleus Taskbar Progress")
-        description.set("Cross-platform taskbar/dock progress indicator for Compose Desktop (Windows + macOS + Linux)")
+        name.set("Nucleus Launcher Linux")
+        description.set("Unity Launcher API (com.canonical.Unity.LauncherEntry) for JVM desktop applications via JNI")
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

@@ -40,13 +40,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import io.github.kdroidfilter.nucleus.freedesktop.icons.FreedesktopIcon
 import io.github.kdroidfilter.nucleus.notification.linux.CloseReason
 import io.github.kdroidfilter.nucleus.notification.linux.LinuxNotificationCenter
 import io.github.kdroidfilter.nucleus.notification.linux.LinuxNotificationListener
 import io.github.kdroidfilter.nucleus.notification.linux.Notification
 import io.github.kdroidfilter.nucleus.notification.linux.NotificationAction
 import io.github.kdroidfilter.nucleus.notification.linux.NotificationHints
-import io.github.kdroidfilter.nucleus.notification.linux.NotificationIcon
 import io.github.kdroidfilter.nucleus.notification.linux.NotificationSound
 import io.github.kdroidfilter.nucleus.notification.linux.ServerInformation
 import io.github.kdroidfilter.nucleus.notification.linux.Urgency
@@ -71,7 +71,7 @@ fun LinuxNotificationsScreen() {
     var appName by remember { mutableStateOf("Nucleus Demo") }
     var summary by remember { mutableStateOf("Hello from Nucleus") }
     var body by remember { mutableStateOf("This is a <b>desktop notification</b> sent via JNI.") }
-    var selectedIcon by remember { mutableStateOf<NotificationIcon>(NotificationIcon.Status.DIALOG_INFORMATION) }
+    var selectedIcon by remember { mutableStateOf<FreedesktopIcon>(FreedesktopIcon.Status.DIALOG_INFORMATION) }
     var urgency by remember { mutableStateOf(Urgency.NORMAL) }
     var useActions by remember { mutableStateOf(true) }
     var useSound by remember { mutableStateOf(false) }
@@ -83,19 +83,19 @@ fun LinuxNotificationsScreen() {
     var replacesPrevious by remember { mutableStateOf(false) }
 
     // All icon and sound options from the freedesktop specs
-    val iconOptions: List<NotificationIcon> =
+    val iconOptions: List<FreedesktopIcon> =
         remember {
             buildList {
-                addAll(NotificationIcon.Status.entries)
-                addAll(NotificationIcon.Emblem.entries)
-                addAll(NotificationIcon.Device.entries)
-                addAll(NotificationIcon.Emote.entries)
-                addAll(NotificationIcon.Action.entries)
-                addAll(NotificationIcon.Application.entries)
-                addAll(NotificationIcon.Category.entries)
-                addAll(NotificationIcon.MimeType.entries)
-                addAll(NotificationIcon.Place.entries)
-                addAll(NotificationIcon.Animation.entries)
+                addAll(FreedesktopIcon.Status.entries)
+                addAll(FreedesktopIcon.Emblem.entries)
+                addAll(FreedesktopIcon.Device.entries)
+                addAll(FreedesktopIcon.Emote.entries)
+                addAll(FreedesktopIcon.Action.entries)
+                addAll(FreedesktopIcon.Application.entries)
+                addAll(FreedesktopIcon.Category.entries)
+                addAll(FreedesktopIcon.MimeType.entries)
+                addAll(FreedesktopIcon.Place.entries)
+                addAll(FreedesktopIcon.Animation.entries)
             }
         }
 
@@ -208,8 +208,8 @@ fun LinuxNotificationsScreen() {
                                     appName = "Nucleus Demo",
                                     summary = "Simple Notification",
                                     body = "This is a basic notification.",
-                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                    appIcon = FreedesktopIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = FreedesktopIcon.Status.DIALOG_INFORMATION),
                                 ),
                             )
                         lastNotifId = id
@@ -224,7 +224,7 @@ fun LinuxNotificationsScreen() {
                                     appName = "Nucleus Demo",
                                     summary = "Message from Alice",
                                     body = "Hey! Have you seen the latest build?",
-                                    appIcon = NotificationIcon.Status.MAIL_UNREAD,
+                                    appIcon = FreedesktopIcon.Status.MAIL_UNREAD,
                                     actions =
                                         listOf(
                                             NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
@@ -235,7 +235,7 @@ fun LinuxNotificationsScreen() {
                                         NotificationHints(
                                             urgency = Urgency.NORMAL,
                                             category = "im.received",
-                                            imagePath = NotificationIcon.Status.MAIL_UNREAD,
+                                            imagePath = FreedesktopIcon.Status.MAIL_UNREAD,
                                         ),
                                 ),
                             )
@@ -252,12 +252,12 @@ fun LinuxNotificationsScreen() {
                                         appName = "Nucleus Demo",
                                         summary = "Critical Alert",
                                         body = "Disk usage is above 95%!",
-                                        appIcon = NotificationIcon.Status.DIALOG_WARNING,
+                                        appIcon = FreedesktopIcon.Status.DIALOG_WARNING,
                                         hints =
                                             NotificationHints(
                                                 urgency = Urgency.CRITICAL,
                                                 category = "device.error",
-                                                imagePath = NotificationIcon.Status.DIALOG_WARNING,
+                                                imagePath = FreedesktopIcon.Status.DIALOG_WARNING,
                                             ),
                                         expireTimeout = 0,
                                     ),
@@ -279,12 +279,12 @@ fun LinuxNotificationsScreen() {
                                     appName = "Nucleus Demo",
                                     summary = "Download Complete",
                                     body = "nucleus-1.3.0.tar.gz has finished downloading.",
-                                    appIcon = NotificationIcon.Emblem.DOWNLOADS,
+                                    appIcon = FreedesktopIcon.Emblem.DOWNLOADS,
                                     hints =
                                         NotificationHints(
                                             urgency = Urgency.LOW,
                                             category = "transfer.complete",
-                                            imagePath = NotificationIcon.Emblem.DOWNLOADS,
+                                            imagePath = FreedesktopIcon.Emblem.DOWNLOADS,
                                         ),
                                 ),
                             )
@@ -302,8 +302,8 @@ fun LinuxNotificationsScreen() {
                                     body =
                                         "<b>Bold</b>, <i>italic</i>, <u>underline</u> " +
                                             "and <a href=\"https://github.com\">a link</a>.",
-                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                    appIcon = FreedesktopIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = FreedesktopIcon.Status.DIALOG_INFORMATION),
                                 ),
                             )
                         lastNotifId = id
@@ -339,8 +339,8 @@ fun LinuxNotificationsScreen() {
                                     replacesId = lastNotifId,
                                     summary = "Replaced!",
                                     body = "This notification replaced #$lastNotifId.",
-                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                    appIcon = FreedesktopIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = FreedesktopIcon.Status.DIALOG_INFORMATION),
                                 ),
                             )
                         log("Replaced #$lastNotifId → #$id")
@@ -537,9 +537,9 @@ private fun SectionCard(
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun IconDropdown(
-    options: List<NotificationIcon>,
-    selected: NotificationIcon,
-    onSelect: (NotificationIcon) -> Unit,
+    options: List<FreedesktopIcon>,
+    selected: FreedesktopIcon,
+    onSelect: (FreedesktopIcon) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {

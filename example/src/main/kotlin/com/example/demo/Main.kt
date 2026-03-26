@@ -178,6 +178,9 @@ fun main(args: Array<String>) {
                                 if (Platform.Current == Platform.MacOS || Platform.Current == Platform.Linux) {
                                     add("Notifications")
                                 }
+                                if (Platform.Current == Platform.Linux) {
+                                    add("Launcher")
+                                }
                             }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
@@ -310,6 +313,7 @@ fun main(args: Array<String>) {
                                     else -> {}
                                 }
                             }
+                            "Launcher" -> LauncherScreen()
                         }
 
                         if (showInfoDialog) {

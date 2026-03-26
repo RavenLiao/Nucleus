@@ -76,6 +76,8 @@ nav:
           - Taskbar Progress: runtime/taskbar-progress.md
           - Notification (macOS): runtime/notification-macos.md
           - Notification (Linux): runtime/notification-linux.md
+          - Launcher (Linux): runtime/launcher-linux.md
+          - Freedesktop Icons: runtime/freedesktop-icons.md
           - Energy Manager: runtime/energy-manager.md
           - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md

@@ -92,6 +92,12 @@ Use them independently or together — each module is published to Maven Central
 | **Decorated Window Jewel** | `nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) integration for decorated windows and dialogs |
 | **Decorated Window Material 2** | `nucleus.decorated-window-material2` | Material 2 integration for decorated windows and dialogs |
 | **Decorated Window Material 3** | `nucleus.decorated-window-material3` | Material 3 integration for decorated windows and dialogs |
+| **Freedesktop Icons** | `nucleus.freedesktop-icons` | Type-safe [freedesktop icon naming](https://specifications.freedesktop.org/icon-naming/latest/) constants |
+| **Notification Linux** | `nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI |
+| **Launcher Linux** | `nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI |
+| **Taskbar Progress** | `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |
+| **System Color** | `nucleus.system-color` | Reactive system accent color & high contrast detection via JNI |
+| **Energy Manager** | `nucleus.energy-manager` | Energy efficiency & screen-awake APIs |
 | **Linux HiDPI** | `nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux (JNI) |
 | **GraalVM Runtime** | `nucleus.graalvm-runtime` | Native-image bootstrap + font substitutions (includes linux-hidpi) |
 

@@ -1,30 +1,58 @@
 package io.github.kdroidfilter.nucleus.taskbarprogress.linux
 
-import io.github.kdroidfilter.nucleus.core.runtime.NativeLibraryLoader
+import io.github.kdroidfilter.nucleus.launcher.linux.LauncherProperties
+import io.github.kdroidfilter.nucleus.launcher.linux.LinuxLauncherEntry
 
-private const val LIBRARY_NAME = "nucleus_taskbar_progress"
+private const val STATE_NO_PROGRESS = 0x00
 
 internal object NativeLinuxTaskbarBridge {
-    private val loaded = NativeLibraryLoader.load(LIBRARY_NAME, NativeLinuxTaskbarBridge::class.java)
+    val isLoaded: Boolean get() = LinuxLauncherEntry.isAvailable
 
-    val isLoaded: Boolean get() = loaded
+    @Volatile
+    private var progressValue: Double = 0.0
 
-    @JvmStatic
-    external fun nativeSetProgress(
+    @Volatile
+    private var progressVisible: Boolean = false
+
+    fun nativeSetProgress(
         desktopFilename: String,
         completed: Long,
         total: Long,
-    ): Int
+    ): Int {
+        progressValue = if (total > 0) completed.toDouble() / total.toDouble() else 0.0
+        if (!progressVisible) progressVisible = true
+        val ok =
+            LinuxLauncherEntry.update(
+                LinuxLauncherEntry.appUri(desktopFilename),
+                LauncherProperties(
+                    progress = progressValue,
+                    progressVisible = progressVisible,
+                ),
+            )
+        return if (ok) 0 else -1
+    }
 
-    @JvmStatic
-    external fun nativeSetProgressState(
+    fun nativeSetProgressState(
         desktopFilename: String,
         flags: Int,
-    ): Int
+    ): Int {
+        progressVisible = flags != STATE_NO_PROGRESS
+        val ok =
+            LinuxLauncherEntry.update(
+                LinuxLauncherEntry.appUri(desktopFilename),
+                LauncherProperties(
+                    progress = progressValue,
+                    progressVisible = progressVisible,
+                ),
+            )
+        return if (ok) 0 else -1
+    }
 
-    @JvmStatic
-    external fun nativeSetUrgent(
+    fun nativeSetUrgent(
         desktopFilename: String,
         urgent: Boolean,
-    ): Int
+    ): Int {
+        val ok = LinuxLauncherEntry.setUrgent(LinuxLauncherEntry.appUri(desktopFilename), urgent)
+        return if (ok) 0 else -1
+    }
 }

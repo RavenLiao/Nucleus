@@ -123,6 +123,13 @@ jobs:
           pattern: 'notification-linux-*'
           merge-multiple: true
 
+      - name: Download launcher-linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: launcher-linux/src/main/resources/nucleus/native/
+          pattern: 'launcher-linux-*'
+          merge-multiple: true
+
       - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon

@@ -409,22 +409,6 @@ jobs:
           path: energy-manager/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
 
-      - name: Build taskbar-progress Linux native shared library
-        run: bash taskbar-progress/src/main/native/linux/build.sh
-
-      - name: Verify taskbar-progress Linux native
-        run: |
-          f="taskbar-progress/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_taskbar_progress.so"
-          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
-          echo "OK: $f ($(wc -c < "$f") bytes)"
-
-      - name: Upload taskbar-progress Linux shared library
-        uses: actions/upload-artifact@v4
-        with:
-          name: taskbar-progress-linux-${{ matrix.arch }}
-          path: taskbar-progress/src/main/resources/nucleus/native/linux-*/
-          retention-days: 1
-
       - name: Build notification-linux native shared library
         run: bash notification-linux/src/main/native/linux/build.sh
 
@@ -439,4 +423,20 @@ jobs:
         with:
           name: notification-linux-${{ matrix.arch }}
           path: notification-linux/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build launcher-linux native shared library
+        run: bash launcher-linux/src/main/native/linux/build.sh
+
+      - name: Verify launcher-linux native
+        run: |
+          f="launcher-linux/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_launcher_linux.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload launcher-linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: launcher-linux-${{ matrix.arch }}
+          path: launcher-linux/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":taskbar-progress"))
     implementation(project(":notification-macos"))
     implementation(project(":notification-linux"))
+    implementation(project(":launcher-linux"))
     implementation(project(":graalvm-runtime"))
     implementation(libs.reorderable)
     implementation("com.materialkolor:material-kolor:4.1.1")

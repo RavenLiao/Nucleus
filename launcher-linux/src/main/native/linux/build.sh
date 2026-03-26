@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compiles nucleus_taskbar_progress_linux.c into a shared library for the current architecture.
+# Compiles nucleus_launcher_linux.c into a shared library for the current architecture.
 # The output is placed in the JAR resources so it ships with the library.
 #
 # Prerequisites: gcc, libgio-2.0-dev (or glib2-devel on Fedora).
@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SRC="$SCRIPT_DIR/nucleus_taskbar_progress_linux.c"
+SRC="$SCRIPT_DIR/nucleus_launcher_linux.c"
 RESOURCE_DIR="$SCRIPT_DIR/../../resources/nucleus/native"
 
 # Detect architecture
@@ -23,8 +23,9 @@ OUT_DIR="$RESOURCE_DIR/$RESOURCE_ARCH"
 
 # Detect JAVA_HOME for JNI headers
 if [ -z "${JAVA_HOME:-}" ]; then
-    # Try common locations
-    for candidate in /usr/lib/jvm/java /usr/lib/jvm/default-java /usr/lib/jvm/java-17 /usr/lib/jvm/java-21; do
+    for candidate in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-21-openjdk-arm64 \
+                     /usr/lib/jvm/java-17-openjdk-amd64 /usr/lib/jvm/java-17-openjdk-arm64 \
+                     /usr/lib/jvm/java /usr/lib/jvm/default-java; do
         if [ -d "$candidate/include" ]; then
             JAVA_HOME="$candidate"
             break
@@ -55,24 +56,29 @@ GIO_LIBS=$(pkg-config --libs gio-2.0)
 
 mkdir -p "$OUT_DIR"
 
+echo "Compiling for $ARCH ($RESOURCE_ARCH)..."
+
 # shellcheck disable=SC2086
 gcc -shared -fPIC \
     -I"$JNI_INCLUDE" -I"$JNI_INCLUDE_LINUX" \
     $GIO_CFLAGS \
     -O2 \
     -fvisibility=hidden \
+    -ffunction-sections \
+    -fdata-sections \
     -Wl,--gc-sections \
     -Wl,-s \
-    -o "$OUT_DIR/libnucleus_taskbar_progress.so" \
+    -lpthread \
+    -o "$OUT_DIR/libnucleus_launcher_linux.so" \
     "$SRC" \
     $GIO_LIBS
 
 echo "Built Linux shared library:"
-ls -lh "$OUT_DIR/libnucleus_taskbar_progress.so"
+ls -lh "$OUT_DIR/libnucleus_launcher_linux.so"
 
 # Clear NativeLibraryLoader cache so the new .so is picked up at next run
 CACHE_BASE="${XDG_CACHE_HOME:-$HOME/.cache}/nucleus/native"
-CACHED="$CACHE_BASE/$RESOURCE_ARCH/libnucleus_taskbar_progress.so"
+CACHED="$CACHE_BASE/$RESOURCE_ARCH/libnucleus_launcher_linux.so"
 if [ -f "$CACHED" ]; then
     rm -f "$CACHED"
     echo "Cleared cache: $CACHED"
