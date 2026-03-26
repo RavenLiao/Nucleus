@@ -72,6 +72,13 @@ jobs:
           pattern: 'taskbar-progress-*'
           merge-multiple: true
 
+      - name: Download notification-macos artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: notification-macos/src/main/resources/nucleus/native/
+          pattern: 'notification-macos*'
+          merge-multiple: true
+
       - name: Cache Gradle Caches
         uses: gradle/actions/setup-gradle@v5
 

@@ -172,7 +172,11 @@ fun main(args: Array<String>) {
                     CompositionLocalProvider(
                         LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                     ) {
-                        val tabs = listOf("Nucleus", "Gallery", "Taskbar")
+                        val tabs =
+                            buildList {
+                                addAll(listOf("Nucleus", "Gallery", "Taskbar"))
+                                if (Platform.Current == Platform.MacOS) add("Notifications")
+                            }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
                         MaterialTitleBar(modifier = Modifier.newFullscreenControls().macOSLargeCornerRadius()) { _ ->
@@ -297,6 +301,7 @@ fun main(args: Array<String>) {
                                 }
                             }
                             "Taskbar" -> TaskbarProgressScreen(window)
+                            "Notifications" -> NotificationsScreen()
                         }
 
                         if (showInfoDialog) {

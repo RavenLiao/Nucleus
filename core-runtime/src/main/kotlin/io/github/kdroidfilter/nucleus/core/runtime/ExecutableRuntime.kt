@@ -97,6 +97,10 @@ public object ExecutableRuntime {
     @JvmStatic
     public fun isDev(): Boolean = type() == ExecutableType.DEV
 
+    @JvmStatic
+    public val isGraalVmNativeImage: Boolean =
+        System.getProperty("org.graalvm.nativeimage.imagecode") != null
+
     public fun parseType(rawValue: String?): ExecutableType =
         when (rawValue?.trim()?.lowercase()) {
             // Windows

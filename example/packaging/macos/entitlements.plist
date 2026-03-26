@@ -6,5 +6,10 @@
     <true/>
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
     <true/>
+    <!-- Uncomment after obtaining Apple's Critical Alerts entitlement approval:
+         https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/
+    <key>com.apple.developer.usernotifications.critical-alerts</key>
+    <true/>
+    -->
 </dict>
 </plist>

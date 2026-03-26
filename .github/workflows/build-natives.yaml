@@ -287,6 +287,25 @@ jobs:
           path: taskbar-progress/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build notification-macos macOS dylibs
+        run: bash notification-macos/src/main/native/macos/build.sh
+
+      - name: Verify notification-macos macOS natives
+        run: |
+          for f in \
+            notification-macos/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_notification.dylib \
+            notification-macos/src/main/resources/nucleus/native/darwin-x64/libnucleus_notification.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload notification-macos macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-macos
+          path: notification-macos/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:

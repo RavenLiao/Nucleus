@@ -29,6 +29,7 @@ dependencies {
     implementation(project(":decorated-window-jni"))
     implementation(project(":energy-manager"))
     implementation(project(":taskbar-progress"))
+    implementation(project(":notification-macos"))
     implementation(project(":graalvm-runtime"))
     implementation(libs.reorderable)
     implementation("com.materialkolor:material-kolor:4.1.1")

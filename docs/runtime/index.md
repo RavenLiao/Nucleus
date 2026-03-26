@@ -10,6 +10,7 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | AOT Runtime | `io.github.kdroidfilter:nucleus.aot-runtime` | AOT cache detection (includes core-runtime via `api`) |
 | Updater Runtime | `io.github.kdroidfilter:nucleus.updater-runtime` | Auto-update library with update level detection and post-update events (includes core-runtime) |
 | Taskbar Progress | `io.github.kdroidfilter:nucleus.taskbar-progress` | Native taskbar/dock progress bar and attention requests (Windows, macOS, Linux) |
+| Notification (macOS) | `io.github.kdroidfilter:nucleus.notification-macos` | macOS UserNotifications API — local notifications, actions, badges via JNI |
 | Decorated Window | `io.github.kdroidfilter:nucleus.decorated-window` | Custom window decorations with native title bar |
 | Decorated Window — Jewel | `io.github.kdroidfilter:nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) color mapping for decorated windows |
 | Decorated Window — Material 2 | `io.github.kdroidfilter:nucleus.decorated-window-material2` | Material 2 color mapping for decorated windows |
@@ -31,6 +32,7 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.aot-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
     implementation("io.github.kdroidfilter:nucleus.taskbar-progress:<version>")
+    implementation("io.github.kdroidfilter:nucleus.notification-macos:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jewel:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-material2:<version>")
@@ -51,7 +53,7 @@ dependencies {
 
 When ProGuard is enabled in a release build, the Nucleus Gradle plugin **automatically includes** the required rules for all Nucleus runtime libraries (`default-compose-desktop-rules.pro`). No manual configuration is needed.
 
-Libraries that use JNI (`decorated-window`, `darkmode-detector`, `system-color`, `energy-manager`, `native-ssl`) require `-keep` rules for their native bridge classes — these are handled by the plugin automatically.
+Libraries that use JNI (`decorated-window`, `darkmode-detector`, `system-color`, `energy-manager`, `native-ssl`, `notification-macos`) require `-keep` rules for their native bridge classes — these are handled by the plugin automatically.
 
 ### Overriding the ProGuard configuration
 
