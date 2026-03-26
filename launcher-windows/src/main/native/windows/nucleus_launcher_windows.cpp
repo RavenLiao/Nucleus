@@ -88,6 +88,8 @@ struct ThumbBarState {
     jmethodID onClickMethod;
     std::vector<HICON> icons;
     bool buttonsAdded;
+    int buttonCount;
+    UINT buttonIds[7];
 };
 
 
@@ -174,6 +176,7 @@ static HRESULT createShellLinkItem(
     const std::wstring &title,
     const std::wstring &arguments,
     const std::wstring &description,
+    int iconType,
     const std::wstring &iconPath,
     int iconIndex,
     IShellLinkW **ppLink
@@ -197,10 +200,28 @@ static HRESULT createShellLinkItem(
         if (FAILED(hr)) return hr;
     }
 
-    if (!iconPath.empty()) {
-        hr = link->SetIconLocation(iconPath.c_str(), iconIndex);
-    } else {
-        hr = link->SetIconLocation(exePath, iconIndex);
+    // Resolve icon location based on type: 0=stock, 1=file, 2=resource, -1=app icon
+    switch (iconType) {
+    case 0: { // Stock icon — resolve to DLL path + index via SHGetStockIconInfo
+        SHSTOCKICONINFO sii = {};
+        sii.cbSize = sizeof(sii);
+        hr = SHGetStockIconInfo((SHSTOCKICONID)iconIndex, SHGSI_ICONLOCATION, &sii);
+        if (SUCCEEDED(hr)) {
+            hr = link->SetIconLocation(sii.szPath, sii.iIcon);
+        }
+        break;
+    }
+    case 1: // .ico file
+    case 2: // DLL resource
+        if (!iconPath.empty()) {
+            hr = link->SetIconLocation(iconPath.c_str(), iconIndex);
+        } else {
+            hr = link->SetIconLocation(exePath, 0);
+        }
+        break;
+    default: // -1 or unknown — use app icon
+        hr = link->SetIconLocation(exePath, 0);
+        break;
     }
     if (FAILED(hr)) return hr;
 
@@ -544,7 +565,7 @@ JNIEXPORT jstring JNICALL
 Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge_nativeAppendCategory(
     JNIEnv *env, jclass clazz, jstring jName,
     jobjectArray jTitles, jobjectArray jArguments, jobjectArray jDescriptions,
-    jobjectArray jIconPaths, jintArray jIconIndices
+    jintArray jIconTypes, jobjectArray jIconPaths, jintArray jIconIndices
 ) {
     std::lock_guard<std::mutex> lock(g_jl_mutex);
     if (!g_jumpList) return env->NewStringUTF("No active jump list session");
@@ -553,6 +574,7 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge
     auto titles = toWStringArray(env, jTitles);
     auto arguments = toWStringArray(env, jArguments);
     auto descriptions = toWStringArray(env, jDescriptions);
+    auto iconTypes = toIntVector(env, jIconTypes);
     auto iconPaths = toWStringArray(env, jIconPaths);
     auto iconIndices = toIntVector(env, jIconIndices);
 
@@ -569,6 +591,7 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge
             titles[i],
             i < arguments.size() ? arguments[i] : L"",
             i < descriptions.size() ? descriptions[i] : L"",
+            i < iconTypes.size() ? iconTypes[i] : -1,
             i < iconPaths.size() ? iconPaths[i] : L"",
             i < iconIndices.size() ? iconIndices[i] : 0,
             &link);
@@ -604,7 +627,8 @@ JNIEXPORT jstring JNICALL
 Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge_nativeAddUserTasks(
     JNIEnv *env, jclass clazz,
     jobjectArray jTitles, jobjectArray jArguments, jobjectArray jDescriptions,
-    jobjectArray jIconPaths, jintArray jIconIndices, jbooleanArray jIsSeparator
+    jintArray jIconTypes, jobjectArray jIconPaths, jintArray jIconIndices,
+    jbooleanArray jIsSeparator
 ) {
     std::lock_guard<std::mutex> lock(g_jl_mutex);
     if (!g_jumpList) return env->NewStringUTF("No active jump list session");
@@ -612,6 +636,7 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge
     auto titles = toWStringArray(env, jTitles);
     auto arguments = toWStringArray(env, jArguments);
     auto descriptions = toWStringArray(env, jDescriptions);
+    auto iconTypes = toIntVector(env, jIconTypes);
     auto iconPaths = toWStringArray(env, jIconPaths);
     auto iconIndices = toIntVector(env, jIconIndices);
     auto isSeparator = toBoolVector(env, jIsSeparator);
@@ -632,6 +657,7 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge
                 titles[i],
                 i < arguments.size() ? arguments[i] : L"",
                 i < descriptions.size() ? descriptions[i] : L"",
+                i < iconTypes.size() ? iconTypes[i] : -1,
                 i < iconPaths.size() ? iconPaths[i] : L"",
                 i < iconIndices.size() ? iconIndices[i] : 0,
                 &link);
@@ -805,17 +831,51 @@ static LRESULT CALLBACK ThumbBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     return CallWindowProcW(state->originalWndProc, hwnd, uMsg, wParam, lParam);
 }
 
+// Hide buttons and detach callback, but keep state so buttons can be re-shown
 static void CleanupThumbBarState(JNIEnv *env, HWND hwnd) {
     auto *state = (ThumbBarState *)GetPropW(hwnd, THUMBBAR_PROP);
     if (!state) return;
 
-    if (state->originalWndProc)
+    // Hide all buttons (Windows doesn't allow removing them)
+    if (state->buttonsAdded && g_taskbarList && IsWindow(hwnd)) {
+        EnsureTaskbarList();
+        THUMBBUTTON hidden[7] = {};
+        for (int i = 0; i < state->buttonCount; i++) {
+            hidden[i].dwMask = THB_FLAGS;
+            hidden[i].iId = state->buttonIds[i];
+            hidden[i].dwFlags = THBF_HIDDEN | THBF_DISABLED | THBF_NOBACKGROUND;
+        }
+        g_taskbarList->ThumbBarUpdateButtons(hwnd, (UINT)state->buttonCount, hidden);
+    }
+
+    // Restore original WndProc
+    if (state->originalWndProc) {
         SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)state->originalWndProc);
+        state->originalWndProc = nullptr;
+    }
+
+    // Release icons
     for (HICON h : state->icons) { if (h) DestroyIcon(h); }
-    if (state->callbackRef && env)
+    state->icons.clear();
+
+    // Release callback
+    if (state->callbackRef && env) {
         env->DeleteGlobalRef(state->callbackRef);
-    RemovePropW(hwnd, THUMBBAR_PROP);
-    delete state;
+        state->callbackRef = nullptr;
+    }
+    // Keep state + prop so re-add uses ThumbBarUpdateButtons instead of ThumbBarAddButtons
+}
+
+// ============================================================================
+// JNI: HWND extraction
+// ============================================================================
+
+JNIEXPORT jlong JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeGetHwnd(
+    JNIEnv *env, jclass, jobject awtWindow)
+{
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    return (jlong)(intptr_t)hwnd;
 }
 
 // ============================================================================
@@ -880,7 +940,59 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_
     int count = env->GetArrayLength(jIds);
     if (count <= 0 || count > 7) return env->NewStringUTF("Invalid button count (1-7)");
 
+    // Check if buttons were already added for this window — re-show them
+    auto *existingState = (ThumbBarState *)GetPropW(hwnd, THUMBBAR_PROP);
+    if (existingState && existingState->buttonsAdded) {
+        // Buttons already registered, update them instead of adding
+        jint *ids = env->GetIntArrayElements(jIds, nullptr);
+        jint *flags = env->GetIntArrayElements(jFlags, nullptr);
+        jint *iconTypes = env->GetIntArrayElements(jIconTypes, nullptr);
+        jint *iconIndices = env->GetIntArrayElements(jIconIndices, nullptr);
+        auto tooltips = toWStringArray(env, jTooltips);
+        auto iconPaths = toWStringArray(env, jIconPaths);
+
+        // Clean old icons
+        for (HICON h : existingState->icons) { if (h) DestroyIcon(h); }
+        existingState->icons.clear();
+
+        THUMBBUTTON buttons[7] = {};
+        for (int i = 0; i < count; i++) {
+            HICON hIcon = LoadIconByType(iconTypes[i], iconPaths[i], iconIndices[i]);
+            if (hIcon) existingState->icons.push_back(hIcon);
+            FillThumbButton(buttons[i], ids[i], tooltips[i], flags[i], hIcon);
+        }
+
+        env->ReleaseIntArrayElements(jIds, ids, JNI_ABORT);
+        env->ReleaseIntArrayElements(jFlags, flags, JNI_ABORT);
+        env->ReleaseIntArrayElements(jIconTypes, iconTypes, JNI_ABORT);
+        env->ReleaseIntArrayElements(jIconIndices, iconIndices, JNI_ABORT);
+
+        HRESULT hr = g_taskbarList->ThumbBarUpdateButtons(hwnd, (UINT)count, buttons);
+        if (FAILED(hr)) return errorString(env, "ThumbBarUpdateButtons failed", hr);
+
+        // Update callback and re-subclass WndProc
+        if (existingState->callbackRef && env) {
+            env->DeleteGlobalRef(existingState->callbackRef);
+            existingState->callbackRef = nullptr;
+        }
+        if (jCallback) {
+            jclass cbClass = env->GetObjectClass(jCallback);
+            jmethodID method = env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V");
+            env->DeleteLocalRef(cbClass);
+            if (method) {
+                existingState->callbackRef = env->NewGlobalRef(jCallback);
+                existingState->onClickMethod = method;
+                if (!existingState->originalWndProc) {
+                    existingState->originalWndProc = (WNDPROC)SetWindowLongPtrW(
+                        hwnd, GWLP_WNDPROC, (LONG_PTR)ThumbBarWndProc);
+                }
+            }
+        }
+        return nullptr;
+    }
+
     auto *state = new ThumbBarState{};
+    state->buttonCount = count;
 
     jint *ids = env->GetIntArrayElements(jIds, nullptr);
     jint *flags = env->GetIntArrayElements(jFlags, nullptr);
@@ -891,6 +1003,7 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_
 
     THUMBBUTTON buttons[7] = {};
     for (int i = 0; i < count; i++) {
+        state->buttonIds[i] = (UINT)ids[i];
         HICON hIcon = LoadIconByType(iconTypes[i], iconPaths[i], iconIndices[i]);
         if (hIcon) state->icons.push_back(hIcon);
         FillThumbButton(buttons[i], ids[i], tooltips[i], flags[i], hIcon);
@@ -977,6 +1090,17 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_
     std::lock_guard<std::mutex> lock(g_tb_mutex);
     HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
     if (!hwnd) return env->NewStringUTF("Could not get HWND");
+    CleanupThumbBarState(env, hwnd);
+    return nullptr;
+}
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeThumbBarUnregisterByHwnd(
+    JNIEnv *env, jclass, jlong jHwnd)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    HWND hwnd = (HWND)(intptr_t)jHwnd;
+    if (!hwnd) return env->NewStringUTF("Invalid HWND");
     CleanupThumbBarState(env, hwnd);
     return nullptr;
 }

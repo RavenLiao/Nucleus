@@ -41,13 +41,14 @@ object WindowsOverlayIcon {
             lastError = "Native library not available"
             return false
         }
-        val error = NativeWindowsTaskbarBridge.nativeSetOverlayIcon(
-            window,
-            iconType = icon.nativeType(),
-            iconPath = icon.nativePath(),
-            iconIndex = icon.nativeIndex(),
-            description = description,
-        )
+        val error =
+            NativeWindowsTaskbarBridge.nativeSetOverlayIcon(
+                window,
+                iconType = icon.nativeType(),
+                iconPath = icon.nativePath(),
+                iconIndex = icon.nativeIndex(),
+                description = description,
+            )
         lastError = error
         if (error != null) {
             logger.warning("SetOverlayIcon failed: $error")
@@ -76,20 +77,23 @@ object WindowsOverlayIcon {
 }
 
 @Suppress("MagicNumber")
-internal fun TaskbarIconSource.nativeType(): Int = when (this) {
-    is TaskbarIconSource.FromStock -> 0
-    is TaskbarIconSource.FromFile -> 1
-    is TaskbarIconSource.FromResource -> 2
-}
+internal fun TaskbarIconSource.nativeType(): Int =
+    when (this) {
+        is TaskbarIconSource.FromStock -> 0
+        is TaskbarIconSource.FromFile -> 1
+        is TaskbarIconSource.FromResource -> 2
+    }
 
-internal fun TaskbarIconSource.nativePath(): String = when (this) {
-    is TaskbarIconSource.FromStock -> ""
-    is TaskbarIconSource.FromFile -> path
-    is TaskbarIconSource.FromResource -> dllPath
-}
+internal fun TaskbarIconSource.nativePath(): String =
+    when (this) {
+        is TaskbarIconSource.FromStock -> ""
+        is TaskbarIconSource.FromFile -> path
+        is TaskbarIconSource.FromResource -> dllPath
+    }
 
-internal fun TaskbarIconSource.nativeIndex(): Int = when (this) {
-    is TaskbarIconSource.FromStock -> stockIcon.id
-    is TaskbarIconSource.FromFile -> 0
-    is TaskbarIconSource.FromResource -> index
-}
+internal fun TaskbarIconSource.nativeIndex(): Int =
+    when (this) {
+        is TaskbarIconSource.FromStock -> stockIcon.id
+        is TaskbarIconSource.FromFile -> 0
+        is TaskbarIconSource.FromResource -> index
+    }

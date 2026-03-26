@@ -10,7 +10,9 @@ package io.github.kdroidfilter.nucleus.launcher.windows
  * @param id The native SHSTOCKICONID value.
  */
 @Suppress("MagicNumber")
-enum class StockIcon(val id: Int) {
+enum class StockIcon(
+    val id: Int,
+) {
     // ---- Documents & Applications ----
     DOCUMENT_NO_ASSOCIATION(0),
     DOCUMENT_WITH_ASSOCIATION(1),

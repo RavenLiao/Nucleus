@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.launcher.windows
 
 import java.awt.Window
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
 /**
@@ -22,6 +23,9 @@ object WindowsThumbnailToolbar {
     /** The last error message from a native operation, or null if the last operation succeeded. */
     var lastError: String? = null
         private set
+
+    // Cache HWND per window so we can unregister even after the AWT peer is disposed
+    private val hwndCache = ConcurrentHashMap<Window, Long>()
 
     /** Whether the native library is loaded and functional on this platform. */
     val isAvailable: Boolean get() = NativeWindowsTaskbarBridge.isLoaded
@@ -50,16 +54,26 @@ object WindowsThumbnailToolbar {
             "Maximum ${ThumbnailToolbarButton.MAX_BUTTONS} buttons allowed, got ${buttons.size}"
         }
 
+        // Cache HWND while the AWT peer is still alive
+        val hwnd = NativeWindowsTaskbarBridge.nativeGetHwnd(window)
+        if (hwnd != 0L) hwndCache[window] = hwnd
+
         val arrays = marshalButtons(buttons)
-        val error = NativeWindowsTaskbarBridge.nativeThumbBarSetButtons(
-            window,
-            arrays.ids, arrays.tooltips, arrays.flags,
-            arrays.iconTypes, arrays.iconPaths, arrays.iconIndices,
-            onClick,
-        )
+        val error =
+            NativeWindowsTaskbarBridge.nativeThumbBarSetButtons(
+                window,
+                arrays.ids,
+                arrays.tooltips,
+                arrays.flags,
+                arrays.iconTypes,
+                arrays.iconPaths,
+                arrays.iconIndices,
+                onClick,
+            )
         lastError = error
         if (error != null) {
             logger.warning("ThumbBarSetButtons failed: $error")
+            hwndCache.remove(window)
         }
         return error == null
     }
@@ -84,11 +98,16 @@ object WindowsThumbnailToolbar {
         }
 
         val arrays = marshalButtons(buttons)
-        val error = NativeWindowsTaskbarBridge.nativeThumbBarUpdateButtons(
-            window,
-            arrays.ids, arrays.tooltips, arrays.flags,
-            arrays.iconTypes, arrays.iconPaths, arrays.iconIndices,
-        )
+        val error =
+            NativeWindowsTaskbarBridge.nativeThumbBarUpdateButtons(
+                window,
+                arrays.ids,
+                arrays.tooltips,
+                arrays.flags,
+                arrays.iconTypes,
+                arrays.iconPaths,
+                arrays.iconIndices,
+            )
         lastError = error
         if (error != null) {
             logger.warning("ThumbBarUpdateButtons failed: $error")
@@ -109,7 +128,14 @@ object WindowsThumbnailToolbar {
             lastError = "Native library not available"
             return false
         }
-        val error = NativeWindowsTaskbarBridge.nativeThumbBarUnregister(window)
+        // Try cached HWND first (works even after AWT peer is disposed)
+        val cachedHwnd = hwndCache.remove(window)
+        val error =
+            if (cachedHwnd != null && cachedHwnd != 0L) {
+                NativeWindowsTaskbarBridge.nativeThumbBarUnregisterByHwnd(cachedHwnd)
+            } else {
+                NativeWindowsTaskbarBridge.nativeThumbBarUnregister(window)
+            }
         lastError = error
         if (error != null) {
             logger.warning("ThumbBarUnregister failed: $error")

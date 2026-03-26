@@ -97,8 +97,9 @@ object WindowsJumpListManager {
                     items.map { it.title }.toTypedArray(),
                     items.map { it.arguments }.toTypedArray(),
                     items.map { it.description }.toTypedArray(),
-                    items.map { it.iconPath }.toTypedArray(),
-                    items.map { it.iconIndex }.toIntArray(),
+                    items.map { it.icon.nativeType() }.toIntArray(),
+                    items.map { it.icon.nativePath() }.toTypedArray(),
+                    items.map { it.icon.nativeIndex() }.toIntArray(),
                 )
             if (error != null) {
                 lastError = error
@@ -122,8 +123,9 @@ object WindowsJumpListManager {
                     tasks.map { it.title }.toTypedArray(),
                     tasks.map { it.arguments }.toTypedArray(),
                     tasks.map { it.description }.toTypedArray(),
-                    tasks.map { it.iconPath }.toTypedArray(),
-                    tasks.map { it.iconIndex }.toIntArray(),
+                    tasks.map { it.icon.nativeType() }.toIntArray(),
+                    tasks.map { it.icon.nativePath() }.toTypedArray(),
+                    tasks.map { it.icon.nativeIndex() }.toIntArray(),
                     tasks.map { it.isSeparator }.toBooleanArray(),
                 )
             if (error != null) {
@@ -165,4 +167,29 @@ object WindowsJumpListManager {
         if (isAppx) return ""
         return NucleusApp.appId
     }
+
+    // -1 = no icon (use app icon), 0 = stock, 1 = file, 2 = resource
+    private fun TaskbarIconSource?.nativeType(): Int =
+        when (this) {
+            is TaskbarIconSource.FromStock -> 0
+            is TaskbarIconSource.FromFile -> 1
+            is TaskbarIconSource.FromResource -> 2
+            null -> -1
+        }
+
+    private fun TaskbarIconSource?.nativePath(): String =
+        when (this) {
+            is TaskbarIconSource.FromStock -> ""
+            is TaskbarIconSource.FromFile -> path
+            is TaskbarIconSource.FromResource -> dllPath
+            null -> ""
+        }
+
+    private fun TaskbarIconSource?.nativeIndex(): Int =
+        when (this) {
+            is TaskbarIconSource.FromStock -> stockIcon.ordinal
+            is TaskbarIconSource.FromFile -> 0
+            is TaskbarIconSource.FromResource -> index
+            null -> 0
+        }
 }

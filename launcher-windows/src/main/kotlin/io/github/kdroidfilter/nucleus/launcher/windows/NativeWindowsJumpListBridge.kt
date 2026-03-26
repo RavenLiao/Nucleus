@@ -24,6 +24,7 @@ internal object NativeWindowsJumpListBridge {
         titles: Array<String>,
         arguments: Array<String>,
         descriptions: Array<String>,
+        iconTypes: IntArray,
         iconPaths: Array<String>,
         iconIndices: IntArray,
     ): String?
@@ -36,6 +37,7 @@ internal object NativeWindowsJumpListBridge {
         titles: Array<String>,
         arguments: Array<String>,
         descriptions: Array<String>,
+        iconTypes: IntArray,
         iconPaths: Array<String>,
         iconIndices: IntArray,
         isSeparator: BooleanArray,

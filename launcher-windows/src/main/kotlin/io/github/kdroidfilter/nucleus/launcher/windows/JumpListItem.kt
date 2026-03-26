@@ -9,16 +9,15 @@ package io.github.kdroidfilter.nucleus.launcher.windows
  * @property title Display text shown in the jump list.
  * @property arguments Command-line arguments passed to the app when this item is clicked.
  * @property description Tooltip text shown on hover.
- * @property iconPath Path to the icon file (.ico, .exe, .dll). Empty string uses the app icon.
- * @property iconIndex Icon resource index within the file.
+ * @property icon Icon to display next to the item. Supports [TaskbarIconSource.FromStock],
+ *   [TaskbarIconSource.FromFile], and [TaskbarIconSource.FromResource]. Null uses the app icon.
  * @property isSeparator Whether this entry is a visual separator (only valid in user tasks).
  */
 data class JumpListItem(
     val title: String = "",
     val arguments: String = "",
     val description: String = "",
-    val iconPath: String = "",
-    val iconIndex: Int = 0,
+    val icon: TaskbarIconSource? = null,
     val isSeparator: Boolean = false,
 ) {
     companion object {

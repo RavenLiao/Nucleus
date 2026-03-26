@@ -40,10 +40,10 @@ data class ThumbnailToolbarButton(
 @Suppress("MagicNumber")
 internal fun ThumbnailToolbarButton.toNativeFlags(): Int {
     var flags = 0
-    if (!enabled) flags = flags or 0x01       // THBF_DISABLED
+    if (!enabled) flags = flags or 0x01 // THBF_DISABLED
     if (dismissOnClick) flags = flags or 0x02 // THBF_DISMISSONCLICK
-    if (noBackground) flags = flags or 0x04   // THBF_NOBACKGROUND
-    if (hidden) flags = flags or 0x08         // THBF_HIDDEN
+    if (noBackground) flags = flags or 0x04 // THBF_NOBACKGROUND
+    if (hidden) flags = flags or 0x08 // THBF_HIDDEN
     if (nonInteractive) flags = flags or 0x10 // THBF_NONINTERACTIVE
     return flags
 }

@@ -47,6 +47,15 @@ import java.awt.Window
 
 private const val EVENT_LOG_MAX = 30
 
+private val DEMO_ICONS =
+    listOf(
+        "Warning" to StockIcon.WARNING,
+        "Error" to StockIcon.ERROR,
+        "Info" to StockIcon.INFO,
+        "Shield" to StockIcon.SHIELD,
+        "Help" to StockIcon.HELP,
+    )
+
 @Suppress("FunctionNaming")
 @Composable
 fun WindowsLauncherScreen(window: Window) {
@@ -184,15 +193,6 @@ private fun BadgeSection(events: MutableList<String>) {
 @Suppress("FunctionNaming", "LongMethod")
 @Composable
 private fun JumpListSection(events: MutableList<String>) {
-    val shell32 =
-        remember {
-            System.getenv("SystemRoot")?.let { "$it\\System32\\shell32.dll" } ?: ""
-        }
-    val imageres =
-        remember {
-            System.getenv("SystemRoot")?.let { "$it\\System32\\imageres.dll" } ?: ""
-        }
-
     Text("Jump List", style = MaterialTheme.typography.headlineSmall)
     Text(
         "Items launch the app with arguments via SingleInstanceManager.",
@@ -213,22 +213,19 @@ private fun JumpListSection(events: MutableList<String>) {
                                             title = "Open Dashboard",
                                             arguments = "nucleus://dashboard",
                                             description = "Open the main dashboard",
-                                            iconPath = imageres,
-                                            iconIndex = 109,
+                                            icon = TaskbarIconSource.FromStock(StockIcon.WORLD),
                                         ),
                                         JumpListItem(
                                             title = "Open Settings",
                                             arguments = "nucleus://settings",
                                             description = "Open application settings",
-                                            iconPath = shell32,
-                                            iconIndex = 176,
+                                            icon = TaskbarIconSource.FromStock(StockIcon.SETTINGS),
                                         ),
                                         JumpListItem(
                                             title = "View Logs",
                                             arguments = "nucleus://logs",
                                             description = "Open the log viewer",
-                                            iconPath = shell32,
-                                            iconIndex = 1,
+                                            icon = TaskbarIconSource.FromStock(StockIcon.INFO),
                                         ),
                                     ),
                             ),
@@ -239,16 +236,14 @@ private fun JumpListSection(events: MutableList<String>) {
                                 title = "New Window",
                                 arguments = "nucleus://new-window",
                                 description = "Open a new application window",
-                                iconPath = shell32,
-                                iconIndex = 2,
+                                icon = TaskbarIconSource.FromStock(StockIcon.DESKTOP_PC),
                             ),
                             JumpListItem.SEPARATOR,
                             JumpListItem(
                                 title = "Check for Updates",
                                 arguments = "nucleus://check-updates",
                                 description = "Check for application updates",
-                                iconPath = shell32,
-                                iconIndex = 46,
+                                icon = TaskbarIconSource.FromStock(StockIcon.SHIELD),
                             ),
                         ),
                 )
@@ -278,7 +273,10 @@ private fun JumpListSection(events: MutableList<String>) {
 @OptIn(ExperimentalLayoutApi::class)
 @Suppress("FunctionNaming")
 @Composable
-private fun OverlayIconSection(window: Window, events: MutableList<String>) {
+private fun OverlayIconSection(
+    window: Window,
+    events: MutableList<String>,
+) {
     Text("Overlay Icon", style = MaterialTheme.typography.headlineSmall)
     Text(
         "Small 16x16 status icon on the taskbar button (works without MSIX)",
@@ -286,25 +284,14 @@ private fun OverlayIconSection(window: Window, events: MutableList<String>) {
     )
 
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        val icons = listOf(
-            "Warning" to StockIcon.WARNING,
-            "Error" to StockIcon.ERROR,
-            "Info" to StockIcon.INFO,
-            "Shield" to StockIcon.SHIELD,
-            "Lock" to StockIcon.LOCK,
-            "Key" to StockIcon.KEY,
-            "Star" to StockIcon.FIND,
-            "Globe" to StockIcon.WORLD,
-            "Users" to StockIcon.USERS,
-            "Settings" to StockIcon.SETTINGS,
-        )
-        icons.forEach { (label, stockIcon) ->
+        DEMO_ICONS.forEach { (label, stockIcon) ->
             Button(onClick = {
-                val ok = WindowsOverlayIcon.setIcon(
-                    window,
-                    TaskbarIconSource.FromStock(stockIcon),
-                    description = label,
-                )
+                val ok =
+                    WindowsOverlayIcon.setIcon(
+                        window,
+                        TaskbarIconSource.FromStock(stockIcon),
+                        description = label,
+                    )
                 val msg = if (ok) "Overlay: $label" else "Overlay FAILED: ${WindowsOverlayIcon.lastError}"
                 events.add(0, msg)
                 if (events.size > EVENT_LOG_MAX) events.removeLast()
@@ -325,7 +312,10 @@ private fun OverlayIconSection(window: Window, events: MutableList<String>) {
 
 @Suppress("FunctionNaming", "LongMethod")
 @Composable
-private fun ThumbnailToolbarSection(window: Window, events: MutableList<String>) {
+private fun ThumbnailToolbarSection(
+    window: Window,
+    events: MutableList<String>,
+) {
     var toolbarAdded by remember { mutableStateOf(false) }
 
     Text("Thumbnail Toolbar", style = MaterialTheme.typography.headlineSmall)
@@ -343,46 +333,27 @@ private fun ThumbnailToolbarSection(window: Window, events: MutableList<String>)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(
             onClick = {
-                val buttons = listOf(
-                    ThumbnailToolbarButton(
-                        id = 0,
-                        tooltip = "Warning",
-                        icon = TaskbarIconSource.FromStock(StockIcon.WARNING),
-                    ),
-                    ThumbnailToolbarButton(
-                        id = 1,
-                        tooltip = "Info",
-                        icon = TaskbarIconSource.FromStock(StockIcon.INFO),
-                    ),
-                    ThumbnailToolbarButton(
-                        id = 2,
-                        tooltip = "Error",
-                        icon = TaskbarIconSource.FromStock(StockIcon.ERROR),
-                    ),
-                    ThumbnailToolbarButton(
-                        id = 3,
-                        tooltip = "Shield",
-                        icon = TaskbarIconSource.FromStock(StockIcon.SHIELD),
-                    ),
-                    ThumbnailToolbarButton(
-                        id = 4,
-                        tooltip = "Help",
-                        icon = TaskbarIconSource.FromStock(StockIcon.HELP),
-                    ),
-                )
-                val ok = WindowsThumbnailToolbar.setButtons(window, buttons) { buttonId ->
-                    val name = when (buttonId) {
-                        0 -> "Warning"; 1 -> "Info"; 2 -> "Error"; 3 -> "Shield"; 4 -> "Help"; else -> "?"
+                val buttons =
+                    DEMO_ICONS.mapIndexed { index, (label, stockIcon) ->
+                        ThumbnailToolbarButton(
+                            id = index,
+                            tooltip = label,
+                            icon = TaskbarIconSource.FromStock(stockIcon),
+                        )
                     }
-                    events.add(0, "Toolbar click: $name (id=$buttonId)")
-                    if (events.size > EVENT_LOG_MAX) events.removeLast()
-                }
+                val ok =
+                    WindowsThumbnailToolbar.setButtons(window, buttons) { buttonId ->
+                        val name = DEMO_ICONS.getOrNull(buttonId)?.first ?: "?"
+                        events.add(0, "Toolbar click: $name (id=$buttonId)")
+                        if (events.size > EVENT_LOG_MAX) events.removeLast()
+                    }
                 toolbarAdded = ok
-                val msg = if (ok) {
-                    "Toolbar added — hover taskbar icon"
-                } else {
-                    "Toolbar FAILED: ${WindowsThumbnailToolbar.lastError}"
-                }
+                val msg =
+                    if (ok) {
+                        "Toolbar added — hover taskbar icon"
+                    } else {
+                        "Toolbar FAILED: ${WindowsThumbnailToolbar.lastError}"
+                    }
                 events.add(0, msg)
                 if (events.size > EVENT_LOG_MAX) events.removeLast()
             },
