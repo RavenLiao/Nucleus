@@ -178,7 +178,7 @@ fun main(args: Array<String>) {
                                 if (Platform.Current == Platform.MacOS || Platform.Current == Platform.Linux) {
                                     add("Notifications")
                                 }
-                                if (Platform.Current == Platform.Linux) {
+                                if (Platform.Current == Platform.Linux || Platform.Current == Platform.MacOS) {
                                     add("Launcher")
                                 }
                             }
@@ -313,7 +313,13 @@ fun main(args: Array<String>) {
                                     else -> {}
                                 }
                             }
-                            "Launcher" -> LauncherScreen()
+                            "Launcher" -> {
+                                when (Platform.Current) {
+                                    Platform.MacOS -> MacOsLauncherScreen()
+                                    Platform.Linux -> LauncherScreen()
+                                    else -> {}
+                                }
+                            }
                         }
 
                         if (showInfoDialog) {

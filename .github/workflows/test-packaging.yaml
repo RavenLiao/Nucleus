@@ -130,6 +130,13 @@ jobs:
           pattern: 'launcher-linux-*'
           merge-multiple: true
 
+      - name: Download launcher-macos artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: launcher-macos/src/main/resources/nucleus/native/
+          pattern: 'launcher-macos*'
+          merge-multiple: true
+
       - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon

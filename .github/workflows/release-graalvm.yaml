@@ -118,6 +118,13 @@ jobs:
           pattern: 'launcher-linux-*'
           merge-multiple: true
 
+      - name: Download launcher-macos artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: launcher-macos/src/main/resources/nucleus/native/
+          pattern: 'launcher-macos*'
+          merge-multiple: true
+
       - name: Setup Nucleus (GraalVM)
         uses: ./.github/actions/setup-nucleus
         with:
