@@ -36,14 +36,20 @@ import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.nucleus.launcher.windows.BadgeGlyph
 import io.github.kdroidfilter.nucleus.launcher.windows.JumpListCategory
 import io.github.kdroidfilter.nucleus.launcher.windows.JumpListItem
+import io.github.kdroidfilter.nucleus.launcher.windows.StockIcon
+import io.github.kdroidfilter.nucleus.launcher.windows.TaskbarIconSource
+import io.github.kdroidfilter.nucleus.launcher.windows.ThumbnailToolbarButton
 import io.github.kdroidfilter.nucleus.launcher.windows.WindowsBadgeManager
 import io.github.kdroidfilter.nucleus.launcher.windows.WindowsJumpListManager
+import io.github.kdroidfilter.nucleus.launcher.windows.WindowsOverlayIcon
+import io.github.kdroidfilter.nucleus.launcher.windows.WindowsThumbnailToolbar
+import java.awt.Window
 
 private const val EVENT_LOG_MAX = 30
 
 @Suppress("FunctionNaming")
 @Composable
-fun WindowsLauncherScreen() {
+fun WindowsLauncherScreen(window: Window) {
     val events = remember { mutableStateListOf<String>() }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -56,6 +62,10 @@ fun WindowsLauncherScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BadgeSection(events)
+            HorizontalDivider()
+            OverlayIconSection(window, events)
+            HorizontalDivider()
+            ThumbnailToolbarSection(window, events)
             HorizontalDivider()
             JumpListSection(events)
             HorizontalDivider()
@@ -262,6 +272,132 @@ private fun JumpListSection(events: MutableList<String>) {
         ) {
             Text("Clear Jump List")
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Suppress("FunctionNaming")
+@Composable
+private fun OverlayIconSection(window: Window, events: MutableList<String>) {
+    Text("Overlay Icon", style = MaterialTheme.typography.headlineSmall)
+    Text(
+        "Small 16x16 status icon on the taskbar button (works without MSIX)",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val icons = listOf(
+            "Warning" to StockIcon.WARNING,
+            "Error" to StockIcon.ERROR,
+            "Info" to StockIcon.INFO,
+            "Shield" to StockIcon.SHIELD,
+            "Lock" to StockIcon.LOCK,
+            "Key" to StockIcon.KEY,
+            "Star" to StockIcon.FIND,
+            "Globe" to StockIcon.WORLD,
+            "Users" to StockIcon.USERS,
+            "Settings" to StockIcon.SETTINGS,
+        )
+        icons.forEach { (label, stockIcon) ->
+            Button(onClick = {
+                val ok = WindowsOverlayIcon.setIcon(
+                    window,
+                    TaskbarIconSource.FromStock(stockIcon),
+                    description = label,
+                )
+                val msg = if (ok) "Overlay: $label" else "Overlay FAILED: ${WindowsOverlayIcon.lastError}"
+                events.add(0, msg)
+                if (events.size > EVENT_LOG_MAX) events.removeLast()
+            }) { Text(label) }
+        }
+    }
+
+    OutlinedButton(
+        onClick = {
+            val ok = WindowsOverlayIcon.clearIcon(window)
+            val msg = if (ok) "Overlay cleared" else "Clear FAILED: ${WindowsOverlayIcon.lastError}"
+            events.add(0, msg)
+            if (events.size > EVENT_LOG_MAX) events.removeLast()
+        },
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+    ) { Text("Clear Overlay") }
+}
+
+@Suppress("FunctionNaming", "LongMethod")
+@Composable
+private fun ThumbnailToolbarSection(window: Window, events: MutableList<String>) {
+    var toolbarAdded by remember { mutableStateOf(false) }
+
+    Text("Thumbnail Toolbar", style = MaterialTheme.typography.headlineSmall)
+    Text(
+        "Buttons in the taskbar thumbnail preview (hover over taskbar icon to see)",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (toolbarAdded) WindowsThumbnailToolbar.unregister(window)
+        }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = {
+                val buttons = listOf(
+                    ThumbnailToolbarButton(
+                        id = 0,
+                        tooltip = "Warning",
+                        icon = TaskbarIconSource.FromStock(StockIcon.WARNING),
+                    ),
+                    ThumbnailToolbarButton(
+                        id = 1,
+                        tooltip = "Info",
+                        icon = TaskbarIconSource.FromStock(StockIcon.INFO),
+                    ),
+                    ThumbnailToolbarButton(
+                        id = 2,
+                        tooltip = "Error",
+                        icon = TaskbarIconSource.FromStock(StockIcon.ERROR),
+                    ),
+                    ThumbnailToolbarButton(
+                        id = 3,
+                        tooltip = "Shield",
+                        icon = TaskbarIconSource.FromStock(StockIcon.SHIELD),
+                    ),
+                    ThumbnailToolbarButton(
+                        id = 4,
+                        tooltip = "Help",
+                        icon = TaskbarIconSource.FromStock(StockIcon.HELP),
+                    ),
+                )
+                val ok = WindowsThumbnailToolbar.setButtons(window, buttons) { buttonId ->
+                    val name = when (buttonId) {
+                        0 -> "Warning"; 1 -> "Info"; 2 -> "Error"; 3 -> "Shield"; 4 -> "Help"; else -> "?"
+                    }
+                    events.add(0, "Toolbar click: $name (id=$buttonId)")
+                    if (events.size > EVENT_LOG_MAX) events.removeLast()
+                }
+                toolbarAdded = ok
+                val msg = if (ok) {
+                    "Toolbar added — hover taskbar icon"
+                } else {
+                    "Toolbar FAILED: ${WindowsThumbnailToolbar.lastError}"
+                }
+                events.add(0, msg)
+                if (events.size > EVENT_LOG_MAX) events.removeLast()
+            },
+            enabled = !toolbarAdded,
+        ) { Text("Add Toolbar Buttons") }
+
+        OutlinedButton(
+            onClick = {
+                WindowsThumbnailToolbar.unregister(window)
+                toolbarAdded = false
+                events.add(0, "Toolbar unregistered")
+                if (events.size > EVENT_LOG_MAX) events.removeLast()
+            },
+            enabled = toolbarAdded,
+        ) { Text("Unregister") }
     }
 }
 

@@ -18,6 +18,7 @@
 
 #include <Windows.h>
 #include <sdkddkver.h>
+#include <shellapi.h>
 #include <ShObjIdl.h>
 #include <ShlObj.h>
 #include <Psapi.h>
@@ -71,6 +72,23 @@ static ComPtr<IBadgeUpdater> g_badgeUpdater;
 // Jump List state
 static std::mutex g_jl_mutex;
 static ComPtr<ICustomDestinationList> g_jumpList;
+
+// Taskbar (ITaskbarList3) state
+static std::mutex g_tb_mutex;
+static ComPtr<ITaskbarList3> g_taskbarList;
+static bool g_taskbarListInitialized = false;
+
+// Per-HWND thumbnail toolbar callback state
+#define THUMBBAR_PROP L"NucleusThumbBarState"
+#define THBN_CLICKED 0x1800
+
+struct ThumbBarState {
+    WNDPROC originalWndProc;
+    jobject callbackRef;     // GlobalRef to ThumbBarClickListener
+    jmethodID onClickMethod;
+    std::vector<HICON> icons;
+    bool buttonsAdded;
+};
 
 
 // ============================================================================
@@ -674,6 +692,292 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsJumpListBridge
     hr = destList->DeleteList(isAppx ? nullptr : aumid.c_str());
     if (FAILED(hr)) return errorString(env, "DeleteList failed", hr);
 
+    return nullptr;
+}
+
+// ============================================================================
+// ITaskbarList3 helpers (overlay icon + thumbnail toolbar)
+// ============================================================================
+
+static bool EnsureTaskbarList() {
+    if (g_taskbarListInitialized) return g_taskbarList != nullptr;
+    g_taskbarListInitialized = true;
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE && hr != S_FALSE) return false;
+
+    hr = CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&g_taskbarList));
+    if (FAILED(hr)) return false;
+
+    hr = g_taskbarList->HrInit();
+    if (FAILED(hr)) { g_taskbarList.Reset(); return false; }
+    return true;
+}
+
+// HWND extraction from java.awt.Window (bypasses JPMS)
+static HWND GetHwndFromAwtWindow(JNIEnv *env, jobject awtWindow) {
+    if (!awtWindow) return nullptr;
+
+    jclass awtAccessorClass = env->FindClass("sun/awt/AWTAccessor");
+    if (!awtAccessorClass || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jmethodID getCompAccessor = env->GetStaticMethodID(awtAccessorClass,
+        "getComponentAccessor", "()Lsun/awt/AWTAccessor$ComponentAccessor;");
+    if (!getCompAccessor || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jobject compAccessor = env->CallStaticObjectMethod(awtAccessorClass, getCompAccessor);
+    if (!compAccessor || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jclass compAccessorClass = env->FindClass("sun/awt/AWTAccessor$ComponentAccessor");
+    if (!compAccessorClass || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jmethodID getPeer = env->GetMethodID(compAccessorClass,
+        "getPeer", "(Ljava/awt/Component;)Ljava/awt/peer/ComponentPeer;");
+    if (!getPeer || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jobject peer = env->CallObjectMethod(compAccessor, getPeer, awtWindow);
+    if (!peer || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jclass wCompPeerClass = env->FindClass("sun/awt/windows/WComponentPeer");
+    if (!wCompPeerClass || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jmethodID getHWnd = env->GetMethodID(wCompPeerClass, "getHWnd", "()J");
+    if (!getHWnd || env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+
+    jlong hwnd = env->CallLongMethod(peer, getHWnd);
+    if (env->ExceptionCheck()) { env->ExceptionClear(); return nullptr; }
+    return (HWND)(intptr_t)hwnd;
+}
+
+// Icon loading: type 0=stock, 1=file, 2=resource
+static HICON LoadIconByType(int iconType, const std::wstring &iconPath, int iconIndex) {
+    switch (iconType) {
+    case 0: { // Stock icon via SHGetStockIconInfo
+        SHSTOCKICONINFO sii = {};
+        sii.cbSize = sizeof(sii);
+        HRESULT hr = SHGetStockIconInfo((SHSTOCKICONID)iconIndex, SHGSI_ICON | SHGSI_SMALLICON, &sii);
+        return SUCCEEDED(hr) ? sii.hIcon : nullptr;
+    }
+    case 1: { // .ico file
+        return (HICON)LoadImageW(nullptr, iconPath.c_str(), IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+    }
+    case 2: { // DLL resource
+        HICON hSmall = nullptr;
+        ExtractIconExW(iconPath.c_str(), iconIndex, nullptr, &hSmall, 1);
+        return hSmall;
+    }
+    default: return nullptr;
+    }
+}
+
+// Fill THUMBBUTTON from arrays
+static void FillThumbButton(THUMBBUTTON &tb, int id, const std::wstring &tooltip,
+                             int flags, HICON hIcon)
+{
+    memset(&tb, 0, sizeof(THUMBBUTTON));
+    tb.dwMask = THB_FLAGS | THB_TOOLTIP;
+    tb.iId = (UINT)id;
+    tb.dwFlags = (THUMBBUTTONFLAGS)flags;
+    wcsncpy_s(tb.szTip, _countof(tb.szTip), tooltip.c_str(), _TRUNCATE);
+    if (hIcon) {
+        tb.dwMask |= THB_ICON;
+        tb.hIcon = hIcon;
+    }
+}
+
+// WndProc subclass for thumbnail button clicks
+static LRESULT CALLBACK ThumbBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    auto *state = (ThumbBarState *)GetPropW(hwnd, THUMBBAR_PROP);
+    if (!state) return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+
+    if (uMsg == WM_COMMAND && HIWORD(wParam) == THBN_CLICKED) {
+        int buttonId = LOWORD(wParam);
+        if (state->callbackRef && g_jvm) {
+            JNIEnv *env = nullptr;
+            if (g_jvm->GetEnv((void **)&env, JNI_VERSION_1_8) == JNI_OK && env) {
+                env->CallVoidMethod(state->callbackRef, state->onClickMethod, (jint)buttonId);
+                if (env->ExceptionCheck()) env->ExceptionClear();
+            }
+        }
+    }
+
+    return CallWindowProcW(state->originalWndProc, hwnd, uMsg, wParam, lParam);
+}
+
+static void CleanupThumbBarState(JNIEnv *env, HWND hwnd) {
+    auto *state = (ThumbBarState *)GetPropW(hwnd, THUMBBAR_PROP);
+    if (!state) return;
+
+    if (state->originalWndProc)
+        SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)state->originalWndProc);
+    for (HICON h : state->icons) { if (h) DestroyIcon(h); }
+    if (state->callbackRef && env)
+        env->DeleteGlobalRef(state->callbackRef);
+    RemovePropW(hwnd, THUMBBAR_PROP);
+    delete state;
+}
+
+// ============================================================================
+// JNI: Overlay Icon
+// ============================================================================
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeSetOverlayIcon(
+    JNIEnv *env, jclass, jobject awtWindow,
+    jint iconType, jstring jIconPath, jint iconIndex, jstring jDescription)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    if (!EnsureTaskbarList()) return env->NewStringUTF("ITaskbarList3 not available");
+
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    if (!hwnd) return env->NewStringUTF("Could not get HWND");
+
+    std::wstring path = toWString(env, jIconPath);
+    HICON hIcon = LoadIconByType(iconType, path, iconIndex);
+    if (!hIcon) return env->NewStringUTF("Failed to load icon");
+
+    std::wstring desc = toWString(env, jDescription);
+    HRESULT hr = g_taskbarList->SetOverlayIcon(hwnd, hIcon, desc.c_str());
+    DestroyIcon(hIcon);
+
+    if (FAILED(hr)) return errorString(env, "SetOverlayIcon failed", hr);
+    return nullptr;
+}
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeClearOverlayIcon(
+    JNIEnv *env, jclass, jobject awtWindow)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    if (!EnsureTaskbarList()) return env->NewStringUTF("ITaskbarList3 not available");
+
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    if (!hwnd) return env->NewStringUTF("Could not get HWND");
+
+    HRESULT hr = g_taskbarList->SetOverlayIcon(hwnd, nullptr, nullptr);
+    if (FAILED(hr)) return errorString(env, "ClearOverlayIcon failed", hr);
+    return nullptr;
+}
+
+// ============================================================================
+// JNI: Thumbnail Toolbar
+// ============================================================================
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeThumbBarSetButtons(
+    JNIEnv *env, jclass, jobject awtWindow,
+    jintArray jIds, jobjectArray jTooltips, jintArray jFlags,
+    jintArray jIconTypes, jobjectArray jIconPaths, jintArray jIconIndices,
+    jobject jCallback)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    if (!EnsureTaskbarList()) return env->NewStringUTF("ITaskbarList3 not available");
+
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    if (!hwnd) return env->NewStringUTF("Could not get HWND");
+
+    int count = env->GetArrayLength(jIds);
+    if (count <= 0 || count > 7) return env->NewStringUTF("Invalid button count (1-7)");
+
+    auto *state = new ThumbBarState{};
+
+    jint *ids = env->GetIntArrayElements(jIds, nullptr);
+    jint *flags = env->GetIntArrayElements(jFlags, nullptr);
+    jint *iconTypes = env->GetIntArrayElements(jIconTypes, nullptr);
+    jint *iconIndices = env->GetIntArrayElements(jIconIndices, nullptr);
+    auto tooltips = toWStringArray(env, jTooltips);
+    auto iconPaths = toWStringArray(env, jIconPaths);
+
+    THUMBBUTTON buttons[7] = {};
+    for (int i = 0; i < count; i++) {
+        HICON hIcon = LoadIconByType(iconTypes[i], iconPaths[i], iconIndices[i]);
+        if (hIcon) state->icons.push_back(hIcon);
+        FillThumbButton(buttons[i], ids[i], tooltips[i], flags[i], hIcon);
+    }
+
+    env->ReleaseIntArrayElements(jIds, ids, JNI_ABORT);
+    env->ReleaseIntArrayElements(jFlags, flags, JNI_ABORT);
+    env->ReleaseIntArrayElements(jIconTypes, iconTypes, JNI_ABORT);
+    env->ReleaseIntArrayElements(jIconIndices, iconIndices, JNI_ABORT);
+
+    HRESULT hr = g_taskbarList->ThumbBarAddButtons(hwnd, (UINT)count, buttons);
+    if (FAILED(hr)) {
+        for (HICON h : state->icons) { if (h) DestroyIcon(h); }
+        delete state;
+        return errorString(env, "ThumbBarAddButtons failed", hr);
+    }
+
+    state->buttonsAdded = true;
+
+    if (jCallback) {
+        jclass cbClass = env->GetObjectClass(jCallback);
+        jmethodID method = env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V");
+        env->DeleteLocalRef(cbClass);
+        if (method) {
+            state->callbackRef = env->NewGlobalRef(jCallback);
+            state->onClickMethod = method;
+            state->originalWndProc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)ThumbBarWndProc);
+        }
+    }
+
+    SetPropW(hwnd, THUMBBAR_PROP, (HANDLE)state);
+    return nullptr;
+}
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeThumbBarUpdateButtons(
+    JNIEnv *env, jclass, jobject awtWindow,
+    jintArray jIds, jobjectArray jTooltips, jintArray jFlags,
+    jintArray jIconTypes, jobjectArray jIconPaths, jintArray jIconIndices)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    if (!EnsureTaskbarList()) return env->NewStringUTF("ITaskbarList3 not available");
+
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    if (!hwnd) return env->NewStringUTF("Could not get HWND");
+
+    auto *state = (ThumbBarState *)GetPropW(hwnd, THUMBBAR_PROP);
+    if (!state || !state->buttonsAdded)
+        return env->NewStringUTF("Buttons not yet added — call setButtons first");
+
+    // Destroy old icons
+    for (HICON h : state->icons) { if (h) DestroyIcon(h); }
+    state->icons.clear();
+
+    int count = env->GetArrayLength(jIds);
+    jint *ids = env->GetIntArrayElements(jIds, nullptr);
+    jint *flags = env->GetIntArrayElements(jFlags, nullptr);
+    jint *iconTypes = env->GetIntArrayElements(jIconTypes, nullptr);
+    jint *iconIndices = env->GetIntArrayElements(jIconIndices, nullptr);
+    auto tooltips = toWStringArray(env, jTooltips);
+    auto iconPaths = toWStringArray(env, jIconPaths);
+
+    THUMBBUTTON buttons[7] = {};
+    for (int i = 0; i < count; i++) {
+        HICON hIcon = LoadIconByType(iconTypes[i], iconPaths[i], iconIndices[i]);
+        if (hIcon) state->icons.push_back(hIcon);
+        FillThumbButton(buttons[i], ids[i], tooltips[i], flags[i], hIcon);
+    }
+
+    env->ReleaseIntArrayElements(jIds, ids, JNI_ABORT);
+    env->ReleaseIntArrayElements(jFlags, flags, JNI_ABORT);
+    env->ReleaseIntArrayElements(jIconTypes, iconTypes, JNI_ABORT);
+    env->ReleaseIntArrayElements(jIconIndices, iconIndices, JNI_ABORT);
+
+    HRESULT hr = g_taskbarList->ThumbBarUpdateButtons(hwnd, (UINT)count, buttons);
+    if (FAILED(hr)) return errorString(env, "ThumbBarUpdateButtons failed", hr);
+    return nullptr;
+}
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_nativeThumbBarUnregister(
+    JNIEnv *env, jclass, jobject awtWindow)
+{
+    std::lock_guard<std::mutex> lock(g_tb_mutex);
+    HWND hwnd = GetHwndFromAwtWindow(env, awtWindow);
+    if (!hwnd) return env->NewStringUTF("Could not get HWND");
+    CleanupThumbBarState(env, hwnd);
     return nullptr;
 }
 

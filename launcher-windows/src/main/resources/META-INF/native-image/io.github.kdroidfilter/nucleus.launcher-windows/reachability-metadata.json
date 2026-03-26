@@ -7,6 +7,22 @@
         {
             "type": "io.github.kdroidfilter.nucleus.launcher.windows.NativeWindowsJumpListBridge",
             "jniAccessible": true
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.launcher.windows.NativeWindowsTaskbarBridge",
+            "jniAccessible": true
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.launcher.windows.ThumbBarClickListener",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onThumbButtonClick",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
         }
     ]
 }

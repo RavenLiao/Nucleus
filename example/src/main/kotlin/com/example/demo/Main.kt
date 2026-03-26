@@ -329,7 +329,7 @@ fun main(args: Array<String>) {
                             }
                             "Launcher" -> {
                                 when (Platform.Current) {
-                                    Platform.Windows -> WindowsLauncherScreen()
+                                    Platform.Windows -> WindowsLauncherScreen(window)
                                     Platform.MacOS -> MacOsLauncherScreen()
                                     Platform.Linux -> LauncherScreen()
                                     else -> {}
