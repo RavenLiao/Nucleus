@@ -164,12 +164,11 @@ fun NotificationsScreen() {
                 AuthorizationOption.ALERT,
                 AuthorizationOption.SOUND,
                 AuthorizationOption.BADGE,
-                AuthorizationOption.CRITICAL_ALERT,
-                AuthorizationOption.TIME_SENSITIVE,
             ),
         ) { granted, error ->
             if (!granted) {
-                log("Authorization denied: ${error ?: "user declined"} — continuing setup anyway")
+                log("Authorization denied: ${error ?: "user declined"}")
+                return@requestAuthorization
             }
 
             // Register two categories

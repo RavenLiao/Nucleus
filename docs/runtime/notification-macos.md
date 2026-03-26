@@ -324,10 +324,10 @@ Received in `NotificationCenterDelegate.didReceive`.
 | `BADGE` | Badge count |
 | `SOUND` | Notification sounds |
 | `ALERT` | Alerts (banners/notifications) |
-| `CRITICAL_ALERT` | Critical alerts (requires Apple entitlement) |
+| `CRITICAL_ALERT` | Critical alerts — **requires** `com.apple.developer.usernotifications.critical-alerts` entitlement. Including this option without the entitlement causes the entire authorization request to fail silently. |
 | `PROVIDES_APP_NOTIFICATION_SETTINGS` | App provides custom settings |
 | `PROVISIONAL` | Provisional authorization (no prompt) |
-| `TIME_SENSITIVE` | Time-sensitive notifications |
+| `TIME_SENSITIVE` | Time-sensitive notifications (macOS 12+) — may require entitlement on some macOS versions |
 
 #### `PresentationOption` (bitmask)
 
@@ -461,7 +461,20 @@ Critical alerts bypass Do Not Disturb and Focus modes. They require:
 2. The entitlement declared in your `entitlements.plist`
 3. `AuthorizationOption.CRITICAL_ALERT` in `requestAuthorization`
 
+!!! danger "Do NOT include `CRITICAL_ALERT` without the entitlement"
+    If you pass `AuthorizationOption.CRITICAL_ALERT` in `requestAuthorization` without the Apple-issued entitlement, **the entire authorization request fails** — macOS returns `granted = false` with error `"Notifications are not allowed for this application"` and the permission dialog is never shown. The same applies to `TIME_SENSITIVE` on some macOS versions.
+
+    Only use `ALERT`, `SOUND`, and `BADGE` unless you have obtained the corresponding entitlement from Apple:
+
+    ```kotlin
+    // Safe default — works without special entitlements
+    NotificationCenter.requestAuthorization(
+        setOf(AuthorizationOption.ALERT, AuthorizationOption.SOUND, AuthorizationOption.BADGE)
+    ) { granted, error -> ... }
+    ```
+
 ```kotlin
+// Only use this if you have the com.apple.developer.usernotifications.critical-alerts entitlement
 NotificationCenter.requestAuthorization(
     setOf(AuthorizationOption.ALERT, AuthorizationOption.SOUND, AuthorizationOption.CRITICAL_ALERT)
 ) { granted, _ ->
