@@ -8,14 +8,16 @@ package io.github.kdroidfilter.nucleus.notification.linux
  * when the first listener is added and stops when the last is removed.
  */
 interface LinuxNotificationListener {
-
     /**
      * Called when a notification is closed.
      *
      * @param notificationId The ID of the closed notification.
      * @param reason         Why the notification was closed.
      */
-    fun onClosed(notificationId: Int, reason: CloseReason) {}
+    fun onClosed(
+        notificationId: Int,
+        reason: CloseReason,
+    ) {}
 
     /**
      * Called when the user invokes an action on a notification.
@@ -23,7 +25,10 @@ interface LinuxNotificationListener {
      * @param notificationId The ID of the notification whose action was invoked.
      * @param actionKey      The key of the invoked action (e.g. [NotificationAction.DEFAULT_KEY]).
      */
-    fun onActionInvoked(notificationId: Int, actionKey: String) {}
+    fun onActionInvoked(
+        notificationId: Int,
+        actionKey: String,
+    ) {}
 
     /**
      * Called when the server provides an activation token (Wayland/X11).
@@ -33,5 +38,8 @@ interface LinuxNotificationListener {
      * @param notificationId The ID of the notification.
      * @param token          The activation token string.
      */
-    fun onActivationToken(notificationId: Int, token: String) {}
+    fun onActivationToken(
+        notificationId: Int,
+        token: String,
+    ) {}
 }

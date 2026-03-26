@@ -22,7 +22,9 @@ sealed interface NotificationIcon {
      * ```
      */
     @JvmInline
-    value class Custom(override val value: String) : NotificationIcon
+    value class Custom(
+        override val value: String,
+    ) : NotificationIcon
 
     companion object {
         /**
@@ -36,7 +38,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Actions ─────────────────────────────────────────────────────
-    enum class Action(override val value: String) : NotificationIcon {
+    enum class Action(
+        override val value: String,
+    ) : NotificationIcon {
         ADDRESS_BOOK_NEW("address-book-new"),
         APPLICATION_EXIT("application-exit"),
         APPOINTMENT_NEW("appointment-new"),
@@ -143,12 +147,16 @@ sealed interface NotificationIcon {
     }
 
     // ── Animations ──────────────────────────────────────────────────
-    enum class Animation(override val value: String) : NotificationIcon {
+    enum class Animation(
+        override val value: String,
+    ) : NotificationIcon {
         PROCESS_WORKING("process-working"),
     }
 
     // ── Applications ────────────────────────────────────────────────
-    enum class Application(override val value: String) : NotificationIcon {
+    enum class Application(
+        override val value: String,
+    ) : NotificationIcon {
         ACCESSORIES_CALCULATOR("accessories-calculator"),
         ACCESSORIES_CHARACTER_MAP("accessories-character-map"),
         ACCESSORIES_DICTIONARY("accessories-dictionary"),
@@ -172,7 +180,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Categories ──────────────────────────────────────────────────
-    enum class Category(override val value: String) : NotificationIcon {
+    enum class Category(
+        override val value: String,
+    ) : NotificationIcon {
         APPLICATIONS_ACCESSORIES("applications-accessories"),
         APPLICATIONS_DEVELOPMENT("applications-development"),
         APPLICATIONS_ENGINEERING("applications-engineering"),
@@ -195,7 +205,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Devices ─────────────────────────────────────────────────────
-    enum class Device(override val value: String) : NotificationIcon {
+    enum class Device(
+        override val value: String,
+    ) : NotificationIcon {
         AUDIO_CARD("audio-card"),
         AUDIO_INPUT_MICROPHONE("audio-input-microphone"),
         BATTERY("battery"),
@@ -226,7 +238,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Emblems ─────────────────────────────────────────────────────
-    enum class Emblem(override val value: String) : NotificationIcon {
+    enum class Emblem(
+        override val value: String,
+    ) : NotificationIcon {
         DEFAULT("emblem-default"),
         DOCUMENTS("emblem-documents"),
         DOWNLOADS("emblem-downloads"),
@@ -243,7 +257,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Emotes ──────────────────────────────────────────────────────
-    enum class Emote(override val value: String) : NotificationIcon {
+    enum class Emote(
+        override val value: String,
+    ) : NotificationIcon {
         FACE_ANGEL("face-angel"),
         FACE_ANGRY("face-angry"),
         FACE_COOL("face-cool"),
@@ -268,7 +284,9 @@ sealed interface NotificationIcon {
     }
 
     // ── MIME Types ──────────────────────────────────────────────────
-    enum class MimeType(override val value: String) : NotificationIcon {
+    enum class MimeType(
+        override val value: String,
+    ) : NotificationIcon {
         APPLICATION_X_EXECUTABLE("application-x-executable"),
         AUDIO_X_GENERIC("audio-x-generic"),
         FONT_X_GENERIC("font-x-generic"),
@@ -287,7 +305,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Places ──────────────────────────────────────────────────────
-    enum class Place(override val value: String) : NotificationIcon {
+    enum class Place(
+        override val value: String,
+    ) : NotificationIcon {
         FOLDER("folder"),
         FOLDER_REMOTE("folder-remote"),
         NETWORK_SERVER("network-server"),
@@ -300,7 +320,9 @@ sealed interface NotificationIcon {
     }
 
     // ── Status ──────────────────────────────────────────────────────
-    enum class Status(override val value: String) : NotificationIcon {
+    enum class Status(
+        override val value: String,
+    ) : NotificationIcon {
         APPOINTMENT_MISSED("appointment-missed"),
         APPOINTMENT_SOON("appointment-soon"),
         AUDIO_VOLUME_HIGH("audio-volume-high"),

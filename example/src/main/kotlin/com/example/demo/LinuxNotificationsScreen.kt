@@ -75,36 +75,40 @@ fun LinuxNotificationsScreen() {
     var urgency by remember { mutableStateOf(Urgency.NORMAL) }
     var useActions by remember { mutableStateOf(true) }
     var useSound by remember { mutableStateOf(false) }
-    var selectedSound by remember { mutableStateOf<NotificationSound>(NotificationSound.Notification.MESSAGE_NEW_INSTANT) }
+    var selectedSound by remember {
+        mutableStateOf<NotificationSound>(NotificationSound.Notification.MESSAGE_NEW_INSTANT)
+    }
     var category by remember { mutableStateOf("") }
     var expireTimeout by remember { mutableStateOf(0f) }
     var replacesPrevious by remember { mutableStateOf(false) }
 
     // All icon and sound options from the freedesktop specs
-    val iconOptions: List<NotificationIcon> = remember {
-        buildList {
-            addAll(NotificationIcon.Status.entries)
-            addAll(NotificationIcon.Emblem.entries)
-            addAll(NotificationIcon.Device.entries)
-            addAll(NotificationIcon.Emote.entries)
-            addAll(NotificationIcon.Action.entries)
-            addAll(NotificationIcon.Application.entries)
-            addAll(NotificationIcon.Category.entries)
-            addAll(NotificationIcon.MimeType.entries)
-            addAll(NotificationIcon.Place.entries)
-            addAll(NotificationIcon.Animation.entries)
+    val iconOptions: List<NotificationIcon> =
+        remember {
+            buildList {
+                addAll(NotificationIcon.Status.entries)
+                addAll(NotificationIcon.Emblem.entries)
+                addAll(NotificationIcon.Device.entries)
+                addAll(NotificationIcon.Emote.entries)
+                addAll(NotificationIcon.Action.entries)
+                addAll(NotificationIcon.Application.entries)
+                addAll(NotificationIcon.Category.entries)
+                addAll(NotificationIcon.MimeType.entries)
+                addAll(NotificationIcon.Place.entries)
+                addAll(NotificationIcon.Animation.entries)
+            }
         }
-    }
 
-    val soundOptions: List<NotificationSound> = remember {
-        buildList {
-            addAll(NotificationSound.Notification.entries)
-            addAll(NotificationSound.Alert.entries)
-            addAll(NotificationSound.Action.entries)
-            addAll(NotificationSound.InputFeedback.entries)
-            addAll(NotificationSound.Game.entries)
+    val soundOptions: List<NotificationSound> =
+        remember {
+            buildList {
+                addAll(NotificationSound.Notification.entries)
+                addAll(NotificationSound.Alert.entries)
+                addAll(NotificationSound.Action.entries)
+                addAll(NotificationSound.InputFeedback.entries)
+                addAll(NotificationSound.Game.entries)
+            }
         }
-    }
 
     fun log(msg: String) {
         events.add(0, msg)
@@ -114,29 +118,40 @@ fun LinuxNotificationsScreen() {
 
     // Register signal listener
     DisposableEffect(Unit) {
-        val listener = object : LinuxNotificationListener {
-            override fun onClosed(notificationId: Int, reason: CloseReason) {
-                log("Closed #$notificationId — reason: ${reason.name}")
-            }
+        val listener =
+            object : LinuxNotificationListener {
+                override fun onClosed(
+                    notificationId: Int,
+                    reason: CloseReason,
+                ) {
+                    log("Closed #$notificationId — reason: ${reason.name}")
+                }
 
-            override fun onActionInvoked(notificationId: Int, actionKey: String) {
-                log("Action #$notificationId — key: \"$actionKey\"")
-            }
+                override fun onActionInvoked(
+                    notificationId: Int,
+                    actionKey: String,
+                ) {
+                    log("Action #$notificationId — key: \"$actionKey\"")
+                }
 
-            override fun onActivationToken(notificationId: Int, token: String) {
-                log("Token #$notificationId — $token")
+                override fun onActivationToken(
+                    notificationId: Int,
+                    token: String,
+                ) {
+                    log("Token #$notificationId — $token")
+                }
             }
-        }
         LinuxNotificationCenter.addListener(listener)
         onDispose { LinuxNotificationCenter.removeListener(listener) }
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("Linux Notifications", style = MaterialTheme.typography.headlineSmall)
@@ -187,39 +202,43 @@ fun LinuxNotificationsScreen() {
                 ) {
                     // Simple notification
                     Button(onClick = {
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                summary = "Simple Notification",
-                                body = "This is a basic notification.",
-                                appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
-                            ),
-                        )
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    summary = "Simple Notification",
+                                    body = "This is a basic notification.",
+                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                ),
+                            )
                         lastNotifId = id
                         log("Sent simple notification #$id")
                     }) { Text("Simple") }
 
                     // With actions
                     Button(onClick = {
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                summary = "Message from Alice",
-                                body = "Hey! Have you seen the latest build?",
-                                appIcon = NotificationIcon.Status.MAIL_UNREAD,
-                                actions = listOf(
-                                    NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
-                                    NotificationAction("reply", "Reply"),
-                                    NotificationAction("archive", "Archive"),
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    summary = "Message from Alice",
+                                    body = "Hey! Have you seen the latest build?",
+                                    appIcon = NotificationIcon.Status.MAIL_UNREAD,
+                                    actions =
+                                        listOf(
+                                            NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
+                                            NotificationAction("reply", "Reply"),
+                                            NotificationAction("archive", "Archive"),
+                                        ),
+                                    hints =
+                                        NotificationHints(
+                                            urgency = Urgency.NORMAL,
+                                            category = "im.received",
+                                            imagePath = NotificationIcon.Status.MAIL_UNREAD,
+                                        ),
                                 ),
-                                hints = NotificationHints(
-                                    urgency = Urgency.NORMAL,
-                                    category = "im.received",
-                                    imagePath = NotificationIcon.Status.MAIL_UNREAD,
-                                ),
-                            ),
-                        )
+                            )
                         lastNotifId = id
                         log("Sent message notification #$id with actions")
                     }) { Text("With Actions") }
@@ -227,59 +246,66 @@ fun LinuxNotificationsScreen() {
                     // Critical urgency
                     Button(
                         onClick = {
-                            val id = LinuxNotificationCenter.notify(
-                                Notification(
-                                    appName = "Nucleus Demo",
-                                    summary = "Critical Alert",
-                                    body = "Disk usage is above 95%!",
-                                    appIcon = NotificationIcon.Status.DIALOG_WARNING,
-                                    hints = NotificationHints(
-                                        urgency = Urgency.CRITICAL,
-                                        category = "device.error",
-                                        imagePath = NotificationIcon.Status.DIALOG_WARNING,
+                            val id =
+                                LinuxNotificationCenter.notify(
+                                    Notification(
+                                        appName = "Nucleus Demo",
+                                        summary = "Critical Alert",
+                                        body = "Disk usage is above 95%!",
+                                        appIcon = NotificationIcon.Status.DIALOG_WARNING,
+                                        hints =
+                                            NotificationHints(
+                                                urgency = Urgency.CRITICAL,
+                                                category = "device.error",
+                                                imagePath = NotificationIcon.Status.DIALOG_WARNING,
+                                            ),
+                                        expireTimeout = 0,
                                     ),
-                                    expireTimeout = 0,
-                                ),
-                            )
+                                )
                             lastNotifId = id
                             log("Sent critical notification #$id")
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                        ),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                            ),
                     ) { Text("Critical") }
 
                     // Low urgency
                     Button(onClick = {
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                summary = "Download Complete",
-                                body = "nucleus-1.3.0.tar.gz has finished downloading.",
-                                appIcon = NotificationIcon.Emblem.DOWNLOADS,
-                                hints = NotificationHints(
-                                    urgency = Urgency.LOW,
-                                    category = "transfer.complete",
-                                    imagePath = NotificationIcon.Emblem.DOWNLOADS,
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    summary = "Download Complete",
+                                    body = "nucleus-1.3.0.tar.gz has finished downloading.",
+                                    appIcon = NotificationIcon.Emblem.DOWNLOADS,
+                                    hints =
+                                        NotificationHints(
+                                            urgency = Urgency.LOW,
+                                            category = "transfer.complete",
+                                            imagePath = NotificationIcon.Emblem.DOWNLOADS,
+                                        ),
                                 ),
-                            ),
-                        )
+                            )
                         lastNotifId = id
                         log("Sent low-urgency notification #$id")
                     }) { Text("Low Urgency") }
 
                     // With markup
                     Button(onClick = {
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                summary = "Markup Demo",
-                                body = "<b>Bold</b>, <i>italic</i>, <u>underline</u> " +
-                                    "and <a href=\"https://github.com\">a link</a>.",
-                                appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
-                            ),
-                        )
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    summary = "Markup Demo",
+                                    body =
+                                        "<b>Bold</b>, <i>italic</i>, <u>underline</u> " +
+                                            "and <a href=\"https://github.com\">a link</a>.",
+                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                ),
+                            )
                         lastNotifId = id
                         log("Sent markup notification #$id")
                     }) { Text("Markup") }
@@ -287,14 +313,15 @@ fun LinuxNotificationsScreen() {
                     // With image data
                     Button(onClick = {
                         val imageData = createSampleImageData()
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                summary = "Image Data",
-                                body = "Notification with embedded pixel data.",
-                                hints = NotificationHints(imageData = imageData),
-                            ),
-                        )
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    summary = "Image Data",
+                                    body = "Notification with embedded pixel data.",
+                                    hints = NotificationHints(imageData = imageData),
+                                ),
+                            )
                         lastNotifId = id
                         log("Sent image-data notification #$id")
                     }) { Text("Image Data") }
@@ -305,16 +332,17 @@ fun LinuxNotificationsScreen() {
                             log("No notification to replace — send one first")
                             return@OutlinedButton
                         }
-                        val id = LinuxNotificationCenter.notify(
-                            Notification(
-                                appName = "Nucleus Demo",
-                                replacesId = lastNotifId,
-                                summary = "Replaced!",
-                                body = "This notification replaced #$lastNotifId.",
-                                appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
-                                hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
-                            ),
-                        )
+                        val id =
+                            LinuxNotificationCenter.notify(
+                                Notification(
+                                    appName = "Nucleus Demo",
+                                    replacesId = lastNotifId,
+                                    summary = "Replaced!",
+                                    body = "This notification replaced #$lastNotifId.",
+                                    appIcon = NotificationIcon.Status.DIALOG_INFORMATION,
+                                    hints = NotificationHints(imagePath = NotificationIcon.Status.DIALOG_INFORMATION),
+                                ),
+                            )
                         log("Replaced #$lastNotifId → #$id")
                         lastNotifId = id
                     }) { Text("Replace Last") }
@@ -431,38 +459,42 @@ fun LinuxNotificationsScreen() {
 
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = {
-                    val actions = if (useActions) {
-                        listOf(
-                            NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
-                            NotificationAction("dismiss", "Dismiss"),
-                        )
-                    } else {
-                        emptyList()
-                    }
+                    val actions =
+                        if (useActions) {
+                            listOf(
+                                NotificationAction(NotificationAction.DEFAULT_KEY, "Open"),
+                                NotificationAction("dismiss", "Dismiss"),
+                            )
+                        } else {
+                            emptyList()
+                        }
 
-                    val expireMs = when {
-                        expireTimeout < 0.5f -> -1    // server default
-                        expireTimeout < 1.5f -> 0     // never expire
-                        else -> (expireTimeout * 1000).toInt()
-                    }
+                    val expireMs =
+                        when {
+                            expireTimeout < 0.5f -> -1 // server default
+                            expireTimeout < 1.5f -> 0 // never expire
+                            else -> (expireTimeout * 1000).toInt()
+                        }
 
-                    val id = LinuxNotificationCenter.notify(
-                        Notification(
-                            appName = appName,
-                            replacesId = if (replacesPrevious) lastNotifId else 0,
-                            appIcon = selectedIcon,
-                            summary = summary,
-                            body = body,
-                            actions = actions,
-                            hints = NotificationHints(
-                                urgency = urgency,
-                                category = category.ifBlank { null },
-                                soundName = if (useSound) selectedSound else null,
-                                imagePath = selectedIcon,
+                    val id =
+                        LinuxNotificationCenter.notify(
+                            Notification(
+                                appName = appName,
+                                replacesId = if (replacesPrevious) lastNotifId else 0,
+                                appIcon = selectedIcon,
+                                summary = summary,
+                                body = body,
+                                actions = actions,
+                                hints =
+                                    NotificationHints(
+                                        urgency = urgency,
+                                        category = category.ifBlank { null },
+                                        soundName = if (useSound) selectedSound else null,
+                                        imagePath = selectedIcon,
+                                    ),
+                                expireTimeout = expireMs,
                             ),
-                            expireTimeout = expireMs,
-                        ),
-                    )
+                        )
                     lastNotifId = id
                     log("Sent custom notification #$id")
                 }) { Text("Send") }
@@ -486,7 +518,10 @@ fun LinuxNotificationsScreen() {
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+private fun SectionCard(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -514,9 +549,10 @@ private fun IconDropdown(
             readOnly = true,
             singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { icon ->
@@ -547,9 +583,10 @@ private fun SoundDropdown(
             readOnly = true,
             singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { sound ->
@@ -590,9 +627,9 @@ private fun createSampleImageData(): io.github.kdroidfilter.nucleus.notification
         for (x in 0 until size) {
             val argb = img.getRGB(x, y)
             val offset = y * rowstride + x * channels
-            pixels[offset] = ((argb shr 16) and 0xFF).toByte()     // R
-            pixels[offset + 1] = ((argb shr 8) and 0xFF).toByte()  // G
-            pixels[offset + 2] = (argb and 0xFF).toByte()           // B
+            pixels[offset] = ((argb shr 16) and 0xFF).toByte() // R
+            pixels[offset + 1] = ((argb shr 8) and 0xFF).toByte() // G
+            pixels[offset + 2] = (argb and 0xFF).toByte() // B
             pixels[offset + 3] = ((argb shr 24) and 0xFF).toByte() // A
         }
     }

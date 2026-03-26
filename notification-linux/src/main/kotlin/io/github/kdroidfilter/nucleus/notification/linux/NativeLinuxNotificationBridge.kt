@@ -7,7 +7,6 @@ import javax.swing.SwingUtilities
 private const val LIBRARY_NAME = "nucleus_notification_linux"
 
 internal object NativeLinuxNotificationBridge {
-
     private val loaded = NativeLibraryLoader.load(LIBRARY_NAME, NativeLinuxNotificationBridge::class.java)
     val isLoaded: Boolean get() = loaded
 
@@ -80,7 +79,10 @@ internal object NativeLinuxNotificationBridge {
     // ---- Callbacks from native (signal handlers) -----------------------
 
     @JvmStatic
-    fun onNotificationClosed(id: Int, reason: Int) {
+    fun onNotificationClosed(
+        id: Int,
+        reason: Int,
+    ) {
         val closeReason = CloseReason.fromValue(reason)
         SwingUtilities.invokeLater {
             listeners.forEach { it.onClosed(id, closeReason) }
@@ -88,14 +90,20 @@ internal object NativeLinuxNotificationBridge {
     }
 
     @JvmStatic
-    fun onActionInvoked(id: Int, actionKey: String) {
+    fun onActionInvoked(
+        id: Int,
+        actionKey: String,
+    ) {
         SwingUtilities.invokeLater {
             listeners.forEach { it.onActionInvoked(id, actionKey) }
         }
     }
 
     @JvmStatic
-    fun onActivationToken(id: Int, token: String) {
+    fun onActivationToken(
+        id: Int,
+        token: String,
+    ) {
         SwingUtilities.invokeLater {
             listeners.forEach { it.onActivationToken(id, token) }
         }

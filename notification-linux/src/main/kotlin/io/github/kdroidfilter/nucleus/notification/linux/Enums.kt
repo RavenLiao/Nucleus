@@ -6,21 +6,26 @@ package io.github.kdroidfilter.nucleus.notification.linux
  * Servers may display low urgency notifications differently, and critical
  * notifications should not auto-expire.
  */
-enum class Urgency(val value: Int) {
+enum class Urgency(
+    val value: Int,
+) {
     LOW(0),
     NORMAL(1),
-    CRITICAL(2);
+    CRITICAL(2),
+    ;
 
     companion object {
-        fun fromValue(value: Int): Urgency =
-            entries.firstOrNull { it.value == value } ?: NORMAL
+        fun fromValue(value: Int): Urgency = entries.firstOrNull { it.value == value } ?: NORMAL
     }
 }
 
 /**
  * Reason a notification was closed, as reported by the [NotificationClosed] signal.
  */
-enum class CloseReason(val value: Int) {
+@Suppress("MagicNumber")
+enum class CloseReason(
+    val value: Int,
+) {
     /** The notification expired (timeout). */
     EXPIRED(1),
 
@@ -31,10 +36,10 @@ enum class CloseReason(val value: Int) {
     CLOSED(3),
 
     /** Undefined/reserved reason. */
-    UNDEFINED(4);
+    UNDEFINED(4),
+    ;
 
     companion object {
-        fun fromValue(value: Int): CloseReason =
-            entries.firstOrNull { it.value == value } ?: UNDEFINED
+        fun fromValue(value: Int): CloseReason = entries.firstOrNull { it.value == value } ?: UNDEFINED
     }
 }

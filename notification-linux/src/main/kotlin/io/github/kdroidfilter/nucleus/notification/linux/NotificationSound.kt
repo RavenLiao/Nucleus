@@ -20,10 +20,14 @@ sealed interface NotificationSound {
      * ```
      */
     @JvmInline
-    value class Custom(override val value: String) : NotificationSound
+    value class Custom(
+        override val value: String,
+    ) : NotificationSound
 
     // ── Alerts ──────────────────────────────────────────────────────
-    enum class Alert(override val value: String) : NotificationSound {
+    enum class Alert(
+        override val value: String,
+    ) : NotificationSound {
         NETWORK_CONNECTIVITY_LOST("network-connectivity-lost"),
         NETWORK_CONNECTIVITY_ERROR("network-connectivity-error"),
         DIALOG_ERROR("dialog-error"),
@@ -34,7 +38,9 @@ sealed interface NotificationSound {
     }
 
     // ── Notifications ───────────────────────────────────────────────
-    enum class Notification(override val value: String) : NotificationSound {
+    enum class Notification(
+        override val value: String,
+    ) : NotificationSound {
         MESSAGE_NEW_INSTANT("message-new-instant"),
         MESSAGE_NEW_EMAIL("message-new-email"),
         COMPLETE_MEDIA_BURN("complete-media-burn"),
@@ -78,7 +84,9 @@ sealed interface NotificationSound {
     }
 
     // ── Actions ─────────────────────────────────────────────────────
-    enum class Action(override val value: String) : NotificationSound {
+    enum class Action(
+        override val value: String,
+    ) : NotificationSound {
         PHONE_OUTGOING_CALLING("phone-outgoing-calling"),
         MESSAGE_SENT_INSTANT("message-sent-instant"),
         MESSAGE_SENT_EMAIL("message-sent-email"),
@@ -111,7 +119,9 @@ sealed interface NotificationSound {
     }
 
     // ── Input Feedback ──────────────────────────────────────────────
-    enum class InputFeedback(override val value: String) : NotificationSound {
+    enum class InputFeedback(
+        override val value: String,
+    ) : NotificationSound {
         WINDOW_CLOSE("window-close"),
         WINDOW_SLIDE_IN("window-slide-in"),
         WINDOW_SLIDE_OUT("window-slide-out"),
@@ -159,7 +169,9 @@ sealed interface NotificationSound {
     }
 
     // ── Game ────────────────────────────────────────────────────────
-    enum class Game(override val value: String) : NotificationSound {
+    enum class Game(
+        override val value: String,
+    ) : NotificationSound {
         GAME_OVER_WINNER("game-over-winner"),
         GAME_OVER_LOSER("game-over-loser"),
         GAME_CARD_SHUFFLE("game-card-shuffle"),

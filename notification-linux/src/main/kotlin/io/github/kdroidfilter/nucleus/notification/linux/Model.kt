@@ -19,16 +19,19 @@ data class ImageData(
     val height: Int,
     val rowstride: Int,
     val hasAlpha: Boolean,
-    val bitsPerSample: Int = 8,
-    val channels: Int = if (hasAlpha) 4 else 3,
+    @Suppress("MagicNumber") val bitsPerSample: Int = 8,
+    @Suppress("MagicNumber") val channels: Int = if (hasAlpha) 4 else 3,
     val data: ByteArray,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ImageData) return false
-        return width == other.width && height == other.height &&
-            rowstride == other.rowstride && hasAlpha == other.hasAlpha &&
-            bitsPerSample == other.bitsPerSample && channels == other.channels &&
+        return width == other.width &&
+            height == other.height &&
+            rowstride == other.rowstride &&
+            hasAlpha == other.hasAlpha &&
+            bitsPerSample == other.bitsPerSample &&
+            channels == other.channels &&
             data.contentEquals(other.data)
     }
 

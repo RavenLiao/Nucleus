@@ -9,7 +9,6 @@ package io.github.kdroidfilter.nucleus.notification.linux
  * Specification: https://specifications.freedesktop.org/notification/latest-single/
  */
 object LinuxNotificationCenter {
-
     /**
      * Whether the native library is loaded and the module is functional.
      *
@@ -94,6 +93,7 @@ object LinuxNotificationCenter {
     fun getServerInformation(): ServerInformation? {
         if (!isAvailable) return null
         val info = NativeLinuxNotificationBridge.nativeGetServerInformation() ?: return null
+        @Suppress("MagicNumber")
         if (info.size < 4) return null
         return ServerInformation(
             name = info[0],
@@ -122,8 +122,9 @@ object LinuxNotificationCenter {
     }
 }
 
-private fun Boolean?.toNativeFlag(): Int = when (this) {
-    null -> -1
-    true -> 1
-    false -> 0
-}
+private fun Boolean?.toNativeFlag(): Int =
+    when (this) {
+        null -> -1
+        true -> 1
+        false -> 0
+    }
