@@ -10,7 +10,6 @@ package io.github.kdroidfilter.nucleus.launcher.macos
  * All methods are no-op on non-macOS platforms (check [isAvailable]).
  */
 object MacOsDockMenu {
-
     /** Whether the native library is loaded and the module is functional. */
     val isAvailable: Boolean
         get() = NativeMacOsDockMenuBridge.isLoaded
@@ -37,7 +36,10 @@ object MacOsDockMenu {
         val flatParentIndices = mutableListOf<Int>()
         val flatSeparators = mutableListOf<Boolean>()
 
-        fun flatten(items: List<DockMenuItem>, parentIndex: Int) {
+        fun flatten(
+            items: List<DockMenuItem>,
+            parentIndex: Int,
+        ) {
             for (item in items) {
                 val currentIndex = flatIds.size
                 flatIds.add(item.id)
