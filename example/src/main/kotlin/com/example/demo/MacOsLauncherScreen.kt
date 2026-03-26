@@ -52,10 +52,11 @@ fun MacOsLauncherScreen() {
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("macOS Dock Menu", style = MaterialTheme.typography.headlineSmall)
@@ -86,11 +87,12 @@ fun MacOsLauncherScreen() {
                                     DockMenuItem(
                                         id = 4,
                                         title = "Recent Files",
-                                        children = listOf(
-                                            DockMenuItem(id = 41, title = "project.kt"),
-                                            DockMenuItem(id = 42, title = "build.gradle.kts"),
-                                            DockMenuItem(id = 43, title = "README.md"),
-                                        ),
+                                        children =
+                                            listOf(
+                                                DockMenuItem(id = 41, title = "project.kt"),
+                                                DockMenuItem(id = 42, title = "build.gradle.kts"),
+                                                DockMenuItem(id = 43, title = "README.md"),
+                                            ),
                                     ),
                                     DockMenuItem.separator(id = 5),
                                     DockMenuItem(id = 6, title = "Preferences"),
