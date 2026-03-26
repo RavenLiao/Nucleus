@@ -116,6 +116,13 @@ jobs:
           pattern: 'notification-macos*'
           merge-multiple: true
 
+      - name: Download notification-linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: notification-linux/src/main/resources/nucleus/native/
+          pattern: 'notification-linux-*'
+          merge-multiple: true
+
       - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon

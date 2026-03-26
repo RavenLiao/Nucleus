@@ -175,7 +175,9 @@ fun main(args: Array<String>) {
                         val tabs =
                             buildList {
                                 addAll(listOf("Nucleus", "Gallery", "Taskbar"))
-                                if (Platform.Current == Platform.MacOS) add("Notifications")
+                                if (Platform.Current == Platform.MacOS || Platform.Current == Platform.Linux) {
+                                    add("Notifications")
+                                }
                             }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
@@ -301,7 +303,13 @@ fun main(args: Array<String>) {
                                 }
                             }
                             "Taskbar" -> TaskbarProgressScreen(window)
-                            "Notifications" -> NotificationsScreen()
+                            "Notifications" -> {
+                                when (Platform.Current) {
+                                    Platform.MacOS -> NotificationsScreen()
+                                    Platform.Linux -> LinuxNotificationsScreen()
+                                    else -> {}
+                                }
+                            }
                         }
 
                         if (showInfoDialog) {

@@ -327,7 +327,7 @@ jobs:
           java-version: '21'
 
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libx11-dev libglib2.0-dev
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libx11-dev libglib2.0-dev libgio-2.0-dev
 
       - name: Build darkmode-detector Linux native shared library
         run: bash darkmode-detector/src/main/native/linux/build.sh
@@ -423,4 +423,20 @@ jobs:
         with:
           name: taskbar-progress-linux-${{ matrix.arch }}
           path: taskbar-progress/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build notification-linux native shared library
+        run: bash notification-linux/src/main/native/linux/build.sh
+
+      - name: Verify notification-linux native
+        run: |
+          f="notification-linux/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_notification_linux.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload notification-linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-linux-${{ matrix.arch }}
+          path: notification-linux/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

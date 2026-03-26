@@ -89,6 +89,13 @@ jobs:
           pattern: 'notification-macos*'
           merge-multiple: true
 
+      - name: Download notification-linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: notification-linux/src/main/resources/nucleus/native/
+          pattern: 'notification-linux-*'
+          merge-multiple: true
+
       - name: Setup Nucleus (GraalVM)
         uses: ./.github/actions/setup-nucleus
         with:

@@ -75,6 +75,7 @@ nav:
           - System Color: runtime/system-color.md
           - Taskbar Progress: runtime/taskbar-progress.md
           - Notification (macOS): runtime/notification-macos.md
+          - Notification (Linux): runtime/notification-linux.md
           - Energy Manager: runtime/energy-manager.md
           - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md

@@ -80,6 +80,13 @@ jobs:
           pattern: 'notification-macos*'
           merge-multiple: true
 
+      - name: Download notification-linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: notification-linux/src/main/resources/nucleus/native/
+          pattern: 'notification-linux-*'
+          merge-multiple: true
+
       - name: Verify all natives present
         run: |
           EXPECTED=(
@@ -123,6 +130,8 @@ jobs:
             "taskbar-progress/src/main/resources/nucleus/native/linux-aarch64/libnucleus_taskbar_progress.so"
             "notification-macos/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_notification.dylib"
             "notification-macos/src/main/resources/nucleus/native/darwin-x64/libnucleus_notification.dylib"
+            "notification-linux/src/main/resources/nucleus/native/linux-x64/libnucleus_notification_linux.so"
+            "notification-linux/src/main/resources/nucleus/native/linux-aarch64/libnucleus_notification_linux.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do
