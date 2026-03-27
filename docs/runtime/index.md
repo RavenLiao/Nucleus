@@ -16,6 +16,8 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Notification (Linux) | `io.github.kdroidfilter:nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI (D-Bus) |
 | Launcher (Linux) | `io.github.kdroidfilter:nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI (D-Bus) |
 | Launcher (macOS) | `io.github.kdroidfilter:nucleus.launcher-macos` | macOS dock context menu — custom items, submenus, click callbacks via JNI |
+| Menu (macOS) | `io.github.kdroidfilter:nucleus.menu-macos` | Complete NSMenu mapping — application menu bar, items, badges, delegates, SF Symbols via JNI |
+| SF Symbols | `io.github.kdroidfilter:nucleus.sf-symbols` | Type-safe Apple SF Symbols constants (6 195 symbols, 21 categories) |
 | Freedesktop Icons | `io.github.kdroidfilter:nucleus.freedesktop-icons` | Type-safe freedesktop Icon Naming Specification constants |
 | Decorated Window | `io.github.kdroidfilter:nucleus.decorated-window` | Custom window decorations with native title bar |
 | Decorated Window — Jewel | `io.github.kdroidfilter:nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) color mapping for decorated windows |
@@ -44,6 +46,8 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.notification-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-macos:<version>")
+    implementation("io.github.kdroidfilter:nucleus.menu-macos:<version>")
+    implementation("io.github.kdroidfilter:nucleus.sf-symbols:<version>")
     implementation("io.github.kdroidfilter:nucleus.freedesktop-icons:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-jewel:<version>")

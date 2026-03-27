@@ -672,6 +672,7 @@ private fun JvmApplicationContext.configurePackageTask(
 
     app.nativeDistributions.let { executables ->
         packageTask.packageName.set(packageNameProvider)
+        packageTask.appName.set(project.provider { executables.appName })
         packageTask.packageDescription.set(executables.description)
         packageTask.packageCopyright.set(executables.copyright)
         packageTask.packageVendor.set(executables.vendor)
@@ -984,6 +985,10 @@ private fun JvmApplicationContext.configureRunTask(
             add("-D$APP_ID=${resolvedAppIdProvider().get()}")
 
             if (currentOS == OS.MacOS) {
+                val dockName = app.nativeDistributions.appName
+                    ?: app.nativeDistributions.packageName
+                    ?: project.name
+                add("-Dapple.awt.application.name=$dockName")
                 val file = app.nativeDistributions.macOS.iconFile.ioFileOrNull
                 if (file != null) add("-Xdock:icon=$file")
             }

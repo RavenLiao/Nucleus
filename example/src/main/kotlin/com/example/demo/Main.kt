@@ -195,6 +195,9 @@ fun main(args: Array<String>) {
                                     add("Launcher")
                                 }
                                 add("Hotkeys")
+                                if (Platform.Current == Platform.MacOS) {
+                                    add("Menu")
+                                }
                             }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
@@ -337,6 +340,7 @@ fun main(args: Array<String>) {
                                 }
                             }
                             "Hotkeys" -> GlobalHotKeyScreen()
+                            "Menu" -> MacOsMenuScreen()
                         }
 
                         if (showInfoDialog) {

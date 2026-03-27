@@ -36,6 +36,8 @@ dependencies {
     implementation(project(":launcher-linux"))
     implementation(project(":launcher-macos"))
     implementation(project(":global-hotkey"))
+    implementation(project(":menu-macos"))
+    implementation(project(":sf-symbols"))
     implementation(libs.coroutines.swing)
     implementation(project(":graalvm-runtime"))
     implementation(libs.reorderable)
@@ -96,7 +98,7 @@ nucleus.application {
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
         appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
-        appName = "NucleusDemo"
+        appName = "Nucleus Demo"
         packageName = "io.github.kdroidfilter.NucleusDemo"
         packageVersion = releaseVersion
 
@@ -110,7 +112,7 @@ nucleus.application {
 
         // --- Native libs handling ---
         cleanupNativeLibs = true // Auto cleanup native libraries
-        enableAotCache = true // Enable AOT compilation cache
+        enableAotCache = System.getenv("GITHUB_REF") != null
 //        splashImage = "splash.png" // Splash screen image file
         homepage = "https://github.com/KdroidFilter/NucleusDemo"
 

@@ -163,6 +163,10 @@ abstract class AbstractJPackageTask
 
         @get:Input
         @get:Optional
+        val appName: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
         val packageDescription: Property<String> = objects.nullableProperty()
 
         @get:Input
@@ -748,7 +752,7 @@ abstract class AbstractJPackageTask
                     ?: launcherMainClass.get().substringBeforeLast(".")
             plist[PlistKeys.CFBundleIdentifier] = bundleId
             plist[PlistKeys.CFBundleInfoDictionaryVersion] = "6.0"
-            plist[PlistKeys.CFBundleName] = packageName
+            plist[PlistKeys.CFBundleName] = appName.orNull ?: packageName
             plist[PlistKeys.CFBundlePackageType] = "APPL"
             val packageVersion = packageVersion.get()
             plist[PlistKeys.CFBundleShortVersionString] = packageVersion

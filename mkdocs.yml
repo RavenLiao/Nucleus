@@ -81,6 +81,7 @@ nav:
           - Notification (Linux): runtime/notification-linux.md
           - Launcher (Linux): runtime/launcher-linux.md
           - Launcher (macOS): runtime/launcher-macos.md
+          - Menu (macOS): runtime/menu-macos.md
           - Freedesktop Icons: runtime/freedesktop-icons.md
           - Energy Manager: runtime/energy-manager.md
           - Linux HiDPI: runtime/linux-hidpi.md
