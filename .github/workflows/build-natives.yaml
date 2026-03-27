@@ -184,6 +184,27 @@ jobs:
           path: launcher-windows/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build global-hotkey Windows DLLs
+        shell: cmd
+        run: call global-hotkey\src\main\native\windows\build.bat
+
+      - name: Verify global-hotkey Windows natives
+        shell: bash
+        run: |
+          for f in \
+            global-hotkey/src/main/resources/nucleus/native/win32-x64/nucleus_global_hotkey.dll \
+            global-hotkey/src/main/resources/nucleus/native/win32-aarch64/nucleus_global_hotkey.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload global-hotkey Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-hotkey-windows
+          path: global-hotkey/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:
@@ -367,6 +388,25 @@ jobs:
           path: launcher-macos/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build global-hotkey macOS dylibs
+        run: bash global-hotkey/src/main/native/macos/build.sh
+
+      - name: Verify global-hotkey macOS natives
+        run: |
+          for f in \
+            global-hotkey/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_global_hotkey.dylib \
+            global-hotkey/src/main/resources/nucleus/native/darwin-x64/libnucleus_global_hotkey.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload global-hotkey macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-hotkey-macos
+          path: global-hotkey/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -500,4 +540,20 @@ jobs:
         with:
           name: launcher-linux-${{ matrix.arch }}
           path: launcher-linux/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build global-hotkey Linux native shared library
+        run: bash global-hotkey/src/main/native/linux/build.sh
+
+      - name: Verify global-hotkey Linux native
+        run: |
+          f="global-hotkey/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_global_hotkey.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload global-hotkey Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-hotkey-linux-${{ matrix.arch }}
+          path: global-hotkey/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
