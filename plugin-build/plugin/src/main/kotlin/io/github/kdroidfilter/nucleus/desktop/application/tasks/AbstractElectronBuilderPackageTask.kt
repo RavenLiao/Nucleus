@@ -360,7 +360,8 @@ abstract class AbstractElectronBuilderPackageTask
 
             // Pad the DMG background image to compensate for the macOS title bar (issue #26).
             // electron-builder uses the image dimensions as the window size, causing the bottom
-            // of the image to be clipped by the height of the title bar.
+            // of the image to be clipped by the title bar height. Uses native sips to preserve
+            // color profiles, DPI metadata, and @2x Retina variants.
             val dmgBackgroundOverride =
                 if (targetFormat == TargetFormat.Dmg) {
                     distributions.macOS.dmg.background.orNull?.asFile?.let { bgFile ->
@@ -438,8 +439,8 @@ abstract class AbstractElectronBuilderPackageTask
             val dmg = mac.dmg
 
             // Copy DMG asset files to a subdirectory so they travel with the metadata artifact.
-            // The background image is padded with extra pixels at the bottom to compensate for
-            // the macOS title bar — see issue #26 and padDmgBackgroundForTitleBar().
+            // The background image is padded using native sips to compensate for the macOS
+            // title bar — see issue #26 and padDmgBackgroundForTitleBar().
             val assetsDir = File(outputDir, "dmg-assets")
             val dmgBackground =
                 dmg.background.orNull?.asFile?.let { bgFile ->

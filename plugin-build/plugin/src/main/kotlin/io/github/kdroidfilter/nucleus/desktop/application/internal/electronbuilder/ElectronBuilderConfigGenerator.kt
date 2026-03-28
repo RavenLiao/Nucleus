@@ -26,7 +26,6 @@ import java.io.File
  * Maps Nucleus DSL properties to the electron-builder configuration schema,
  * producing a `electron-builder.yml` file consumed by `electron-builder --prepackaged`.
  *
- * @see io.github.kdroidfilter.nucleus.desktop.application.internal.padDmgBackgroundForTitleBar
  */
 @Suppress("TooManyFunctions", "LargeClass")
 internal class ElectronBuilderConfigGenerator {
