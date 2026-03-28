@@ -74,6 +74,7 @@ nav:
           - Dark Mode Detector: runtime/darkmode-detector.md
           - System Color: runtime/system-color.md
           - Taskbar Progress: runtime/taskbar-progress.md
+          - Global Hotkey: runtime/global-hotkey.md
           - Notification (macOS): runtime/notification-macos.md
           - Notification (Windows): runtime/notification-windows.md
           - Launcher (Windows): runtime/launcher-windows.md

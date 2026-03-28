@@ -194,6 +194,7 @@ fun main(args: Array<String>) {
                                 ) {
                                     add("Launcher")
                                 }
+                                add("Hotkeys")
                             }
                         var selectedTab by remember { mutableStateOf("Nucleus") }
 
@@ -335,6 +336,7 @@ fun main(args: Array<String>) {
                                     else -> {}
                                 }
                             }
+                            "Hotkeys" -> GlobalHotKeyScreen()
                         }
 
                         if (showInfoDialog) {

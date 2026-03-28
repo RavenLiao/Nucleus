@@ -19,5 +19,11 @@ enum class Platform {
                 else -> Unknown
             }
         }
+
+        /** `true` when running on a Wayland session (Linux only). */
+        val isWayland: Boolean by lazy {
+            Current == Linux &&
+                (System.getenv("XDG_SESSION_TYPE") == "wayland" || System.getenv("WAYLAND_DISPLAY") != null)
+        }
     }
 }
