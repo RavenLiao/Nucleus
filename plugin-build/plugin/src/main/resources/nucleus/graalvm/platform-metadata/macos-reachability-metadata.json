@@ -762,9 +762,41 @@
             ],
             "methods": [
                 {
+                    "name": "attributedSubstringFromRange",
+                    "parameterTypes": [
+                        "int",
+                        "int"
+                    ]
+                },
+                {
+                    "name": "characterIndexForPoint",
+                    "parameterTypes": [
+                        "int",
+                        "int"
+                    ]
+                },
+                {
+                    "name": "dispatchText",
+                    "parameterTypes": [
+                        "int",
+                        "int",
+                        "boolean"
+                    ]
+                },
+                {
                     "name": "firstRectForCharacterRange",
                     "parameterTypes": [
                         "int"
+                    ]
+                },
+                {
+                    "name": "hasMarkedText",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "insertText",
+                    "parameterTypes": [
+                        "java.lang.String"
                     ]
                 },
                 {
@@ -772,8 +804,31 @@
                     "parameterTypes": []
                 },
                 {
+                    "name": "selectNextGlyph",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "selectPreviousGlyph",
+                    "parameterTypes": []
+                },
+                {
                     "name": "selectedRange",
                     "parameterTypes": []
+                },
+                {
+                    "name": "startIMUpdate",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "addAttribute",
+                    "parameterTypes": [
+                        "boolean",
+                        "boolean",
+                        "int",
+                        "int"
+                    ]
                 },
                 {
                     "name": "unmarkText",
