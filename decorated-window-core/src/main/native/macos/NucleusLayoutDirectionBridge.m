@@ -1,12 +1,15 @@
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #include <jni.h>
 
 JNIEXPORT jboolean JNICALL
 Java_io_github_kdroidfilter_nucleus_window_NativeLayoutDirectionBridge_nativeIsRTL(
     JNIEnv *env, jclass clazz) {
     @autoreleasepool {
-        return [NSApplication sharedApplication].userInterfaceLayoutDirection
-                   == NSUserInterfaceLayoutDirectionRightToLeft
+        NSString *language = [[NSLocale preferredLanguages] firstObject];
+        if (!language) return JNI_FALSE;
+        NSLocaleLanguageDirection direction =
+            [NSLocale characterDirectionForLanguage:language];
+        return direction == NSLocaleLanguageDirectionRightToLeft
                ? JNI_TRUE
                : JNI_FALSE;
     }

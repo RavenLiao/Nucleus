@@ -30,7 +30,7 @@ mkdir -p "$OUT_DIR_ARM64" "$OUT_DIR_X64"
 COMMON_FLAGS=(
     -dynamiclib
     -I"$JNI_INCLUDE" -I"$JNI_INCLUDE_DARWIN"
-    -framework Cocoa
+    -framework Foundation
     -mmacosx-version-min=10.13
     -fobjc-arc
     -Oz -flto

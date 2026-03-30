@@ -42,4 +42,4 @@ enum class ControlButtonsDirection {
  * `user.language` system property against known RTL languages.
  */
 internal fun nativeSystemLayoutDirection(): LayoutDirection =
-    if (NativeLayoutDirectionBridge.isSystemRTL()) LayoutDirection.Rtl else LayoutDirection.Ltr
+    if (NativeLayoutDirectionBridge.nativeIsRTL()) LayoutDirection.Rtl else LayoutDirection.Ltr
