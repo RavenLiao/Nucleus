@@ -76,7 +76,7 @@ internal fun padDmgBackgroundForTitleBar(
  * Adds [padding] pixels of fully transparent space at the bottom of [source]
  * and writes the result to [output].
  *
- * @return `true` if successful, `false` if the image could not be read.
+ * @return `true` if successful, `false` if the image could not be read or written.
  */
 private fun padImageBottom(
     source: File,
@@ -103,7 +103,14 @@ private fun padImageBottom(
     g.drawImage(original, 0, 0, null)
     g.dispose()
 
-    ImageIO.write(padded, formatName, output)
+    val written = ImageIO.write(padded, formatName, output)
+    if (!written || !output.isFile) {
+        logger?.warn(
+            "ImageIO could not write padded DMG background as '$formatName' to ${output.absolutePath}, " +
+                "falling back to original image",
+        )
+        return false
+    }
     logger?.info(
         "Padded DMG background with ${padding}px: " +
             "${original.width}x${original.height} → ${padded.width}x${padded.height}",
