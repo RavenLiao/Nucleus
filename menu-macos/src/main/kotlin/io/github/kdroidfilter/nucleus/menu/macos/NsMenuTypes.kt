@@ -1,7 +1,9 @@
 package io.github.kdroidfilter.nucleus.menu.macos
 
 /** NSControlStateValue used by NSMenuItem.state. */
-enum class NsMenuItemState(val nativeValue: Int) {
+enum class NsMenuItemState(
+    val nativeValue: Int,
+) {
     OFF(0),
     ON(1),
     MIXED(-1),
@@ -23,7 +25,9 @@ internal object NsEventModifierFlags {
 }
 
 /** NSUserInterfaceLayoutDirection. */
-internal enum class NsUserInterfaceLayoutDirection(val nativeValue: Int) {
+internal enum class NsUserInterfaceLayoutDirection(
+    val nativeValue: Int,
+) {
     LEFT_TO_RIGHT(0),
     RIGHT_TO_LEFT(1),
     ;
@@ -35,32 +39,37 @@ internal enum class NsUserInterfaceLayoutDirection(val nativeValue: Int) {
 }
 
 /** NSMenuPresentationStyle (macOS 14+). */
-internal enum class NsMenuPresentationStyle(val nativeValue: Int) {
+internal enum class NsMenuPresentationStyle(
+    val nativeValue: Int,
+) {
     REGULAR(0),
     PALETTE(1),
     ;
 
     companion object {
-        fun fromNative(value: Int): NsMenuPresentationStyle =
-            entries.firstOrNull { it.nativeValue == value } ?: REGULAR
+        fun fromNative(value: Int): NsMenuPresentationStyle = entries.firstOrNull { it.nativeValue == value } ?: REGULAR
     }
 }
 
 /** NSMenuSelectionMode (macOS 14+). */
-internal enum class NsMenuSelectionMode(val nativeValue: Int) {
+internal enum class NsMenuSelectionMode(
+    val nativeValue: Int,
+) {
     AUTOMATIC(0),
     SELECT_ANY(1),
     SELECT_ONE(2),
     ;
 
     companion object {
-        fun fromNative(value: Int): NsMenuSelectionMode =
-            entries.firstOrNull { it.nativeValue == value } ?: AUTOMATIC
+        fun fromNative(value: Int): NsMenuSelectionMode = entries.firstOrNull { it.nativeValue == value } ?: AUTOMATIC
     }
 }
 
 /** NSMenuItemBadgeType (macOS 14+). */
-internal enum class NsMenuItemBadgeType(val nativeValue: Int) {
+@Suppress("MagicNumber")
+internal enum class NsMenuItemBadgeType(
+    val nativeValue: Int,
+) {
     NONE(0),
     UPDATES(1),
     NEW_ITEMS(2),
@@ -68,15 +77,16 @@ internal enum class NsMenuItemBadgeType(val nativeValue: Int) {
     ;
 
     companion object {
-        fun fromNative(value: Int): NsMenuItemBadgeType =
-            entries.firstOrNull { it.nativeValue == value } ?: NONE
+        fun fromNative(value: Int): NsMenuItemBadgeType = entries.firstOrNull { it.nativeValue == value } ?: NONE
     }
 }
 
 /** Image source for NSMenuItem image properties. */
 sealed class NsMenuItemImage {
     /** Named image from the app bundle or AppKit constants (e.g. "NSActionTemplate"). */
-    data class Named(val name: String) : NsMenuItemImage()
+    data class Named(
+        val name: String,
+    ) : NsMenuItemImage()
 
     /**
      * SF Symbol image (macOS 11+).
@@ -104,7 +114,9 @@ sealed class NsMenuItemImage {
     }
 
     /** Image loaded from a file path. */
-    data class File(val path: String) : NsMenuItemImage()
+    data class File(
+        val path: String,
+    ) : NsMenuItemImage()
 }
 
 // Property ID constants used internally between Kotlin and native code.

@@ -18,7 +18,11 @@ internal object NativeLinuxHotKeyBridge {
     external fun nativeInit(): String?
 
     @JvmStatic
-    external fun nativeRegister(id: Long, modifiers: Int, keyCode: Int): String?
+    external fun nativeRegister(
+        id: Long,
+        modifiers: Int,
+        keyCode: Int,
+    ): String?
 
     @JvmStatic
     external fun nativeUnregister(id: Long): String?
@@ -27,7 +31,11 @@ internal object NativeLinuxHotKeyBridge {
     external fun nativeShutdown()
 
     @JvmStatic
-    fun onHotKey(id: Long, keyCode: Int, modifiers: Int) {
+    fun onHotKey(
+        id: Long,
+        keyCode: Int,
+        modifiers: Int,
+    ) {
         listeners[id]?.onHotKey(keyCode, modifiers)
     }
 

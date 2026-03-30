@@ -121,7 +121,8 @@ object LinuxLauncherEntry {
      * Clears the progress bar.
      */
     @Suppress("MaxLineLength")
-    fun clearProgress(appUri: String): Boolean = update(appUri, LauncherProperties(progress = 0.0, progressVisible = false))
+    fun clearProgress(appUri: String): Boolean =
+        update(appUri, LauncherProperties(progress = 0.0, progressVisible = false))
 
     /**
      * Sets or clears the urgency flag on the launcher icon.

@@ -18,7 +18,10 @@ internal interface NsMenuDelegate {
     fun menuNeedsUpdate(menu: NsMenu) {}
 
     /** Invoked when a menu item is about to be highlighted. [item] is null when no item is highlighted. */
-    fun menuWillHighlightItem(menu: NsMenu, item: NsMenuItem?) {}
+    fun menuWillHighlightItem(
+        menu: NsMenu,
+        item: NsMenuItem?,
+    ) {}
 
     /**
      * Return the number of items in a lazily-populated menu.

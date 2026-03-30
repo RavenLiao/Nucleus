@@ -20,5 +20,7 @@ sealed interface SFSymbol {
      * ```
      */
     @JvmInline
-    value class Custom(override val symbolName: String) : SFSymbol
+    value class Custom(
+        override val symbolName: String,
+    ) : SFSymbol
 }

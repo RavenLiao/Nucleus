@@ -29,7 +29,11 @@ internal object NativeMacOsHotKeyBridge {
      * @return error message or null on success.
      */
     @JvmStatic
-    external fun nativeRegister(id: Long, modifiers: Int, keyCode: Int): String?
+    external fun nativeRegister(
+        id: Long,
+        modifiers: Int,
+        keyCode: Int,
+    ): String?
 
     /**
      * Unregister a previously registered global hotkey.
@@ -47,7 +51,11 @@ internal object NativeMacOsHotKeyBridge {
 
     // Called from native code when a hotkey fires
     @JvmStatic
-    fun onHotKey(id: Long, keyCode: Int, modifiers: Int) {
+    fun onHotKey(
+        id: Long,
+        keyCode: Int,
+        modifiers: Int,
+    ) {
         listeners[id]?.onHotKey(keyCode, modifiers)
     }
 

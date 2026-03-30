@@ -60,7 +60,10 @@ fun NativeMenuBar(content: NativeMenuBarScope.() -> Unit) {
         onDispose {
             currentMenu?.close()
             NativeNsMenuBridge.clearAllActions()
-            savedMenu?.let { NsMenu.setMainMenu(it); it.close() }
+            savedMenu?.let {
+                NsMenu.setMainMenu(it)
+                it.close()
+            }
         }
     }
 }
@@ -79,6 +82,7 @@ class NativeMenuBarScope internal constructor() {
      * @param mnemonic Ignored on macOS (accepted for API compatibility).
      * @param content Items inside this menu.
      */
+    @Suppress("UnusedParameter")
     fun Menu(
         text: String,
         enabled: Boolean = true,
@@ -122,6 +126,7 @@ class NativeMenuScope internal constructor() {
      * @param mixedStateImage Image shown when state is MIXED.
      * @param onClick Callback when clicked (dispatched on Swing EDT). Trailing lambda.
      */
+    @Suppress("UnusedParameter")
     fun Item(
         text: String,
         enabled: Boolean = true,
@@ -141,24 +146,25 @@ class NativeMenuScope internal constructor() {
         mixedStateImage: NsMenuItemImage? = null,
         onClick: () -> Unit = {},
     ) {
-        entries += MenuItemEntry.Regular(
-            text = text,
-            onClick = onClick,
-            enabled = enabled,
-            shortcut = shortcut,
-            icon = icon,
-            state = state,
-            tag = tag,
-            badge = badge,
-            subtitle = subtitle,
-            toolTip = toolTip,
-            indentationLevel = indentationLevel,
-            isAlternate = isAlternate,
-            isHidden = isHidden,
-            onStateImage = onStateImage,
-            offStateImage = offStateImage,
-            mixedStateImage = mixedStateImage,
-        )
+        entries +=
+            MenuItemEntry.Regular(
+                text = text,
+                onClick = onClick,
+                enabled = enabled,
+                shortcut = shortcut,
+                icon = icon,
+                state = state,
+                tag = tag,
+                badge = badge,
+                subtitle = subtitle,
+                toolTip = toolTip,
+                indentationLevel = indentationLevel,
+                isAlternate = isAlternate,
+                isHidden = isHidden,
+                onStateImage = onStateImage,
+                offStateImage = offStateImage,
+                mixedStateImage = mixedStateImage,
+            )
     }
 
     // ── CheckboxItem ─────────────────────────────────────────────────────
@@ -168,6 +174,7 @@ class NativeMenuScope internal constructor() {
      *
      * Convenience wrapper around [Item] with automatic [NsMenuItemState] mapping.
      */
+    @Suppress("UnusedParameter")
     fun CheckboxItem(
         text: String,
         checked: Boolean,
@@ -205,6 +212,7 @@ class NativeMenuScope internal constructor() {
      * Uses [NsMenuItemState.ON] when [selected] and [NsMenuItemState.OFF] otherwise.
      * Group your radio items together and manage selection state externally.
      */
+    @Suppress("UnusedParameter")
     fun RadioButtonItem(
         text: String,
         selected: Boolean,
@@ -258,6 +266,7 @@ class NativeMenuScope internal constructor() {
      * @param icon Native image for the submenu item.
      * @param content Items inside this submenu.
      */
+    @Suppress("UnusedParameter")
     fun Menu(
         text: String,
         enabled: Boolean = true,
@@ -310,7 +319,9 @@ internal sealed class MenuItemEntry {
 
     object SeparatorEntry : MenuItemEntry()
 
-    data class SectionHeaderEntry(val title: String) : MenuItemEntry()
+    data class SectionHeaderEntry(
+        val title: String,
+    ) : MenuItemEntry()
 }
 
 // ─── Materialization (description → native NSMenu tree) ──────────────────────
@@ -331,7 +342,11 @@ private fun materializeMenuBar(entries: List<MenuBarEntry>): NsMenu {
     return menuBar
 }
 
-private fun materializeItems(menu: NsMenu, entries: List<MenuItemEntry>) {
+@Suppress("CyclomaticComplexMethod")
+private fun materializeItems(
+    menu: NsMenu,
+    entries: List<MenuItemEntry>,
+) {
     for (entry in entries) {
         when (entry) {
             is MenuItemEntry.SeparatorEntry -> {
@@ -386,7 +401,7 @@ private fun materializeItems(menu: NsMenu, entries: List<MenuItemEntry>) {
 /**
  * Describes a keyboard shortcut for a native macOS menu item.
  *
- * @param key The key equivalent character (e.g. `"c"`, `","`, `"?"`, [NativeKey.Escape]).
+ * @param key The key equivalent character (e.g. `"c"`, `","`, `"?"`, [NativeKey.ESCAPE]).
  * @param command Command (⌘) modifier. **Tip:** this is the macOS equivalent of `ctrl` on other platforms.
  * @param shift Shift (⇧) modifier.
  * @param option Option (⌥) modifier.
@@ -404,15 +419,15 @@ data class NativeKeyShortcut(
 
 /** Well-known non-printable key equivalent characters for [NativeKeyShortcut]. */
 object NativeKey {
-    const val Escape: String = "\u001B"
-    const val Return: String = "\r"
-    const val Tab: String = "\t"
-    const val Delete: String = "\u007F"
-    const val Backspace: String = "\u0008"
-    const val Up: String = "\uF700"
-    const val Down: String = "\uF701"
-    const val Left: String = "\uF702"
-    const val Right: String = "\uF703"
+    const val ESCAPE: String = "\u001B"
+    const val RETURN: String = "\r"
+    const val TAB: String = "\t"
+    const val DELETE: String = "\u007F"
+    const val BACKSPACE: String = "\u0008"
+    const val UP: String = "\uF700"
+    const val DOWN: String = "\uF701"
+    const val LEFT: String = "\uF702"
+    const val RIGHT: String = "\uF703"
     const val F1: String = "\uF704"
     const val F2: String = "\uF705"
     const val F3: String = "\uF706"
@@ -425,10 +440,10 @@ object NativeKey {
     const val F10: String = "\uF70D"
     const val F11: String = "\uF70E"
     const val F12: String = "\uF70F"
-    const val Home: String = "\uF729"
-    const val End: String = "\uF72B"
-    const val PageUp: String = "\uF72C"
-    const val PageDown: String = "\uF72D"
+    const val HOME: String = "\uF729"
+    const val END: String = "\uF72B"
+    const val PAGE_UP: String = "\uF72C"
+    const val PAGE_DOWN: String = "\uF72D"
 }
 
 // ─── Shortcut → NSMenu key equivalent mapping ───────────────────────────────

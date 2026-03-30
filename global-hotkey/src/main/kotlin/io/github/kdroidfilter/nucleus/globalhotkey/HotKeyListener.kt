@@ -8,5 +8,8 @@ fun interface HotKeyListener {
      * @param keyCode the virtual key code that was pressed.
      * @param modifiers the modifier bitmask that was active.
      */
-    fun onHotKey(keyCode: Int, modifiers: Int)
+    fun onHotKey(
+        keyCode: Int,
+        modifiers: Int,
+    )
 }

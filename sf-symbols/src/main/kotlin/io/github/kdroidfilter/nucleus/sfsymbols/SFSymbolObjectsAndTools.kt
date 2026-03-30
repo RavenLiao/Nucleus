@@ -104,9 +104,13 @@ enum class SFSymbolObjectsAndTools(
     DOOR_GARAGE_CLOSED("door.garage.closed"),
     DOOR_GARAGE_CLOSED_TRIANGLEBADGE_EXCLAMATIONMARK("door.garage.closed.trianglebadge.exclamationmark"),
     DOOR_GARAGE_DOUBLE_BAY_CLOSED("door.garage.double.bay.closed"),
-    DOOR_GARAGE_DOUBLE_BAY_CLOSED_TRIANGLEBADGE_EXCLAMATIONMARK("door.garage.double.bay.closed.trianglebadge.exclamationmark"),
+    DOOR_GARAGE_DOUBLE_BAY_CLOSED_TRIANGLEBADGE_EXCLAMATIONMARK(
+        "door.garage.double.bay.closed.trianglebadge.exclamationmark",
+    ),
     DOOR_GARAGE_DOUBLE_BAY_OPEN("door.garage.double.bay.open"),
-    DOOR_GARAGE_DOUBLE_BAY_OPEN_TRIANGLEBADGE_EXCLAMATIONMARK("door.garage.double.bay.open.trianglebadge.exclamationmark"),
+    DOOR_GARAGE_DOUBLE_BAY_OPEN_TRIANGLEBADGE_EXCLAMATIONMARK(
+        "door.garage.double.bay.open.trianglebadge.exclamationmark",
+    ),
     DOOR_GARAGE_OPEN("door.garage.open"),
     DOOR_GARAGE_OPEN_TRIANGLEBADGE_EXCLAMATIONMARK("door.garage.open.trianglebadge.exclamationmark"),
     DOOR_LEFT_HAND_CLOSED("door.left.hand.closed"),

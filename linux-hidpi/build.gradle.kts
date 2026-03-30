@@ -63,7 +63,9 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Linux HiDPI")
-        description.set("Native HiDPI scale factor detection for Compose Desktop on Linux (GSettings, GDK_SCALE, Xft.dpi)")
+        description.set(
+            "Native HiDPI scale factor detection for Compose Desktop on Linux (GSettings, GDK_SCALE, Xft.dpi)",
+        )
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

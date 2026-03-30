@@ -67,7 +67,9 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Menu macOS")
-        description.set("Complete NSMenu / NSMenuItem / NSMenuItemBadge / NSMenuDelegate mapping for JVM desktop applications via JNI")
+        description.set(
+            "Complete NSMenu / NSMenuItem / NSMenuItemBadge / NSMenuDelegate mapping for JVM desktop applications via JNI",
+        )
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

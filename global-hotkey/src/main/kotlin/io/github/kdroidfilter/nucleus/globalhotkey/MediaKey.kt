@@ -5,7 +5,10 @@ package io.github.kdroidfilter.nucleus.globalhotkey
  *
  * @param nativeCode platform-specific virtual key code used by the native bridge.
  */
-enum class MediaKey(internal val nativeCode: Int) {
+@Suppress("MagicNumber")
+enum class MediaKey(
+    internal val nativeCode: Int,
+) {
     /** Play/Pause toggle. */
     PLAY_PAUSE(0xB3),
 

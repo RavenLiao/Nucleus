@@ -85,7 +85,9 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Global Hotkey")
-        description.set("Cross-platform global hotkey (system-wide keyboard shortcuts) for JVM desktop applications via JNI")
+        description.set(
+            "Cross-platform global hotkey (system-wide keyboard shortcuts) for JVM desktop applications via JNI",
+        )
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

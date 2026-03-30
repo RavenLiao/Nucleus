@@ -300,7 +300,8 @@ class TitleBarScopeImpl(
     override val icon: Painter?,
 ) : TitleBarScope {
     @Suppress("MaxLineLength")
-    override fun Modifier.align(alignment: Alignment.Horizontal): Modifier = this then TitleBarChildDataElement(alignment)
+    override fun Modifier.align(alignment: Alignment.Horizontal): Modifier =
+        this then TitleBarChildDataElement(alignment)
 }
 
 class TitleBarChildDataElement(

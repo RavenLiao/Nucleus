@@ -58,7 +58,9 @@ enum class SFSymbolHealth(
     VOLLEYBALL_FILL("volleyball.fill"),
     WATER_WAVES("water.waves"),
     WATER_WAVES_AND_ARROW_TRIANGLEHEAD_DOWN("water.waves.and.arrow.trianglehead.down"),
-    WATER_WAVES_AND_ARROW_TRIANGLEHEAD_DOWN_TRIANGLEBADGE_EXCLAMATIONMARK("water.waves.and.arrow.trianglehead.down.trianglebadge.exclamationmark"),
+    WATER_WAVES_AND_ARROW_TRIANGLEHEAD_DOWN_TRIANGLEBADGE_EXCLAMATIONMARK(
+        "water.waves.and.arrow.trianglehead.down.trianglebadge.exclamationmark",
+    ),
     WATER_WAVES_AND_ARROW_TRIANGLEHEAD_UP("water.waves.and.arrow.trianglehead.up"),
     WATER_WAVES_SLASH("water.waves.slash"),
 }

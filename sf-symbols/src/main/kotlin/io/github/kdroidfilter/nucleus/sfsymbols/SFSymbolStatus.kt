@@ -98,8 +98,12 @@ enum class SFSymbolStatus(
     EXCLAMATIONMARK_2("exclamationmark.2"),
     EXCLAMATIONMARK_3("exclamationmark.3"),
     EXCLAMATIONMARK_APPLEWATCH("exclamationmark.applewatch"),
-    EXCLAMATIONMARK_ARROW_TRIANGLEHEAD_2_CLOCKWISE_ROTATE_90("exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"),
-    EXCLAMATIONMARK_ARROW_TRIANGLEHEAD_COUNTERCLOCKWISE_ROTATE_90("exclamationmark.arrow.trianglehead.counterclockwise.rotate.90"),
+    EXCLAMATIONMARK_ARROW_TRIANGLEHEAD_2_CLOCKWISE_ROTATE_90(
+        "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90",
+    ),
+    EXCLAMATIONMARK_ARROW_TRIANGLEHEAD_COUNTERCLOCKWISE_ROTATE_90(
+        "exclamationmark.arrow.trianglehead.counterclockwise.rotate.90",
+    ),
     EXCLAMATIONMARK_BRAKESIGNAL("exclamationmark.brakesignal"),
     EXCLAMATIONMARK_BUBBLE("exclamationmark.bubble"),
     EXCLAMATIONMARK_BUBBLE_CIRCLE("exclamationmark.bubble.circle"),
@@ -126,10 +130,18 @@ enum class SFSymbolStatus(
     EXCLAMATIONMARK_WARNINGLIGHT("exclamationmark.warninglight"),
     EXCLAMATIONMARK_WARNINGLIGHT_FILL("exclamationmark.warninglight.fill"),
     GAUGE_OPEN_WITH_LINES_NEEDLE_33PERCENT("gauge.open.with.lines.needle.33percent"),
-    GAUGE_OPEN_WITH_LINES_NEEDLE_33PERCENT_AND_ARROW_TRIANGLEHEAD_FROM_0PERCENT_TO_50PERCENT("gauge.open.with.lines.needle.33percent.and.arrow.trianglehead.from.0percent.to.50percent"),
-    GAUGE_OPEN_WITH_LINES_NEEDLE_33PERCENT_AND_ARROWTRIANGLE("gauge.open.with.lines.needle.33percent.and.arrowtriangle"),
-    GAUGE_OPEN_WITH_LINES_NEEDLE_67PERCENT_AND_ARROWTRIANGLE("gauge.open.with.lines.needle.67percent.and.arrowtriangle"),
-    GAUGE_OPEN_WITH_LINES_NEEDLE_67PERCENT_AND_ARROWTRIANGLE_AND_CAR("gauge.open.with.lines.needle.67percent.and.arrowtriangle.and.car"),
+    GAUGE_OPEN_WITH_LINES_NEEDLE_33PERCENT_AND_ARROW_TRIANGLEHEAD_FROM_0PERCENT_TO_50PERCENT(
+        "gauge.open.with.lines.needle.33percent.and.arrow.trianglehead.from.0percent.to.50percent",
+    ),
+    GAUGE_OPEN_WITH_LINES_NEEDLE_33PERCENT_AND_ARROWTRIANGLE(
+        "gauge.open.with.lines.needle.33percent.and.arrowtriangle",
+    ),
+    GAUGE_OPEN_WITH_LINES_NEEDLE_67PERCENT_AND_ARROWTRIANGLE(
+        "gauge.open.with.lines.needle.67percent.and.arrowtriangle",
+    ),
+    GAUGE_OPEN_WITH_LINES_NEEDLE_67PERCENT_AND_ARROWTRIANGLE_AND_CAR(
+        "gauge.open.with.lines.needle.67percent.and.arrowtriangle.and.car",
+    ),
     GAUGE_OPEN_WITH_LINES_NEEDLE_84PERCENT_EXCLAMATION("gauge.open.with.lines.needle.84percent.exclamation"),
     GAUGE_WITH_DOTS_NEEDLE_0PERCENT("gauge.with.dots.needle.0percent"),
     GAUGE_WITH_DOTS_NEEDLE_33PERCENT("gauge.with.dots.needle.33percent"),

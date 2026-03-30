@@ -65,8 +65,10 @@ object NativeLibraryLoader {
             val resourcePath = "$resourcePrefix/${platform.resourceDir}/$fileName"
 
             val stream =
-                callerClass.getResourceAsStream(resourcePath)
-                    ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
+                callerClass.getResourceAsStream(resourcePath) ?: run {
+                    logger.fine("Native library not available on this platform: $resourcePath")
+                    return false
+                }
 
             val cachedLib =
                 stream.use { input ->

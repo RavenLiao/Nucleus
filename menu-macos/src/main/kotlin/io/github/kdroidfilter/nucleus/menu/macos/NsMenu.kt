@@ -16,7 +16,6 @@ internal class NsMenu internal constructor(
     internal val handle: Long,
     private val owned: Boolean = true,
 ) : AutoCloseable {
-
     private val closed = AtomicBoolean(false)
 
     /** Creates a new NSMenu with the given title. */
@@ -64,7 +63,6 @@ internal class NsMenu internal constructor(
             NativeNsMenuBridge.nativeSetMainMenu(menu.handle)
         }
 
-
         /** Creates a non-owning wrapper for use in callbacks. */
         internal fun borrowed(handle: Long): NsMenu = NsMenu(handle, owned = false)
     }
@@ -99,23 +97,26 @@ internal class NsMenu internal constructor(
         set(value) = NativeNsMenuBridge.nativeMenuSetBool(handle, MenuBoolProp.ALLOWS_CONTEXT_MENU_PLUGINS, value)
 
     var userInterfaceLayoutDirection: NsUserInterfaceLayoutDirection
-        get() = NsUserInterfaceLayoutDirection.fromNative(
-            NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.LAYOUT_DIRECTION),
-        )
+        get() =
+            NsUserInterfaceLayoutDirection.fromNative(
+                NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.LAYOUT_DIRECTION),
+            )
         set(value) = NativeNsMenuBridge.nativeMenuSetInt(handle, MenuIntProp.LAYOUT_DIRECTION, value.nativeValue)
 
     /** NSMenuPresentationStyle (macOS 14+). Returns [NsMenuPresentationStyle.REGULAR] on older systems. */
     var presentationStyle: NsMenuPresentationStyle
-        get() = NsMenuPresentationStyle.fromNative(
-            NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.PRESENTATION_STYLE),
-        )
+        get() =
+            NsMenuPresentationStyle.fromNative(
+                NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.PRESENTATION_STYLE),
+            )
         set(value) = NativeNsMenuBridge.nativeMenuSetInt(handle, MenuIntProp.PRESENTATION_STYLE, value.nativeValue)
 
     /** NSMenuSelectionMode (macOS 14+). Returns [NsMenuSelectionMode.AUTOMATIC] on older systems. */
     var selectionMode: NsMenuSelectionMode
-        get() = NsMenuSelectionMode.fromNative(
-            NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.SELECTION_MODE),
-        )
+        get() =
+            NsMenuSelectionMode.fromNative(
+                NativeNsMenuBridge.nativeMenuGetInt(handle, MenuIntProp.SELECTION_MODE),
+            )
         set(value) = NativeNsMenuBridge.nativeMenuSetInt(handle, MenuIntProp.SELECTION_MODE, value.nativeValue)
 
     /** The currently highlighted item, or null. The returned item must be closed. */
@@ -157,17 +158,27 @@ internal class NsMenu internal constructor(
     }
 
     /** Creates a new item, adds it to the end, and returns it. The caller owns the returned handle. */
-    fun addItem(title: String, keyEquivalent: String = ""): NsMenuItem {
+    fun addItem(
+        title: String,
+        keyEquivalent: String = "",
+    ): NsMenuItem {
         val h = NativeNsMenuBridge.nativeMenuAddItemWithTitle(handle, title, keyEquivalent)
         return NsMenuItem(h)
     }
 
-    fun insertItem(item: NsMenuItem, atIndex: Int) {
+    fun insertItem(
+        item: NsMenuItem,
+        atIndex: Int,
+    ) {
         NativeNsMenuBridge.nativeMenuInsertItem(handle, item.handle, atIndex)
     }
 
     /** Creates a new item, inserts it at [atIndex], and returns it. The caller owns the returned handle. */
-    fun insertItem(title: String, keyEquivalent: String = "", atIndex: Int): NsMenuItem {
+    fun insertItem(
+        title: String,
+        keyEquivalent: String = "",
+        atIndex: Int,
+    ): NsMenuItem {
         val h = NativeNsMenuBridge.nativeMenuInsertItemWithTitle(handle, title, keyEquivalent, atIndex)
         return NsMenuItem(h)
     }
@@ -211,14 +222,11 @@ internal class NsMenu internal constructor(
 
     // ---- Finding indices ----
 
-    fun indexOfItem(item: NsMenuItem): Int =
-        NativeNsMenuBridge.nativeMenuIndexOfItem(handle, item.handle)
+    fun indexOfItem(item: NsMenuItem): Int = NativeNsMenuBridge.nativeMenuIndexOfItem(handle, item.handle)
 
-    fun indexOfItemWithTitle(title: String): Int =
-        NativeNsMenuBridge.nativeMenuIndexOfItemWithTitle(handle, title)
+    fun indexOfItemWithTitle(title: String): Int = NativeNsMenuBridge.nativeMenuIndexOfItemWithTitle(handle, title)
 
-    fun indexOfItemWithTag(tag: Int): Int =
-        NativeNsMenuBridge.nativeMenuIndexOfItemWithTag(handle, tag)
+    fun indexOfItemWithTag(tag: Int): Int = NativeNsMenuBridge.nativeMenuIndexOfItemWithTag(handle, tag)
 
     fun indexOfItemWithSubmenu(submenu: NsMenu): Int =
         NativeNsMenuBridge.nativeMenuIndexOfItemWithSubmenu(handle, submenu.handle)
@@ -226,7 +234,10 @@ internal class NsMenu internal constructor(
     // ---- Submenu ----
 
     /** Assigns [submenu] as the submenu of [item]. Pass null to remove a submenu. */
-    fun setSubmenu(submenu: NsMenu?, forItem: NsMenuItem) {
+    fun setSubmenu(
+        submenu: NsMenu?,
+        forItem: NsMenuItem,
+    ) {
         NativeNsMenuBridge.nativeMenuSetSubmenuForItem(handle, submenu?.handle ?: 0L, forItem.handle)
     }
 
@@ -256,8 +267,11 @@ internal class NsMenu internal constructor(
      * @param atY Y coordinate in screen space.
      * @return true if the user selected an item, false if the menu was dismissed.
      */
-    fun popUp(positioningItem: NsMenuItem? = null, atX: Float, atY: Float): Boolean =
-        NativeNsMenuBridge.nativeMenuPopUp(handle, positioningItem?.handle ?: 0L, atX, atY)
+    fun popUp(
+        positioningItem: NsMenuItem? = null,
+        atX: Float,
+        atY: Float,
+    ): Boolean = NativeNsMenuBridge.nativeMenuPopUp(handle, positioningItem?.handle ?: 0L, atX, atY)
 
     // ---- Delegate ----
 

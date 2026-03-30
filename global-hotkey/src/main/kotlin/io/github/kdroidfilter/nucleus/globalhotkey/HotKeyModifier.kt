@@ -5,7 +5,10 @@ package io.github.kdroidfilter.nucleus.globalhotkey
  *
  * Combine using addition: `HotKeyModifier.CONTROL + HotKeyModifier.SHIFT`
  */
-enum class HotKeyModifier(internal val nativeFlag: Int) {
+@Suppress("MagicNumber")
+enum class HotKeyModifier(
+    internal val nativeFlag: Int,
+) {
     /** Alt key (Option on macOS). */
     ALT(0x0001),
 

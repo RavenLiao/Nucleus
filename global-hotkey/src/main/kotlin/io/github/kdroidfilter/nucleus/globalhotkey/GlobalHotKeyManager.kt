@@ -6,6 +6,8 @@ import io.github.kdroidfilter.nucleus.globalhotkey.macos.NativeMacOsHotKeyBridge
 import io.github.kdroidfilter.nucleus.globalhotkey.windows.NativeWindowsHotKeyBridge
 import java.util.logging.Logger
 
+private const val WIN32_MOD_NOREPEAT = 0x4000
+
 /**
  * Cross-platform manager for system-wide global hotkeys.
  *
@@ -36,8 +38,10 @@ import java.util.logging.Logger
  * GlobalHotKeyManager.shutdown()
  * ```
  */
+@Suppress("TooManyFunctions")
 object GlobalHotKeyManager {
     private val logger = Logger.getLogger(GlobalHotKeyManager::class.java.simpleName)
+
     @Volatile
     private var initialized = false
 
@@ -47,12 +51,13 @@ object GlobalHotKeyManager {
 
     /** Whether the native library is loaded and functional on this platform. */
     val isAvailable: Boolean
-        get() = when (Platform.Current) {
-            Platform.Windows -> NativeWindowsHotKeyBridge.isLoaded
-            Platform.MacOS -> NativeMacOsHotKeyBridge.isLoaded
-            Platform.Linux -> NativeLinuxHotKeyBridge.isLoaded
-            else -> false
-        }
+        get() =
+            when (Platform.Current) {
+                Platform.Windows -> NativeWindowsHotKeyBridge.isLoaded
+                Platform.MacOS -> NativeMacOsHotKeyBridge.isLoaded
+                Platform.Linux -> NativeLinuxHotKeyBridge.isLoaded
+                else -> false
+            }
 
     /**
      * Initialize the global hotkey subsystem.
@@ -69,12 +74,13 @@ object GlobalHotKeyManager {
             return false
         }
 
-        val error = when (Platform.Current) {
-            Platform.Windows -> NativeWindowsHotKeyBridge.nativeInit()
-            Platform.MacOS -> NativeMacOsHotKeyBridge.nativeInit()
-            Platform.Linux -> NativeLinuxHotKeyBridge.nativeInit()
-            else -> "Unsupported platform"
-        }
+        val error =
+            when (Platform.Current) {
+                Platform.Windows -> NativeWindowsHotKeyBridge.nativeInit()
+                Platform.MacOS -> NativeMacOsHotKeyBridge.nativeInit()
+                Platform.Linux -> NativeLinuxHotKeyBridge.nativeInit()
+                else -> "Unsupported platform"
+            }
 
         initialized = error == null
         lastError = error
@@ -93,7 +99,11 @@ object GlobalHotKeyManager {
      * @param listener callback invoked when the hotkey is pressed.
      * @return a registration handle for [unregister], or -1 on failure.
      */
-    fun register(keyCode: Int, modifiers: Int = 0, listener: HotKeyListener): Long {
+    fun register(
+        keyCode: Int,
+        modifiers: Int = 0,
+        listener: HotKeyListener,
+    ): Long {
         if (!ensureReady()) return -1
 
         return when (Platform.Current) {
@@ -111,7 +121,10 @@ object GlobalHotKeyManager {
      * @param listener callback invoked when the key is pressed.
      * @return a registration handle for [unregister], or -1 on failure.
      */
-    fun register(mediaKey: MediaKey, listener: HotKeyListener): Long {
+    fun register(
+        mediaKey: MediaKey,
+        listener: HotKeyListener,
+    ): Long {
         if (!ensureReady()) return -1
 
         return when (Platform.Current) {
@@ -170,16 +183,20 @@ object GlobalHotKeyManager {
         initialized = false
     }
 
-    private fun registerWindows(keyCode: Int, modifiers: Int, listener: HotKeyListener): Long {
+    private fun registerWindows(
+        keyCode: Int,
+        modifiers: Int,
+        listener: HotKeyListener,
+    ): Long {
         val id = NativeWindowsHotKeyBridge.registerListener(listener)
 
         // Map portable modifier flags to Win32 MOD_* constants
         var winMods = 0
-        if (modifiers and HotKeyModifier.ALT.nativeFlag != 0) winMods = winMods or 0x0001 // MOD_ALT
-        if (modifiers and HotKeyModifier.CONTROL.nativeFlag != 0) winMods = winMods or 0x0002 // MOD_CONTROL
-        if (modifiers and HotKeyModifier.SHIFT.nativeFlag != 0) winMods = winMods or 0x0004 // MOD_SHIFT
-        if (modifiers and HotKeyModifier.META.nativeFlag != 0) winMods = winMods or 0x0008 // MOD_WIN
-        winMods = winMods or 0x4000 // MOD_NOREPEAT
+        if (modifiers and HotKeyModifier.ALT.nativeFlag != 0) winMods = winMods or HotKeyModifier.ALT.nativeFlag
+        if (modifiers and HotKeyModifier.CONTROL.nativeFlag != 0) winMods = winMods or HotKeyModifier.CONTROL.nativeFlag
+        if (modifiers and HotKeyModifier.SHIFT.nativeFlag != 0) winMods = winMods or HotKeyModifier.SHIFT.nativeFlag
+        if (modifiers and HotKeyModifier.META.nativeFlag != 0) winMods = winMods or HotKeyModifier.META.nativeFlag
+        winMods = winMods or WIN32_MOD_NOREPEAT
 
         val error = NativeWindowsHotKeyBridge.nativeRegister(id, winMods, keyCode)
         if (error != null) {
@@ -203,7 +220,11 @@ object GlobalHotKeyManager {
         return true
     }
 
-    private fun registerMacOs(keyCode: Int, modifiers: Int, listener: HotKeyListener): Long {
+    private fun registerMacOs(
+        keyCode: Int,
+        modifiers: Int,
+        listener: HotKeyListener,
+    ): Long {
         val id = NativeMacOsHotKeyBridge.registerListener(listener)
 
         val error = NativeMacOsHotKeyBridge.nativeRegister(id, modifiers, keyCode)
@@ -228,7 +249,11 @@ object GlobalHotKeyManager {
         return true
     }
 
-    private fun registerLinux(keyCode: Int, modifiers: Int, listener: HotKeyListener): Long {
+    private fun registerLinux(
+        keyCode: Int,
+        modifiers: Int,
+        listener: HotKeyListener,
+    ): Long {
         val id = NativeLinuxHotKeyBridge.registerListener(listener)
         val error = NativeLinuxHotKeyBridge.nativeRegister(id, modifiers, keyCode)
         if (error != null) {

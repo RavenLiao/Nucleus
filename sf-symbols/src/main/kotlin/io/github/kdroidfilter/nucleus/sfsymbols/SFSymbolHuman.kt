@@ -276,12 +276,22 @@ enum class SFSymbolHuman(
     FIGURE_SEATED_SIDE_LEFT("figure.seated.side.left"),
     FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_LOWER("figure.seated.side.left.air.distribution.lower"),
     FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_MIDDLE("figure.seated.side.left.air.distribution.middle"),
-    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER("figure.seated.side.left.air.distribution.middle.and.lower"),
-    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER_ANGLED("figure.seated.side.left.air.distribution.middle.and.lower.angled"),
+    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER(
+        "figure.seated.side.left.air.distribution.middle.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER_ANGLED(
+        "figure.seated.side.left.air.distribution.middle.and.lower.angled",
+    ),
     FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER("figure.seated.side.left.air.distribution.upper"),
-    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_LOWER_ANGLED("figure.seated.side.left.air.distribution.upper.angled.and.lower.angled"),
-    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE("figure.seated.side.left.air.distribution.upper.angled.and.middle"),
-    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE_AND_LOWER_ANGLED("figure.seated.side.left.air.distribution.upper.angled.and.middle.and.lower.angled"),
+    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_LOWER_ANGLED(
+        "figure.seated.side.left.air.distribution.upper.angled.and.lower.angled",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE(
+        "figure.seated.side.left.air.distribution.upper.angled.and.middle",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE_AND_LOWER_ANGLED(
+        "figure.seated.side.left.air.distribution.upper.angled.and.middle.and.lower.angled",
+    ),
     FIGURE_SEATED_SIDE_LEFT_AIRBAG_OFF("figure.seated.side.left.airbag.off"),
     FIGURE_SEATED_SIDE_LEFT_AIRBAG_OFF_2("figure.seated.side.left.airbag.off.2"),
     FIGURE_SEATED_SIDE_LEFT_AIRBAG_ON("figure.seated.side.left.airbag.on"),
@@ -290,22 +300,46 @@ enum class SFSymbolHuman(
     FIGURE_SEATED_SIDE_LEFT_FAN("figure.seated.side.left.fan"),
     FIGURE_SEATED_SIDE_LEFT_STEERINGWHEEL("figure.seated.side.left.steeringwheel"),
     FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES("figure.seated.side.left.windshield.front.and.heat.waves"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_LOWER("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.lower"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.middle"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE_AND_LOWER("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.middle.and.lower"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_LOWER("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.lower"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.middle"),
-    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE_AND_LOWER("figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.middle.and.lower"),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_LOWER(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.lower",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.middle",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE_AND_LOWER(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.middle.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_LOWER(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.middle",
+    ),
+    FIGURE_SEATED_SIDE_LEFT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE_AND_LOWER(
+        "figure.seated.side.left.windshield.front.and.heat.waves.air.distribution.upper.and.middle.and.lower",
+    ),
     FIGURE_SEATED_SIDE_RIGHT("figure.seated.side.right"),
     FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_LOWER("figure.seated.side.right.air.distribution.lower"),
     FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_MIDDLE("figure.seated.side.right.air.distribution.middle"),
-    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER("figure.seated.side.right.air.distribution.middle.and.lower"),
-    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER_ANGLED("figure.seated.side.right.air.distribution.middle.and.lower.angled"),
+    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER(
+        "figure.seated.side.right.air.distribution.middle.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_MIDDLE_AND_LOWER_ANGLED(
+        "figure.seated.side.right.air.distribution.middle.and.lower.angled",
+    ),
     FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER("figure.seated.side.right.air.distribution.upper"),
-    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_LOWER_ANGLED("figure.seated.side.right.air.distribution.upper.angled.and.lower.angled"),
-    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE("figure.seated.side.right.air.distribution.upper.angled.and.middle"),
-    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE_AND_LOWER_ANGLED("figure.seated.side.right.air.distribution.upper.angled.and.middle.and.lower.angled"),
+    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_LOWER_ANGLED(
+        "figure.seated.side.right.air.distribution.upper.angled.and.lower.angled",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE(
+        "figure.seated.side.right.air.distribution.upper.angled.and.middle",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_AIR_DISTRIBUTION_UPPER_ANGLED_AND_MIDDLE_AND_LOWER_ANGLED(
+        "figure.seated.side.right.air.distribution.upper.angled.and.middle.and.lower.angled",
+    ),
     FIGURE_SEATED_SIDE_RIGHT_AIRBAG_OFF("figure.seated.side.right.airbag.off"),
     FIGURE_SEATED_SIDE_RIGHT_AIRBAG_OFF_2("figure.seated.side.right.airbag.off.2"),
     FIGURE_SEATED_SIDE_RIGHT_AIRBAG_ON("figure.seated.side.right.airbag.on"),
@@ -313,14 +347,30 @@ enum class SFSymbolHuman(
     FIGURE_SEATED_SIDE_RIGHT_AUTOMATIC("figure.seated.side.right.automatic"),
     FIGURE_SEATED_SIDE_RIGHT_FAN("figure.seated.side.right.fan"),
     FIGURE_SEATED_SIDE_RIGHT_STEERINGWHEEL("figure.seated.side.right.steeringwheel"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES("figure.seated.side.right.windshield.front.and.heat.waves"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_LOWER("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.lower"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.middle"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE_AND_LOWER("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.middle.and.lower"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_LOWER("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.lower"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.middle"),
-    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE_AND_LOWER("figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.middle.and.lower"),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES(
+        "figure.seated.side.right.windshield.front.and.heat.waves",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_LOWER(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.lower",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.middle",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_MIDDLE_AND_LOWER(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.middle.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_LOWER(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.lower",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.middle",
+    ),
+    FIGURE_SEATED_SIDE_RIGHT_WINDSHIELD_FRONT_AND_HEAT_WAVES_AIR_DISTRIBUTION_UPPER_AND_MIDDLE_AND_LOWER(
+        "figure.seated.side.right.windshield.front.and.heat.waves.air.distribution.upper.and.middle.and.lower",
+    ),
     FIGURE_SKATEBOARDING("figure.skateboarding"),
     FIGURE_SKATEBOARDING_CIRCLE("figure.skateboarding.circle"),
     FIGURE_SKATEBOARDING_CIRCLE_FILL("figure.skateboarding.circle.fill"),

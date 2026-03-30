@@ -14,7 +14,8 @@ enum class AuthorizationStatus(
     ;
 
     companion object {
-        fun fromRawValue(value: Int): AuthorizationStatus = entries.firstOrNull { it.rawValue == value } ?: NOT_DETERMINED
+        fun fromRawValue(value: Int): AuthorizationStatus =
+            entries.firstOrNull { it.rawValue == value } ?: NOT_DETERMINED
     }
 }
 
@@ -28,7 +29,8 @@ enum class NotificationSetting(
     ;
 
     companion object {
-        fun fromRawValue(value: Int): NotificationSetting = entries.firstOrNull { it.rawValue == value } ?: NOT_SUPPORTED
+        fun fromRawValue(value: Int): NotificationSetting =
+            entries.firstOrNull { it.rawValue == value } ?: NOT_SUPPORTED
     }
 }
 

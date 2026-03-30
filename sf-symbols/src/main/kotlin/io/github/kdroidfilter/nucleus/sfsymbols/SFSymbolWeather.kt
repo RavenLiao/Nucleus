@@ -235,7 +235,9 @@ enum class SFSymbolWeather(
     SUNSET_FILL("sunset.fill"),
     THERMOMETER_AND_LIQUID_WAVES("thermometer.and.liquid.waves"),
     THERMOMETER_AND_LIQUID_WAVES_SNOWFLAKE("thermometer.and.liquid.waves.snowflake"),
-    THERMOMETER_AND_LIQUID_WAVES_TRIANGLEBADGE_EXCLAMATIONMARK("thermometer.and.liquid.waves.trianglebadge.exclamationmark"),
+    THERMOMETER_AND_LIQUID_WAVES_TRIANGLEBADGE_EXCLAMATIONMARK(
+        "thermometer.and.liquid.waves.trianglebadge.exclamationmark",
+    ),
     THERMOMETER_BRAKESIGNAL("thermometer.brakesignal"),
     THERMOMETER_HIGH("thermometer.high"),
     THERMOMETER_LOW("thermometer.low"),

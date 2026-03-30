@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.sfsymbols
 
 /** SF Symbols — Numbers (301 symbols). */
+@Suppress("EnumNaming")
 enum class SFSymbolNumbers(
     override val symbolName: String,
 ) : SFSymbol {

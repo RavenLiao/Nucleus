@@ -88,11 +88,25 @@ jobs:
           pattern: 'decorated-window-jni-*'
           merge-multiple: true
 
+      - name: Download decorated-window-core artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: decorated-window-core/src/main/resources/nucleus/native/
+          pattern: 'decorated-window-core-*'
+          merge-multiple: true
+
       - name: Download linux-hidpi artifacts
         uses: actions/download-artifact@v4
         with:
           path: linux-hidpi/src/main/resources/nucleus/native/
           pattern: 'linux-hidpi-*'
+          merge-multiple: true
+
+      - name: Download system-color artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: system-color/src/main/resources/nucleus/native/
+          pattern: 'system-color-*'
           merge-multiple: true
 
       - name: Download energy-manager artifacts
@@ -149,6 +163,20 @@ jobs:
         with:
           path: launcher-macos/src/main/resources/nucleus/native/
           pattern: 'launcher-macos*'
+          merge-multiple: true
+
+      - name: Download global-hotkey artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: global-hotkey/src/main/resources/nucleus/native/
+          pattern: 'global-hotkey-*'
+          merge-multiple: true
+
+      - name: Download menu-macos artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: menu-macos/src/main/resources/nucleus/native/
+          pattern: 'menu-macos*'
           merge-multiple: true
 
       - name: Build packages

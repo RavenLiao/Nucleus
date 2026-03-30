@@ -20,8 +20,12 @@ enum class SFSymbolDevices(
     AIRPODS_PRO("airpods.pro"),
     AIRPODS_PRO_CHARGINGCASE_WIRELESS("airpods.pro.chargingcase.wireless"),
     AIRPODS_PRO_CHARGINGCASE_WIRELESS_FILL("airpods.pro.chargingcase.wireless.fill"),
-    AIRPODS_PRO_CHARGINGCASE_WIRELESS_RADIOWAVES_LEFT_AND_RIGHT("airpods.pro.chargingcase.wireless.radiowaves.left.and.right"),
-    AIRPODS_PRO_CHARGINGCASE_WIRELESS_RADIOWAVES_LEFT_AND_RIGHT_FILL("airpods.pro.chargingcase.wireless.radiowaves.left.and.right.fill"),
+    AIRPODS_PRO_CHARGINGCASE_WIRELESS_RADIOWAVES_LEFT_AND_RIGHT(
+        "airpods.pro.chargingcase.wireless.radiowaves.left.and.right",
+    ),
+    AIRPODS_PRO_CHARGINGCASE_WIRELESS_RADIOWAVES_LEFT_AND_RIGHT_FILL(
+        "airpods.pro.chargingcase.wireless.radiowaves.left.and.right.fill",
+    ),
     AIRPODS_PRO_LEFT("airpods.pro.left"),
     AIRPODS_PRO_RIGHT("airpods.pro.right"),
     AIRTAG("airtag"),

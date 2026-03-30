@@ -11,6 +11,7 @@ indent_style = space
 indent_size = 2
 
 [*.{kt,kts}]
+max_line_length = 120
 ktlint_standard_backing-property-naming = disabled
 ktlint_standard_function-naming = disabled
 ij_kotlin_packages_to_use_import_on_demand = io.github.kdroidfilter.nucleus.window.icons.**
@@ -19,4 +20,10 @@ ij_kotlin_packages_to_use_import_on_demand = io.github.kdroidfilter.nucleus.wind
 ktlint = disabled
 
 [**/icons/**]
+ktlint = disabled
+
+[sf-symbols/**]
+ktlint_standard_enum-entry-name-case = disabled
+
+[plugin-build/**]
 ktlint = disabled

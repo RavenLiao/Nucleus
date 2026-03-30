@@ -18,6 +18,13 @@ enum class IntUiThemes {
 
     companion object {
         @Suppress("MaxLineLength")
-        fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes = if (systemTheme == SystemTheme.LIGHT) Light else Dark
+        fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes =
+            if (systemTheme ==
+                SystemTheme.LIGHT
+            ) {
+                Light
+            } else {
+                Dark
+            }
     }
 }

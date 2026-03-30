@@ -12,7 +12,6 @@ internal class NsMenuItem internal constructor(
     internal val handle: Long,
     private val owned: Boolean = true,
 ) : AutoCloseable {
-
     private val closed = AtomicBoolean(false)
 
     /** Creates a new NSMenuItem with the given title and optional key equivalent. */
@@ -174,13 +173,18 @@ internal class NsMenuItem internal constructor(
         get() = null
         set(value) = setImageNative(value, StateImageTarget.MIXED)
 
-    private fun setImageNative(image: NsMenuItemImage?, stateTarget: Int) {
-        val (type, value, desc) = when (image) {
-            null -> Triple(ImageType.CLEAR, null, null)
-            is NsMenuItemImage.Named -> Triple(ImageType.NAMED, image.name, null)
-            is NsMenuItemImage.SystemSymbol -> Triple(ImageType.SYSTEM_SYMBOL, image.name, image.accessibilityDescription)
-            is NsMenuItemImage.File -> Triple(ImageType.FILE, image.path, null)
-        }
+    private fun setImageNative(
+        image: NsMenuItemImage?,
+        stateTarget: Int,
+    ) {
+        val (type, value, desc) =
+            when (image) {
+                null -> Triple(ImageType.CLEAR, null, null)
+                is NsMenuItemImage.Named -> Triple(ImageType.NAMED, image.name, null)
+                is NsMenuItemImage.SystemSymbol ->
+                    Triple(ImageType.SYSTEM_SYMBOL, image.name, image.accessibilityDescription)
+                is NsMenuItemImage.File -> Triple(ImageType.FILE, image.path, null)
+            }
         if (stateTarget < 0) {
             NativeNsMenuBridge.nativeItemSetImage(handle, type, value, desc)
         } else {
@@ -197,11 +201,16 @@ internal class NsMenuItem internal constructor(
         set(value) {
             when (value) {
                 null -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.CLEAR, 0, null)
-                is NsMenuItemBadge.Count -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.COUNT, value.count, null)
-                is NsMenuItemBadge.Text -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.STRING, 0, value.string)
-                is NsMenuItemBadge.Alerts -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.ALERTS, value.count, null)
-                is NsMenuItemBadge.NewItems -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.NEW_ITEMS, value.count, null)
-                is NsMenuItemBadge.Updates -> NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.UPDATES, value.count, null)
+                is NsMenuItemBadge.Count ->
+                    NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.COUNT, value.count, null)
+                is NsMenuItemBadge.Text ->
+                    NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.STRING, 0, value.string)
+                is NsMenuItemBadge.Alerts ->
+                    NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.ALERTS, value.count, null)
+                is NsMenuItemBadge.NewItems ->
+                    NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.NEW_ITEMS, value.count, null)
+                is NsMenuItemBadge.Updates ->
+                    NativeNsMenuBridge.nativeItemSetBadge(handle, BadgeType.UPDATES, value.count, null)
             }
         }
 }
