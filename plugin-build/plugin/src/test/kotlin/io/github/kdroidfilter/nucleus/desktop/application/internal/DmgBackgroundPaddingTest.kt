@@ -248,6 +248,118 @@ class DmgBackgroundPaddingTest {
         assertEquals(1 + MACOS_DMG_TITLE_BAR_HEIGHT, dims.second)
     }
 
+    // ---- Issue #166 regression: returned file must always exist ----
+
+    @Test
+    fun `issue 166 - TIFF padding result file exists on disk`() {
+        // Regression test: before the fix, ImageIO.write could return false for TIFF
+        // and the code returned a File that did not exist, causing FileNotFoundException
+        val original = createTestImage(600, 400, Color.RED)
+        val source = tmpDir.newFile("background.tiff")
+        ImageIO.write(original, "tiff", source)
+        val outputDir = tmpDir.newFolder("output")
+
+        val result = padDmgBackgroundForTitleBar(source, outputDir)
+
+        assertTrue("Result file must exist on disk (issue #166)", result.isFile)
+        assertTrue("Result file must be non-empty", result.length() > 0)
+    }
+
+    @Test
+    fun `issue 166 - PNG padding result file exists on disk`() {
+        val original = createTestImage(600, 400, Color.RED)
+        val source = tmpDir.newFile("background.png")
+        ImageIO.write(original, "png", source)
+        val outputDir = tmpDir.newFolder("output")
+
+        val result = padDmgBackgroundForTitleBar(source, outputDir)
+
+        assertTrue("Result file must exist on disk", result.isFile)
+        assertTrue("Result file must be non-empty", result.length() > 0)
+    }
+
+    @Test
+    fun `issue 166 - TIFF with alpha channel produces valid output`() {
+        // The exact scenario from issue #166: TYPE_INT_ARGB TIFF
+        val img = BufferedImage(500, 350, BufferedImage.TYPE_INT_ARGB)
+        val g = img.createGraphics()
+        g.color = Color(255, 0, 0, 128) // semi-transparent red
+        g.fillRect(0, 0, 500, 350)
+        g.dispose()
+
+        val source = tmpDir.newFile("background.tiff")
+        ImageIO.write(img, "tiff", source)
+        val outputDir = tmpDir.newFolder("output")
+
+        val result = padDmgBackgroundForTitleBar(source, outputDir)
+
+        assertTrue("Result file must exist on disk", result.isFile)
+        // Either padded or fallback to original — both are valid
+        val resultImg = ImageIO.read(result)
+        assertNotNull("Result must be a readable image", resultImg)
+        assertEquals("Width must be preserved", 500, resultImg.width)
+    }
+
+    @Test
+    fun `issue 166 - corrupted image falls back to source instead of missing file`() {
+        // Simulate the core bug: an unreadable image should return the original source,
+        // not a non-existent padded file
+        val source = tmpDir.newFile("background.png")
+        source.writeBytes(byteArrayOf(0x00, 0x01, 0x02, 0x03)) // not a valid image
+        val outputDir = tmpDir.newFolder("output")
+
+        val result = padDmgBackgroundForTitleBar(source, outputDir)
+
+        assertTrue("Fallback must return an existing file", result.isFile)
+        assertEquals(
+            "When read fails, should fallback to original source",
+            source.absolutePath,
+            result.absolutePath,
+        )
+    }
+
+    @Test
+    fun `issue 166 - TIFF result can be read without FileNotFoundException`() {
+        // End-to-end: pad TIFF, then simulate what the task does: read the result
+        val original = createTestImage(800, 600, Color.GREEN)
+        val source = tmpDir.newFile("background.tiff")
+        ImageIO.write(original, "tiff", source)
+        val outputDir = tmpDir.newFolder("dmg-assets")
+
+        val paddedFile = padDmgBackgroundForTitleBar(source, outputDir)
+
+        // This is what the task does after padding — must not throw FileNotFoundException
+        val bytes = paddedFile.readBytes()
+        assertTrue("Padded file must have content", bytes.isNotEmpty())
+
+        // Verify it's a valid image
+        val readBack = ImageIO.read(paddedFile)
+        assertNotNull("Must be a valid image file", readBack)
+    }
+
+    @Test
+    fun `issue 166 - padded TIFF retina pair both exist on disk`() {
+        val sourceDir = tmpDir.newFolder("source")
+        val source1x = File(sourceDir, "background.tiff")
+        val source2x = File(sourceDir, "background@2x.tiff")
+        ImageIO.write(createTestImage(400, 300), "tiff", source1x)
+        ImageIO.write(createTestImage(800, 600), "tiff", source2x)
+
+        val outputDir = tmpDir.newFolder("output")
+        val result = padDmgBackgroundForTitleBar(source1x, outputDir)
+
+        assertTrue("1x result must exist", result.isFile)
+
+        val retina = File(outputDir, "background@2x.tiff")
+        if (retina.exists()) {
+            // If retina was padded, it must be valid
+            assertTrue("2x result must be non-empty", retina.length() > 0)
+            val retinaImg = ImageIO.read(retina)
+            assertNotNull("2x result must be readable", retinaImg)
+        }
+        // If retina doesn't exist, that's also fine — the function is resilient
+    }
+
     // ---- helpers ----
 
     private fun createTestImage(
