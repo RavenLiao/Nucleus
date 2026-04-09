@@ -38,6 +38,17 @@ This is an upstream JBR bug, not a Nucleus bug. The module throws an `IllegalSta
 !!! tip
     When running via `./gradlew run`, Gradle uses the JDK configured in your toolchain. Make sure it is a JBR distribution if using this module.
 
+!!! warning "macOS: `--add-opens` required for IDE run configurations"
+    On macOS, this module uses reflection on `sun.awt.AWTAccessor` to obtain the native NSWindow pointer. The Nucleus plugin injects the required `--add-opens` flags automatically for `./gradlew run` and packaged applications, but if you launch your app **directly from the IDE** (e.g. clicking the Run button on `main()`), you must add these JVM arguments to your run configuration manually:
+
+    ```
+    --add-opens=java.desktop/sun.awt=ALL-UNNAMED
+    --add-opens=java.desktop/sun.lwawt=ALL-UNNAMED
+    --add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED
+    ```
+
+    Without these flags, you will see an `IllegalAccessException` on `sun.awt.AWTAccessor` and title bar color updates will not work.
+
 ### `decorated-window-jni` — Nucleus native implementation
 
 Entirely implemented by Nucleus using JNI native libraries on all platforms. None of the JBR bugs mentioned above are present — window maximization and drag work reliably.
