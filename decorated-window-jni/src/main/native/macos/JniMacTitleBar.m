@@ -17,7 +17,7 @@ static const char kMenuBarOffsetKey            = 8;
 static const char kMenuBarMonitorKey           = 9;
 static const char kMenuBarLastRawOffsetKey     = 10;
 static const char kLargeCornerRadiusKey        = 11;
-static const char kResizeObserverKey           = 12;
+
 static const char kRTLKey                     = 13;
 
 static const float kMinHeightForFullSize = 28.0f;
@@ -454,87 +454,6 @@ static void notifyMenuBarOffsetChanged(NSWindow *window, float offset) {
 
 @end
 
-// ─── Live resize observer ────────────────────────────────────────────────────────
-
-// Returns YES if the running macOS version is 26.0 or later.
-// Cached after the first call for zero-overhead subsequent checks.
-static BOOL isMacOS26OrLater(void) {
-    static BOOL checked = NO;
-    static BOOL result  = NO;
-    if (!checked) {
-        if (@available(macOS 26.0, *)) {
-            result = YES;
-        }
-        checked = YES;
-    }
-    return result;
-}
-
-// Recursively toggles presentsWithTransaction on all CAMetalLayer instances
-// found in the view hierarchy. During live resize, enabling this flag forces
-// Metal to present each frame synchronously, so the compositor uses the
-// freshly rendered frame instead of stretching the stale one.
-//
-// Only applied on macOS 26+ where the Metal/Skiko threading model handles
-// the sync toggle safely. On older macOS this can deadlock the main thread
-// against the render thread.
-static void setPresentsWithTransactionRecursive(NSView *view, BOOL value) {
-    CALayer *layer = view.layer;
-    if (layer && [layer isKindOfClass:[CAMetalLayer class]]) {
-        ((CAMetalLayer *)layer).presentsWithTransaction = value;
-    }
-    for (NSView *subview in view.subviews) {
-        setPresentsWithTransactionRecursive(subview, value);
-    }
-}
-
-// Invisible view added to the content view. Its sole purpose is to receive
-// viewWillStartLiveResize / viewDidEndLiveResize from AppKit and toggle
-// synchronous Metal presentation accordingly.
-@interface NucleusResizeObserverView : NSView
-@end
-
-@implementation NucleusResizeObserverView
-
-- (void)viewWillStartLiveResize {
-    [super viewWillStartLiveResize];
-    if (!isMacOS26OrLater()) return;
-    NSWindow *w = self.window;
-    if (w && w.contentView) {
-        setPresentsWithTransactionRecursive(w.contentView, YES);
-    }
-}
-
-- (void)viewDidEndLiveResize {
-    [super viewDidEndLiveResize];
-    if (!isMacOS26OrLater()) return;
-    NSWindow *w = self.window;
-    if (w && w.contentView) {
-        setPresentsWithTransactionRecursive(w.contentView, NO);
-    }
-}
-
-@end
-
-static void ensureResizeObserver(NSWindow *window) {
-    if (objc_getAssociatedObject(window, &kResizeObserverKey)) return;
-
-    NucleusResizeObserverView *observer = [[NucleusResizeObserverView alloc]
-        initWithFrame:NSZeroRect];
-    observer.hidden = YES;
-    [window.contentView addSubview:observer];
-    objc_setAssociatedObject(window, &kResizeObserverKey, observer,
-                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-static void removeResizeObserver(NSWindow *window) {
-    NucleusResizeObserverView *observer =
-        objc_getAssociatedObject(window, &kResizeObserverKey);
-    if (!observer) return;
-    [observer removeFromSuperview];
-    objc_setAssociatedObject(window, &kResizeObserverKey, nil,
-                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
 
 // ─── Fullscreen button helpers ──────────────────────────────────────────────────
 
@@ -1159,7 +1078,6 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
             [w setTitleVisibility:NSWindowTitleHidden];
             [w setMovable:NO];
             ensureDragView(w);
-            ensureResizeObserver(w);
             applyConstraints(w, capturedHeight);
         }
     });
@@ -1191,7 +1109,6 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
             removeFullscreenObserver(w);
             removeZoomButtonResponder(w);
             removeDragView(w);
-            removeResizeObserver(w);
             removeExistingConstraints(w);
             objc_setAssociatedObject(w, &kTitleBarHeightKey, nil,
                                      OBJC_ASSOCIATION_RETAIN_NONATOMIC);

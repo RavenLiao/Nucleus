@@ -52,17 +52,10 @@ This module does not depend on JBR, making it compatible with **any JVM** (OpenJ
 
     This fix is **not present** in `decorated-window-jbr`.
 
-!!! note "macOS: smooth live resize with synchronous Metal presentation"
-    On macOS, resizing a window triggers a modal tracking loop on the main thread. By default, Skiko's Metal layer (`CAMetalLayer`) presents frames asynchronously — which means macOS stretches the stale frame content to fill the new window size, producing a visible freeze/lag during resize.
+!!! note "macOS: resize behavior"
+    On macOS, resizing a window triggers a modal tracking loop on the main thread. Skiko's Metal layer (`CAMetalLayer`) presents frames asynchronously, which means macOS may briefly stretch stale frame content to fill the new window size during rapid resize.
 
-    The JNI module fixes this by toggling `CAMetalLayer.presentsWithTransaction` during live resize:
-
-    - When a resize starts (`viewWillStartLiveResize`), the module enables synchronous presentation on all Metal layers in the window hierarchy. This forces each rendered frame to be committed to the compositor before the next resize step, so the window content follows the resize in real time.
-    - When the resize ends (`viewDidEndLiveResize`), the module restores asynchronous presentation for optimal rendering performance during normal use.
-
-    This matches the behavior of native macOS Metal applications (Safari, Finder, etc.). The trade-off is that windows with heavy Compose layouts may see a lower frame rate during resize (since each frame blocks until presented), but the content will always track the window size instead of freezing.
-
-    This fix is **not present** in `decorated-window-jbr`.
+    Both the JNI and JBR modules rely on this default asynchronous presentation. An earlier approach using `CAMetalLayer.presentsWithTransaction` during live resize was removed because synchronous presentation blocked the main thread on every frame, causing significant resize lag — especially on heavy Compose layouts.
 
 !!! warning "Less battle-tested"
     While the JNI module has no known bugs, it has not been as widely tested as the JBR implementation. Use it with appropriate caution in production, and report any issues you encounter.
@@ -149,7 +142,7 @@ The following tables compare a standard Compose `Window()`, the JBR module (`dec
 | Title bar drag | Native | JBR hit-test | `nativeStartWindowDrag()` via JNI |
 | Double-click maximize | Native | Native (via JBR `CustomTitleBar`) | Native via JNI |
 | Window snapping / tiling | Native | Native | Native (swizzled `_adjustWindowToScreen`) |
-| Resize flash / freeze | Image freezes during resize | No freeze (JBR handles it) | **Fixed** — synchronous Metal presentation via `presentsWithTransaction` |
+| Resize flash / freeze | Image freezes during resize | No freeze (JBR handles it) | Async Metal presentation (same as JBR) |
 | 26pt corner radius | No | No | Yes (`macOSLargeCornerRadius()`) |
 | Fullscreen controls | No custom title bar | macOS native (`apple.awt.newFullScreenControls`) | Sliding overlay (`newFullscreenControls()`) |
 | RTL support | No custom title bar | No (requires [custom JBR](../targets/macos.md#jvm-based-applications)) | Yes (live hot-swap, traffic lights move to right) |
@@ -198,7 +191,7 @@ The following tables compare a standard Compose `Window()`, the JBR module (`dec
 | Custom title bar | | ✅ | ✅ |
 | Works on any JDK | ✅ | | ✅ |
 | GraalVM native-image | ✅ | | ✅ |
-| No resize artifacts (macOS) | | ✅ | ✅ |
+| No resize artifacts (macOS) | | ✅ | |
 | No resize artifacts (Windows) | | | ✅ |
 | True fullscreen (Windows) | | | ✅ |
 | Native fullscreen (Linux) | | | ✅ |
