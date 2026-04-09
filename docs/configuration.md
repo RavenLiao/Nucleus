@@ -183,9 +183,14 @@ nativeDistributions {
 | Level | Description |
 |-------|-------------|
 | `CompressionLevel.Store` | No compression |
-| `CompressionLevel.Fast` | Fast compression |
 | `CompressionLevel.Normal` | Balanced (default) |
-| `CompressionLevel.Maximum` | Best compression |
+| `CompressionLevel.Maximum` | Best compression (recommended for most formats) |
+
+!!! warning "AppImage and Maximum Compression"
+    Using `CompressionLevel.Maximum` with AppImage causes extremely slow startup times (60s+)
+    due to squashfs/FUSE decompression overhead. For AppImage targets, use `Normal` or `Store` instead.
+    Other formats (DMG, NSIS, DEB, RPM, etc.) are not affected.
+    See [electron-builder#7483](https://github.com/electron-userland/electron-builder/issues/7483) for details.
 
 ### Trusted CA Certificates
 

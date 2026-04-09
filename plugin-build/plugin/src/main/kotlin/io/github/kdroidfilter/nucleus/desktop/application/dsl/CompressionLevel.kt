@@ -10,7 +10,6 @@ enum class CompressionLevel(
     internal val id: String,
 ) {
     Store("store"),
-    Fast("fast"),
     Normal("normal"),
     Maximum("maximum"),
 }

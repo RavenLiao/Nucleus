@@ -99,6 +99,18 @@ linux {
 
 `AudioVideo`, `Development`, `Education`, `Game`, `Graphics`, `Network`, `Office`, `Science`, `Settings`, `System`, `Utility`
 
+### Compression
+
+AppImage startup time is heavily affected by the compression level. Using `CompressionLevel.Maximum` causes squashfs/FUSE decompression at every launch, resulting in startup times of **60 seconds or more**.
+
+| Compression Level | Startup Impact | Recommended |
+|---|---|---|
+| `Store` | Fastest startup, largest file | Testing |
+| `Normal` (default) | Good balance | **Production** |
+| `Maximum` | 60s+ startup, ~20% smaller | Not recommended |
+
+See [electron-builder#7483](https://github.com/electron-userland/electron-builder/issues/7483) for details.
+
 ### Build Requirements
 
 AppImage requires `fuse` (or `libfuse2`) on the build host. On Ubuntu:

@@ -5,6 +5,7 @@
 
 package io.github.kdroidfilter.nucleus.desktop.application.tasks
 
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.CompressionLevel
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationDistributions
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.MacOSSigningSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
@@ -370,6 +371,14 @@ abstract class AbstractElectronBuilderPackageTask
                 } else {
                     null
                 }
+
+            if (targetFormat == TargetFormat.AppImage && distributions.compressionLevel == CompressionLevel.Maximum) {
+                logger.warn(
+                    "AppImage with 'maximum' compression can cause extremely slow startup times (60s+) " +
+                        "due to squashfs/FUSE decompression overhead. Consider using 'normal' or 'store' instead. " +
+                        "See https://github.com/electron-userland/electron-builder/issues/7483",
+                )
+            }
 
             val configContent =
                 configGenerator.generateConfig(
