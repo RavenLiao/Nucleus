@@ -58,7 +58,6 @@ internal fun rememberMaterialTitleBarStyle(colors: Colors): TitleBarStyle {
                     height = 40.dp,
                     titlePaneButtonSize = if (isKde) DpSize(28.dp, 28.dp) else DpSize(40.dp, 40.dp),
                 ),
-
         )
     }
 }

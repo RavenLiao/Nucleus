@@ -53,7 +53,7 @@ A multi-module Gradle plugin and runtime library toolkit for shipping production
 - Native modules use platform-specific JNI implementations — test on each OS
 - Plugin is published via included build in `plugin-build/`
 - Version catalog is the source of truth for all dependency versions
-- `decorated-window-jni` is the recommended backend for new projects (fixes resize artifacts, true Windows fullscreen, GraalVM compatible)
+- `decorated-window-jni` is the recommended backend for new projects (true Windows fullscreen, GraalVM compatible)
 - macOS Liquid Glass enabled by default via `macOsSdkVersion = "26.0"` (vtool SDK patching)
 
 ## Adding a Native JNI Module
