@@ -93,6 +93,9 @@ typedef struct {
     LONG    savedStyle;
     LONG    savedExStyle;
     WINDOWPLACEMENT savedPlacement;
+    /* Min/max size override (logical pixels, 0 = not set) */
+    POINT   minSizePx;
+    POINT   maxSizePx;
     /* Debug counters */
     int     hitTestCount;
     int     hitTestCaption;
@@ -416,6 +419,33 @@ static LRESULT CALLBACK decorationWndProc(
         ScreenToClient(hwnd, &pt);
         PostMessageW(hwnd, WM_MOUSEMOVE, 0, MAKELPARAM(pt.x, pt.y));
         break;  /* also let original handle it */
+    }
+
+    /* -------------------------------------------------------------- */
+    /*  WM_GETMINMAXINFO: fix DPI scaling for min/max size.            */
+    /*  Standard OpenJDK stores logical pixels in ptMinTrackSize but  */
+    /*  Windows expects physical pixels. JBR applies ScaleUpX/Y;      */
+    /*  we replicate that fix here so it works on all JVMs.            */
+    /* -------------------------------------------------------------- */
+    case WM_GETMINMAXINFO: {
+        /* Let AWT process first (sets unscaled values) */
+        LRESULT result = CallWindowProcW(state->originalWndProc,
+                                          hwnd, msg, wParam, lParam);
+        LPMINMAXINFO lpmmi = (LPMINMAXINFO)lParam;
+        UINT dpi = getDpi(hwnd);
+
+        /* Override with DPI-scaled values if set */
+        if (state->minSizePx.x > 0 || state->minSizePx.y > 0) {
+            lpmmi->ptMinTrackSize.x = MulDiv(state->minSizePx.x, dpi, 96);
+            lpmmi->ptMinTrackSize.y = MulDiv(state->minSizePx.y, dpi, 96);
+        }
+        if (state->maxSizePx.x > 0 || state->maxSizePx.y > 0) {
+            if (state->maxSizePx.x > 0)
+                lpmmi->ptMaxTrackSize.x = MulDiv(state->maxSizePx.x, dpi, 96);
+            if (state->maxSizePx.y > 0)
+                lpmmi->ptMaxTrackSize.y = MulDiv(state->maxSizePx.y, dpi, 96);
+        }
+        return result;
     }
 
     /* -------------------------------------------------------------- */
@@ -1031,4 +1061,44 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
             (int)state->forceHitTestClient);
     }
     return (*env)->NewStringUTF(env, buf);
+}
+
+/* -------------------------------------------------------------- */
+/*  nativeSetMinimumSize(long hwnd, int widthPx, int heightPx)     */
+/*  Stores the minimum window size in logical pixels. The          */
+/*  WM_GETMINMAXINFO handler applies DPI scaling automatically.    */
+/*  Pass (0, 0) to disable the override and fall back to AWT.      */
+/* -------------------------------------------------------------- */
+JNIEXPORT void JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBridge_nativeSetMinimumSize(
+    JNIEnv *env, jclass clazz, jlong hwndLong, jint widthPx, jint heightPx)
+{
+    HWND hwnd = (HWND)(uintptr_t)hwndLong;
+    if (!hwnd) return;
+
+    DecoState *state = getState(hwnd);
+    if (!state) return;
+
+    state->minSizePx.x = (LONG)widthPx;
+    state->minSizePx.y = (LONG)heightPx;
+}
+
+/* -------------------------------------------------------------- */
+/*  nativeSetMaximumSize(long hwnd, int widthPx, int heightPx)     */
+/*  Stores the maximum window size in logical pixels. The          */
+/*  WM_GETMINMAXINFO handler applies DPI scaling automatically.    */
+/*  Pass (0, 0) to disable the override and fall back to AWT.      */
+/* -------------------------------------------------------------- */
+JNIEXPORT void JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBridge_nativeSetMaximumSize(
+    JNIEnv *env, jclass clazz, jlong hwndLong, jint widthPx, jint heightPx)
+{
+    HWND hwnd = (HWND)(uintptr_t)hwndLong;
+    if (!hwnd) return;
+
+    DecoState *state = getState(hwnd);
+    if (!state) return;
+
+    state->maxSizePx.x = (LONG)widthPx;
+    state->maxSizePx.y = (LONG)heightPx;
 }

@@ -73,6 +73,26 @@ internal object JniWindowsDecorationBridge {
         argb: Int,
     )
 
+    // Sets the minimum window size in logical pixels. The native
+    // WM_GETMINMAXINFO handler applies DPI scaling automatically.
+    // Pass (0, 0) to disable the override and fall back to AWT default.
+    @JvmStatic
+    external fun nativeSetMinimumSize(
+        hwnd: Long,
+        widthPx: Int,
+        heightPx: Int,
+    )
+
+    // Sets the maximum window size in logical pixels. The native
+    // WM_GETMINMAXINFO handler applies DPI scaling automatically.
+    // Pass (0, 0) to disable the override and fall back to AWT default.
+    @JvmStatic
+    external fun nativeSetMaximumSize(
+        hwnd: Long,
+        widthPx: Int,
+        heightPx: Int,
+    )
+
     // Returns debug counters as a string (temporary).
     @JvmStatic
     external fun nativeGetDebugInfo(hwnd: Long): String
