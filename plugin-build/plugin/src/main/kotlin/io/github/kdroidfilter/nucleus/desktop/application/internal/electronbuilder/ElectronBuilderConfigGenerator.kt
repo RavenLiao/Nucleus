@@ -49,6 +49,7 @@ internal class ElectronBuilderConfigGenerator {
         linuxAfterInstallTemplate: File? = null,
         executableName: String? = null,
         dmgBackgroundOverride: File? = null,
+        dmgWindowOverride: DmgWindowOverride? = null,
     ): String {
         val yaml = StringBuilder()
 
@@ -94,7 +95,7 @@ internal class ElectronBuilderConfigGenerator {
         // --- Platform-specific config ---
         when (currentOS) {
             OS.MacOS ->
-                generateMacConfig(yaml, distributions, targetFormat, targetArch, dmgBackgroundOverride)
+                generateMacConfig(yaml, distributions, targetFormat, targetArch, dmgBackgroundOverride, dmgWindowOverride)
             OS.Windows ->
                 generateWindowsConfig(
                     yaml,
@@ -141,6 +142,7 @@ internal class ElectronBuilderConfigGenerator {
         targetFormat: TargetFormat,
         targetArch: Arch,
         dmgBackgroundOverride: File? = null,
+        windowOverride: DmgWindowOverride? = null,
     ) {
         yaml.appendLine("mac:")
         yaml.appendLine("  target:")
@@ -164,7 +166,7 @@ internal class ElectronBuilderConfigGenerator {
         }
 
         when (targetFormat) {
-            TargetFormat.Dmg -> generateDmgConfig(yaml, distributions.macOS.dmg, dmgBackgroundOverride)
+            TargetFormat.Dmg -> generateDmgConfig(yaml, distributions.macOS.dmg, dmgBackgroundOverride, windowOverride)
             TargetFormat.Pkg -> {
                 yaml.appendLine("pkg:")
                 appendIfNotNull(yaml, "  installLocation", distributions.macOS.installationPath)
@@ -186,6 +188,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml: StringBuilder,
         dmg: DmgSettings,
         dmgBackgroundOverride: File? = null,
+        windowOverride: DmgWindowOverride? = null,
     ) {
         yaml.appendLine("dmg:")
         yaml.appendLine("  sign: ${dmg.sign}")
@@ -218,13 +221,15 @@ internal class ElectronBuilderConfigGenerator {
         dmg.shrink?.let { yaml.appendLine("  shrink: $it") }
 
         val w = dmg.window
-        val hasWindowConfig = w.x != null || w.y != null || w.width != null || w.height != null
+        val hasWindowConfig = w.x != null || w.y != null || w.width != null || w.height != null || windowOverride != null
         if (hasWindowConfig) {
             yaml.appendLine("  window:")
             w.x?.let { yaml.appendLine("    x: $it") }
             w.y?.let { yaml.appendLine("    y: $it") }
-            w.width?.let { yaml.appendLine("    width: $it") }
-            w.height?.let { yaml.appendLine("    height: $it") }
+            val overrideWidth = windowOverride?.width ?: w.width
+            val overrideHeight = windowOverride?.height ?: w.height
+            overrideWidth?.let { yaml.appendLine("    width: $it") }
+            overrideHeight?.let { yaml.appendLine("    height: $it") }
         }
 
         if (dmg.contents.isNotEmpty()) {
@@ -238,6 +243,11 @@ internal class ElectronBuilderConfigGenerator {
             }
         }
     }
+
+    data class DmgWindowOverride(
+        val width: Int,
+        val height: Int,
+    )
 
     private fun generateWindowsConfig(
         yaml: StringBuilder,

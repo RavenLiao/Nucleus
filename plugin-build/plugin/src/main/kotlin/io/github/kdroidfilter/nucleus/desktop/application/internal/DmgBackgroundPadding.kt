@@ -6,9 +6,6 @@
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
 import org.gradle.api.logging.Logger
-import java.awt.AlphaComposite
-import java.awt.Color
-import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
@@ -17,113 +14,43 @@ import javax.imageio.ImageIO
  *
  * The Finder window bounds include the title bar, so the visible content area
  * is `boundsHeight - titleBarHeight`. This constant is used by the native
- * AppleScript DMG path to ensure the window is large enough for the full
- * background image to be visible, and by the electron-builder path to pad the
- * background image so the clipped region is transparent padding, not content.
+ * AppleScript DMG path and the electron-builder path to ensure the window
+ * is large enough for the full background image to be visible.
  */
 internal const val MACOS_DMG_TITLE_BAR_HEIGHT = 28
 
 /**
- * Pads a DMG background image at the bottom to compensate for the macOS title bar.
+ * Copies a DMG background image to [outputDir] without modification.
  *
- * electron-builder sets the DMG window size to match the background image dimensions.
- * Because the macOS title bar takes [MACOS_DMG_TITLE_BAR_HEIGHT] pixels, the actual
- * content area is smaller, clipping the bottom of the image.
+ * electron-builder uses the image dimensions as the DMG window size.
+ * The macOS title bar takes [MACOS_DMG_TITLE_BAR_HEIGHT] pixels, so the window
+ * height is adjusted accordingly in the generated config (windowOverride).
  *
- * This function adds transparent padding at the bottom so the clipped region is padding,
- * not actual content. It also handles `@2x` Retina variants if present alongside the
- * source, padding them with 2x the pixel count to match the same point offset.
+ * TIFF files must never be re-encoded because ImageIO destroys Apple's
+ * multi-resolution TIFF metadata (2x + 1x layers with DPI info).
+ * PNG files are also copied directly to avoid any quality loss from re-encoding.
  *
- * The original filename is preserved so that electron-builder's `@2x` auto-detection
- * (`transformBackgroundFileIfNeed`) continues to work.
- *
- * @return the padded image file in [outputDir], or [source] unchanged if padding fails.
- * @see <a href="https://github.com/kdroidFilter/Nucleus/issues/26">Issue #26</a>
+ * @return the copied image file in [outputDir]
  */
 internal fun padDmgBackgroundForTitleBar(
     source: File,
     outputDir: File,
     logger: Logger? = null,
 ): File {
-    try {
-        val extension = source.extension.ifEmpty { "png" }
-        val formatName = toImageIOFormat(extension)
-        outputDir.mkdirs()
+    outputDir.mkdirs()
+    val output = File(outputDir, source.name)
+    source.copyTo(output, overwrite = true)
+    logger?.info("Copied DMG background directly: ${source.name}")
 
-        // Preserve the original filename so electron-builder can still discover @2x variants
-        val output = File(outputDir, source.name)
-        if (!padImageBottom(source, output, MACOS_DMG_TITLE_BAR_HEIGHT, formatName, logger)) {
-            return source
-        }
-
-        // Also pad the @2x Retina variant if it sits alongside the source.
-        // Retina images need 2× the pixel padding to match the same point offset.
-        val retinaName = "${source.nameWithoutExtension}@2x.$extension"
-        val retinaSource = File(source.parentFile, retinaName)
-        if (retinaSource.isFile) {
-            val retinaOutput = File(outputDir, retinaName)
-            padImageBottom(retinaSource, retinaOutput, MACOS_DMG_TITLE_BAR_HEIGHT * 2, formatName, logger)
-        }
-
-        return output
-    } catch (e: Exception) {
-        logger?.warn("Failed to pad DMG background, using original: ${e.message}")
-        return source
+    // Also copy the @2x Retina variant if present alongside the source
+    val retinaSource = File(source.parentFile, "${source.nameWithoutExtension}@2x.${source.extension}")
+    if (retinaSource.isFile) {
+        retinaSource.copyTo(File(outputDir, retinaSource.name), overwrite = true)
+        logger?.info("Copied @2x Retina DMG background: ${retinaSource.name}")
     }
+
+    return output
 }
-
-/**
- * Adds [padding] pixels of fully transparent space at the bottom of [source]
- * and writes the result to [output].
- *
- * @return `true` if successful, `false` if the image could not be read or written.
- */
-private fun padImageBottom(
-    source: File,
-    output: File,
-    padding: Int,
-    formatName: String,
-    logger: Logger?,
-): Boolean {
-    val original =
-        ImageIO.read(source) ?: run {
-            logger?.warn("Could not read DMG background image: ${source.absolutePath}, skipping padding")
-            return false
-        }
-
-    val paddedHeight = original.height + padding
-    val padded = BufferedImage(original.width, paddedHeight, BufferedImage.TYPE_INT_ARGB)
-    val g = padded.createGraphics()
-    // Fill the entire canvas with transparent pixels first
-    g.composite = AlphaComposite.Clear
-    g.color = Color(0, 0, 0, 0)
-    g.fillRect(0, 0, padded.width, padded.height)
-    // Draw the original image at the top
-    g.composite = AlphaComposite.SrcOver
-    g.drawImage(original, 0, 0, null)
-    g.dispose()
-
-    val written = ImageIO.write(padded, formatName, output)
-    if (!written || !output.isFile) {
-        logger?.warn(
-            "ImageIO could not write padded DMG background as '$formatName' to ${output.absolutePath}, " +
-                "falling back to original image",
-        )
-        return false
-    }
-    logger?.info(
-        "Padded DMG background with ${padding}px: " +
-            "${original.width}x${original.height} → ${padded.width}x${padded.height}",
-    )
-    return true
-}
-
-/** Maps a file extension to the ImageIO format name. */
-private fun toImageIOFormat(extension: String): String =
-    when (extension.lowercase()) {
-        "tiff", "tif" -> "tiff"
-        else -> "png"
-    }
 
 /**
  * Reads the dimensions of an image file.

@@ -18,7 +18,9 @@ import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuild
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.ElectronBuilderToolManager
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.NodeJsDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.isDylibPath
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MACOS_DMG_TITLE_BAR_HEIGHT
 import io.github.kdroidfilter.nucleus.desktop.application.internal.padDmgBackgroundForTitleBar
+import io.github.kdroidfilter.nucleus.desktop.application.internal.readImageDimensions
 import io.github.kdroidfilter.nucleus.desktop.application.internal.updateExecutableTypeInAppImage
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.ValidatedMacOSSigningSettings
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.validate
@@ -359,23 +361,25 @@ abstract class AbstractElectronBuilderPackageTask
             val configGenerator = ElectronBuilderConfigGenerator()
             val resolvedArch = Arch.entries.first { it.id == targetArch.get() }
 
-            // Pad the DMG background image to compensate for the macOS title bar (issue #26).
-            // electron-builder uses the image dimensions as the window size, causing the bottom
-            // of the image to be clipped by the title bar height. Uses native sips to preserve
-            // color profiles, DPI metadata, and @2x Retina variants.
-            val dmgBackgroundOverride =
-                if (targetFormat == TargetFormat.Dmg) {
-                    distributions.macOS.dmg.background.orNull?.asFile?.let { bgFile ->
-                        padDmgBackgroundForTitleBar(bgFile, outputDir.resolve("dmg-assets"), logger)
+            val (dmgBackgroundOverride, dmgWindowOverride) = if (targetFormat == TargetFormat.Dmg) {
+                val bgFile = distributions.macOS.dmg.background.orNull?.asFile
+                if (bgFile != null) {
+                    val processedBg = padDmgBackgroundForTitleBar(bgFile, outputDir.resolve("dmg-assets"), logger)
+                    val windowOverride = readImageDimensions(processedBg)?.let { (w, h) ->
+                        ElectronBuilderConfigGenerator.DmgWindowOverride(w, h + MACOS_DMG_TITLE_BAR_HEIGHT)
                     }
+                    processedBg to windowOverride
                 } else {
-                    null
+                    null to null
                 }
+            } else {
+                null to null
+            }
 
             if (targetFormat == TargetFormat.AppImage && distributions.compressionLevel == CompressionLevel.Maximum) {
                 logger.warn(
                     "AppImage with 'maximum' compression can cause extremely slow startup times (60s+) " +
-                        "due to squashfs/FUSE decompression overhead. Consider using 'normal' or 'store' instead. " +
+                        "due to squashfs/FUSE decompression overhead. Consider 'normal' or 'store' instead. " +
                         "See https://github.com/electron-userland/electron-builder/issues/7483",
                 )
             }
@@ -392,6 +396,7 @@ abstract class AbstractElectronBuilderPackageTask
                     linuxAfterInstallTemplate = linuxAfterInstallTemplate,
                     executableName = executableName.orNull,
                     dmgBackgroundOverride = dmgBackgroundOverride,
+                    dmgWindowOverride = dmgWindowOverride,
                 )
             val configFile = File(outputDir, "electron-builder.yml")
             configFile.writeText(configContent)
