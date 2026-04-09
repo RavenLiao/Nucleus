@@ -5,7 +5,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -14,7 +13,6 @@ import io.github.kdroidfilter.nucleus.window.DecoratedWindowState
 data class TitleBarStyle(
     val colors: TitleBarColors,
     val metrics: TitleBarMetrics,
-    val icons: TitleBarIcons,
 )
 
 data class TitleBarColors(
@@ -37,13 +35,6 @@ data class TitleBarMetrics(
     val gradientStartX: Dp = (-100).dp,
     val gradientEndX: Dp = 400.dp,
     val titlePaneButtonSize: DpSize = DpSize(40.dp, 40.dp),
-)
-
-data class TitleBarIcons(
-    val closeButton: Painter? = null,
-    val minimizeButton: Painter? = null,
-    val maximizeButton: Painter? = null,
-    val restoreButton: Painter? = null,
 )
 
 val LocalTitleBarStyle =

@@ -11,7 +11,6 @@ import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowColors
 import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowMetrics
 import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarColors
-import io.github.kdroidfilter.nucleus.window.styling.TitleBarIcons
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarMetrics
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -69,7 +68,7 @@ internal fun rememberJewelTitleBarStyle(): TitleBarStyle {
                     height = 40.dp,
                     titlePaneButtonSize = if (isKde) DpSize(28.dp, 28.dp) else DpSize(40.dp, 40.dp),
                 ),
-            icons = TitleBarIcons(),
+
         )
     }
 }

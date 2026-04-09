@@ -397,7 +397,7 @@ val myTitleBarStyle = TitleBarStyle(
         border = MyTheme.colors.outline,
     ),
     metrics = TitleBarMetrics(height = 40.dp),
-    icons = TitleBarIcons(), // null = use platform defaults
+
 )
 
 NucleusDecoratedWindowTheme(

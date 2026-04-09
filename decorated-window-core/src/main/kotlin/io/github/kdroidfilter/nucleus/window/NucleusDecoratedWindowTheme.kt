@@ -13,7 +13,6 @@ import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowStyle
 import io.github.kdroidfilter.nucleus.window.styling.LocalDecoratedWindowStyle
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarColors
-import io.github.kdroidfilter.nucleus.window.styling.TitleBarIcons
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarMetrics
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 
@@ -96,7 +95,7 @@ object DecoratedWindowDefaults {
                     height = 40.dp,
                     titlePaneButtonSize = if (isKde) DpSize(28.dp, 28.dp) else DpSize(40.dp, 40.dp),
                 ),
-            icons = TitleBarIcons(),
+
         )
 
     fun darkTitleBarStyle(): TitleBarStyle =
@@ -124,6 +123,6 @@ object DecoratedWindowDefaults {
                     height = 40.dp,
                     titlePaneButtonSize = if (isKde) DpSize(28.dp, 28.dp) else DpSize(40.dp, 40.dp),
                 ),
-            icons = TitleBarIcons(),
+
         )
 }
