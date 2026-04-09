@@ -99,6 +99,9 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
         }
     }
 
+    // Fix DPI scaling for min/max size on non-JBR JVMs (issue #102)
+    SyncMinMaxSizeToNative(window)
+
     val useNewFullscreenControls = modifier.hasNewFullscreenControls()
 
     // ── Fullscreen with newFullscreenControls: sliding overlay ──
@@ -236,5 +239,42 @@ private fun DecoratedWindowScope.FallbackWindowsTitleBar(
     ) { currentState ->
         WindowsWindowControlArea(window, currentState, style)
         content(currentState)
+    }
+}
+
+/**
+ * Syncs [java.awt.Window.minimumSize] and [java.awt.Window.maximumSize] to the native
+ * WM_GETMINMAXINFO handler so that DPI scaling is applied correctly on non-JBR JVMs.
+ */
+@Suppress("FunctionNaming")
+@Composable
+private fun SyncMinMaxSizeToNative(window: java.awt.Window) {
+    DisposableEffect(window) {
+        val hwnd = JniWindowsWindowUtil.getHwnd(window)
+        if (hwnd != 0L) {
+            val syncSizes = {
+                val min = window.minimumSize
+                JniWindowsDecorationBridge.nativeSetMinimumSize(hwnd, min.width, min.height)
+                val max = window.maximumSize
+                val maxW = if (max.width < Short.MAX_VALUE) max.width else 0
+                val maxH = if (max.height < Short.MAX_VALUE) max.height else 0
+                JniWindowsDecorationBridge.nativeSetMaximumSize(hwnd, maxW, maxH)
+            }
+            syncSizes()
+            val propertyListener =
+                java.beans.PropertyChangeListener { evt ->
+                    if (evt.propertyName == "minimumSize" || evt.propertyName == "maximumSize") {
+                        syncSizes()
+                    }
+                }
+            window.addPropertyChangeListener(propertyListener)
+            onDispose {
+                window.removePropertyChangeListener(propertyListener)
+                JniWindowsDecorationBridge.nativeSetMinimumSize(hwnd, 0, 0)
+                JniWindowsDecorationBridge.nativeSetMaximumSize(hwnd, 0, 0)
+            }
+        } else {
+            onDispose { }
+        }
     }
 }

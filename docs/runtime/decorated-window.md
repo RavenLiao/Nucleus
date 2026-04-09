@@ -58,6 +58,13 @@ This module does not depend on JBR, making it compatible with **any JVM** (OpenJ
 !!! info "macOS: Liquid Glass and Xcode 26 appearance"
     Nucleus automatically patches the application launcher's `LC_BUILD_VERSION` to macOS SDK 26.0 via `vtool`, enabling Liquid Glass window decorations (larger traffic lights, rounded corners). This works with **any JDK** — a JDK compiled with Xcode 26 is no longer required. See [macOS 26 Window Appearance](../targets/macos.md#macos-26-window-appearance-liquid-glass) for details and configuration options.
 
+!!! note "Windows: DPI-aware minimum and maximum window size"
+    On non-JBR JVMs (OpenJDK, GraalVM), `Window.minimumSize` and `Window.maximumSize` are stored in logical pixels but Windows expects physical pixels in `WM_GETMINMAXINFO`. This causes the enforced min/max size to be too small on HiDPI displays (e.g. a 640×480 minimum becomes 427×320 at 150% scaling). JBR fixes this internally with `ScaleUpX`/`ScaleUpY`.
+
+    The JNI module replicates this fix: it intercepts `WM_GETMINMAXINFO` after AWT and applies `MulDiv(value, dpi, 96)` scaling. Just set `window.minimumSize` or `window.maximumSize` as usual — the DPI correction is automatic.
+
+    This fix is **not present** in `decorated-window-jbr` (JBR handles it natively).
+
 !!! note "Windows: no white background flash during resize"
     On Windows, Skiko's rendering pipeline clears the DirectX canvas to white before each frame. When the window is resized larger, the newly exposed pixels remain white for one frame — producing a visible white flash. The JNI module eliminates this by adjusting Skiko's clear color to transparent for dark themes (rendered as opaque black on the DirectX surface), so the flash is invisible against a dark background. It also synchronizes the DWM caption and border colors (`DWMWA_CAPTION_COLOR`, `DWMWA_BORDER_COLOR`, `DWMWA_USE_IMMERSIVE_DARK_MODE`) with the title bar color for consistent Windows 11 window chrome styling.
 
@@ -175,6 +182,7 @@ The following tables compare a standard Compose `Window()`, the JBR module (`dec
 | True fullscreen | Broken (doesn't cover taskbar) | Broken (doesn't cover taskbar) | **Fixed** — native Win32 fullscreen (`newFullscreenControls()`) |
 | Fullscreen sliding title bar | No | No | Yes (`newFullscreenControls()`) |
 | DWM dark mode sync | No | No | Yes (`DWMWA_USE_IMMERSIVE_DARK_MODE`, caption/border color) |
+| DPI-aware min/max size | Broken on non-JBR | JBR handles it | **Fixed** — `WM_GETMINMAXINFO` DPI scaling |
 | RTL support | No custom title bar | Yes (no hot-swap, restart required) | Yes (live hot-swap) |
 | JDK requirement | Any | JBR only | Any |
 | Fallback (no native lib) | N/A | N/A | Compose `windowDragHandler()` (no WndProc subclass) |

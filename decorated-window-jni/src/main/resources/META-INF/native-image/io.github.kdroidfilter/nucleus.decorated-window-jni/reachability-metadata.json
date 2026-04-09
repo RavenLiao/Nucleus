@@ -12,6 +12,28 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.window.utils.windows.JniWindowsDecorationBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "nativeSetMinimumSize",
+                    "parameterTypes": [
+                        "long",
+                        "int",
+                        "int"
+                    ]
+                },
+                {
+                    "name": "nativeSetMaximumSize",
+                    "parameterTypes": [
+                        "long",
+                        "int",
+                        "int"
+                    ]
+                }
+            ]
         }
     ]
 }

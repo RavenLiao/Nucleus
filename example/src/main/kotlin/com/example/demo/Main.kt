@@ -175,6 +175,10 @@ fun main(args: Array<String>) {
                     onCloseRequest = ::exitApplication,
                     title = "Nucleus Demo",
                 ) {
+                    // Set minimum window size (DPI-scaled automatically by JNI module)
+                    LaunchedEffect(Unit) {
+                        window.minimumSize = java.awt.Dimension(640, 480)
+                    }
                     CompositionLocalProvider(
                         LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                     ) {
