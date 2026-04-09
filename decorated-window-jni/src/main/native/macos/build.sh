@@ -56,6 +56,14 @@ clang -arch x86_64 "${COMMON_FLAGS[@]}" \
     -o "$OUT_DIR_X64/libnucleus_macos_jni.dylib" "$SRC"
 strip -x "$OUT_DIR_X64/libnucleus_macos_jni.dylib"
 
+# Clear NativeLibraryLoader cache so the fresh library is used on next run.
+# Without this, the loader serves the stale cached copy from ~/.cache/nucleus/.
+CACHE_DIR="$HOME/.cache/nucleus/native"
+if [ -d "$CACHE_DIR" ]; then
+    rm -rf "$CACHE_DIR"
+    echo "Cleared NativeLibraryLoader cache: $CACHE_DIR"
+fi
+
 echo "Built per-architecture dylibs:"
 ls -lh "$OUT_DIR_ARM64/libnucleus_macos_jni.dylib"
 ls -lh "$OUT_DIR_X64/libnucleus_macos_jni.dylib"

@@ -546,7 +546,7 @@ private enum class ThemeMode {
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FunctionNaming", "DEPRECATION")
 @Composable
-private fun TitleBarIconButton(
+private fun io.github.kdroidfilter.nucleus.window.TitleBarScope.TitleBarIconButton(
     imageVector: ImageVector,
     contentDescription: String,
     modifier: Modifier = Modifier,
@@ -576,10 +576,7 @@ private fun TitleBarIconButton(
                             } else {
                                 Color.Transparent
                             },
-                        ).clickable(
-                            interactionSource = hoverInteraction,
-                            indication = null,
-                        ) { onClick() }
+                        ).titleBarClickable { onClick() }
                         .padding(4.dp)
                         .size(16.dp),
             )

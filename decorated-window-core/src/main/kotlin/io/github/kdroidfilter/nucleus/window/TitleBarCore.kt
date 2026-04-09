@@ -293,6 +293,22 @@ interface TitleBarScope {
     val icon: Painter?
 
     fun Modifier.align(alignment: Alignment.Horizontal): Modifier
+
+    /**
+     * Click handler for title bar elements that works reliably in macOS
+     * fullscreen on non-notch screens.
+     *
+     * Standard [clickable][androidx.compose.foundation.clickable] requires a
+     * complete Press → Release (tap) gesture. On some JDK/macOS combinations,
+     * the system injects phantom pointer-exit events between Press and Release
+     * in fullscreen, which cancels the tap gesture and prevents `onClick` from
+     * firing.
+     *
+     * This modifier fires [onClick] on the **press** event instead, making it
+     * immune to phantom exit events. It is the recommended replacement for
+     * `clickable` on interactive elements placed inside a title bar.
+     */
+    fun Modifier.titleBarClickable(onClick: () -> Unit): Modifier
 }
 
 class TitleBarScopeImpl(
@@ -302,6 +318,23 @@ class TitleBarScopeImpl(
     @Suppress("MaxLineLength")
     override fun Modifier.align(alignment: Alignment.Horizontal): Modifier =
         this then TitleBarChildDataElement(alignment)
+
+    override fun Modifier.titleBarClickable(onClick: () -> Unit): Modifier =
+        pointerInput(onClick) {
+            val ctx = currentCoroutineContext()
+            awaitPointerEventScope {
+                while (ctx.isActive) {
+                    val event = awaitPointerEvent(PointerEventPass.Main)
+                    if (event.type == PointerEventType.Press) {
+                        val change = event.changes.firstOrNull() ?: continue
+                        if (!change.isConsumed) {
+                            change.consume()
+                            onClick()
+                        }
+                    }
+                }
+            }
+        }
 }
 
 class TitleBarChildDataElement(
