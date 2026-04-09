@@ -512,8 +512,13 @@ abstract class AbstractElectronBuilderPackageTask
             if (source == null || !source.isFile) return null
             assetsDir.mkdirs()
             val dest = File(assetsDir, "$baseName.${source.extension}")
-            source.copyTo(dest, overwrite = true)
-            logger.info("Copied DMG asset: ${source.absolutePath} → ${dest.absolutePath}")
+            // Skip copy when source is already the destination (e.g. padDmgBackgroundForTitleBar
+            // wrote directly into assetsDir). Kotlin's copyTo(overwrite=true) deletes the target
+            // before copying, which destroys the source when they are the same file (issue #166).
+            if (source.canonicalPath != dest.canonicalPath) {
+                source.copyTo(dest, overwrite = true)
+                logger.info("Copied DMG asset: ${source.absolutePath} → ${dest.absolutePath}")
+            }
             return "dmg-assets/${dest.name}"
         }
 
