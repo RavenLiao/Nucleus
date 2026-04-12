@@ -57,31 +57,34 @@ Nucleus integrates deeply with both: decorated windows with native window contro
 
 ## What Nucleus provides
 
-### Distribution
+### Ship everywhere
 
 - **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, ZIP, TAR, 7Z
-- **Store-ready outputs** — Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), Flathub (Flatpak)
-- **Code signing & notarization** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID)
-- **Auto-update** — Built-in update metadata generation and runtime update library with SHA-512 verification; publish to GitHub Releases or S3
+- **Store-ready** — Mac App Store, Microsoft Store, Snapcraft, Flathub — one build, all stores
+- **Code signing & notarization** — Windows and macOS, built into the build pipeline
+- **Auto-update** — Your app checks for updates, downloads them, verifies integrity, and installs — all built-in
+- **Deep links & file associations** — Protocol handlers and file type registration on all platforms
 
-### Native integration
+### Feel native on every OS
 
-- **Decorated windows** — Custom title bar content while preserving native window controls on all platforms
-- **Notifications** — Full native notification APIs on macOS (UserNotifications), Windows (Toast/WinRT), and Linux (freedesktop)
-- **Launchers** — Badge counts, progress bars, jump lists, overlay icons, dock menus, quicklists — per-platform, via JNI
-- **System APIs** — Dark mode detection, accent colors, high contrast, energy management, system info (CPU/GPU/memory metrics), global hotkeys, taskbar progress
-- **Native Access** — Write Kotlin/Native, call it from the JVM. The plugin generates the FFM bridge automatically.
+- **Decorated windows** — Custom title bar with your own content, while the OS keeps its native window controls
+- **Notifications** — Native notification APIs on every platform, not browser-style popups
+- **Launchers** — Badge counts, progress bars, jump lists, dock menus, quicklists — what each OS does best
+- **System integration** — Dark mode, accent colors, high contrast, energy management, global hotkeys, taskbar progress, system info
+- **Pixel-perfect rendering** — Crisp on every display, every DPI, every platform
 
-### Performance
+### Perform like native code
 
-- **AOT Cache (Project Leyden)** — Near-instant cold startup with one Gradle flag, no GraalVM required
-- **GraalVM Native Image** — Standalone binary with transparent metadata resolution (5-level automatic analysis, zero manual config for most apps)
-- **Linux HiDPI** — Native scale detection via JNI for crisp rendering on high-DPI displays
+- **Blazing cold start** — Sub-second startup with GraalVM native image, near-instant with AOT cache — a single Gradle flag
+- **The world's most advanced JIT** — The HotSpot JVM optimizes your hot paths at runtime with decades of engineering behind it. No static binary can match sustained JVM throughput.
+- **Lightweight** — 100–150 MB RAM as a native image. Your app, not a browser engine.
+- **GraalVM native image** — Compile your entire app ahead of time into a standalone binary. Nucleus resolves all reflection metadata transparently — zero manual config for most apps.
 
-### CI/CD
+### Go deeper when you need to
 
-- **Reusable GitHub Actions** — `setup-nucleus` composite action + workflows for multi-platform matrix builds, universal macOS binaries, MSIX bundles
-- **Deep links & file associations** — Cross-platform protocol handlers and file type registration
+- **Native Access** — Call any platform API from Kotlin. Write Kotlin/Native, the plugin generates the bridge. No C, no JNI, no build scripts.
+- **30+ JNI runtime modules** — Notifications, launchers, dark mode, system colors, taskbar, energy, HiDPI — all via JNI, all cross-platform
+- **CI/CD ready** — Reusable GitHub Actions, multi-platform matrix builds, universal macOS binaries, MSIX bundles
 
 ## Quick start
 
