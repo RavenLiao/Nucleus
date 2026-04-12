@@ -16,6 +16,9 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Build darkmode-detector Windows native DLLs
         shell: cmd
         run: call darkmode-detector\src\main\native\windows\build.bat
