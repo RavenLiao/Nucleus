@@ -13,6 +13,25 @@ But ComposeNativeTray goes further. **TrayApp** turns a tray icon into a full me
 
 Native menus rendered by the OS. Dark mode detection and automatic icon adaptation. Tray position detection for precise window placement. Left-click actions, right-click menus, checkable items, nested submenus with icons. Everything a system tray framework should be — and nothing you have to wire up yourself.
 
+## In action
+
+<figure markdown>
+  ![Demo](assets/demo.gif)
+  <figcaption>Reactive tray menu with dark mode toggle, dynamic items, and nested submenus</figcaption>
+</figure>
+
+=== "macOS"
+    ![macOS](assets/mac.png)
+
+=== "Windows"
+    ![Windows](assets/windows.png)
+
+=== "Linux (GNOME)"
+    ![GNOME](assets/gnome.png)
+
+=== "Linux (KDE)"
+    ![KDE](assets/kde.png)
+
 ## Quick example
 
 ```kotlin

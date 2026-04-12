@@ -5,6 +5,11 @@
 
 `TrayApp` creates a **popup Compose window anchored to the tray icon** — similar to macOS menu bar apps like Bartender or iStatMenus. Click the tray icon and a window appears right next to it, with smooth enter/exit animations.
 
+<figure markdown>
+  ![TrayApp Demo](assets/trayappdemo.gif)
+  <figcaption>A Compose popup window anchored to the tray icon</figcaption>
+</figure>
+
 ## Basic usage
 
 ```kotlin
