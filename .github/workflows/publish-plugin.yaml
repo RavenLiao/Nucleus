@@ -142,6 +142,13 @@ jobs:
           pattern: 'menu-macos*'
           merge-multiple: true
 
+      - name: Download system-info artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: system-info/src/main/resources/nucleus/native/
+          pattern: 'system-info-*'
+          merge-multiple: true
+
       - name: Cache Gradle Caches
         uses: gradle/actions/setup-gradle@v5
 

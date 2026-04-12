@@ -179,6 +179,13 @@ jobs:
           pattern: 'menu-macos*'
           merge-multiple: true
 
+      - name: Download system-info artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: system-info/src/main/resources/nucleus/native/
+          pattern: 'system-info-*'
+          merge-multiple: true
+
       - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon

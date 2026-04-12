@@ -1,0 +1,11 @@
+package io.github.kdroidfilter.nucleus.systeminfo.model
+
+data class MemoryInfo(
+    val totalMemory: Long,
+    val freeMemory: Long,
+    val availableMemory: Long,
+    val usedMemory: Long,
+    val totalSwap: Long,
+    val freeSwap: Long,
+    val usedSwap: Long,
+)

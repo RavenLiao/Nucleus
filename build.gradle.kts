@@ -12,13 +12,19 @@ plugins {
     alias(libs.plugins.versionCheck)
 }
 
+val demoProjects = setOf("example", "jewel-sample", "system-info-demo", "sample-cmp")
+
 subprojects {
+    if (name !in demoProjects) {
+        apply {
+            plugin(
+                rootProject.libs.plugins.detekt
+                    .get()
+                    .pluginId,
+            )
+        }
+    }
     apply {
-        plugin(
-            rootProject.libs.plugins.detekt
-                .get()
-                .pluginId,
-        )
         plugin(
             rootProject.libs.plugins.ktlint
                 .get()
@@ -39,12 +45,14 @@ subprojects {
         }
     }
 
-    detekt {
-        config.setFrom(rootProject.files("config/detekt/detekt.yml"))
-    }
+    if (name !in demoProjects) {
+        detekt {
+            config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+        }
 
-    tasks.withType<Detekt>().configureEach {
-        jvmTarget.set("21")
+        tasks.withType<Detekt>().configureEach {
+            jvmTarget.set("21")
+        }
     }
 }
 

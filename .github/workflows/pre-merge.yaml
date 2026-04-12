@@ -141,6 +141,13 @@ jobs:
           pattern: 'menu-macos*'
           merge-multiple: true
 
+      - name: Download system-info artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: system-info/src/main/resources/nucleus/native/
+          pattern: 'system-info-*'
+          merge-multiple: true
+
       - name: Verify all natives present
         run: |
           EXPECTED=(
@@ -206,6 +213,12 @@ jobs:
             "decorated-window-core/src/main/resources/nucleus/native/darwin-x64/libnucleus_layout_direction.dylib"
             "decorated-window-core/src/main/resources/nucleus/native/linux-x64/libnucleus_layout_direction.so"
             "decorated-window-core/src/main/resources/nucleus/native/linux-aarch64/libnucleus_layout_direction.so"
+            "system-info/src/main/resources/nucleus/native/win32-x64/nucleus_system_info.dll"
+            "system-info/src/main/resources/nucleus/native/win32-aarch64/nucleus_system_info.dll"
+            "system-info/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_system_info.dylib"
+            "system-info/src/main/resources/nucleus/native/darwin-x64/libnucleus_system_info.dylib"
+            "system-info/src/main/resources/nucleus/native/linux-x64/libnucleus_system_info.so"
+            "system-info/src/main/resources/nucleus/native/linux-aarch64/libnucleus_system_info.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do

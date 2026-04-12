@@ -84,6 +84,7 @@ nav:
           - Launcher (macOS): runtime/launcher-macos.md
           - Menu (macOS): runtime/menu-macos.md
           - Freedesktop Icons: runtime/freedesktop-icons.md
+          - System Info: runtime/system-info.md
           - Energy Manager: runtime/energy-manager.md
           - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md

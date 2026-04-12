@@ -28,11 +28,12 @@ private val linuxWindowBorderColor = Color(0x12FFFFFF)
 @Composable
 internal fun rememberJewelWindowStyle(): DecoratedWindowStyle {
     val isDark = JewelTheme.isDark
-    // On Linux, use a subtle semi-transparent border that matches native GNOME/KDE
-    // window chrome instead of the opaque Jewel borders.normal (designed for UI separators).
+    // On Linux, blend the Jewel border color with a semi-transparent overlay so the
+    // window frame adapts to both light and dark themes without a jarring white outline.
     val borderColor =
         if (isLinux) {
-            linuxWindowBorderColor
+            JewelTheme.globalColors.borders.normal
+                .copy(alpha = 0.6f)
         } else {
             JewelTheme.globalColors.borders.normal
         }

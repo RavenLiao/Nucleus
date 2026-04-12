@@ -16,6 +16,9 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Build darkmode-detector Windows native DLLs
         shell: cmd
         run: call darkmode-detector\src\main\native\windows\build.bat
@@ -224,6 +227,27 @@ jobs:
         with:
           name: decorated-window-core-windows
           path: decorated-window-core/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
+      - name: Build system-info Windows DLLs
+        shell: cmd
+        run: call system-info\src\main\native\windows\build.bat
+
+      - name: Verify system-info Windows natives
+        shell: bash
+        run: |
+          for f in \
+            system-info/src/main/resources/nucleus/native/win32-x64/nucleus_system_info.dll \
+            system-info/src/main/resources/nucleus/native/win32-aarch64/nucleus_system_info.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload system-info Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-info-windows
+          path: system-info/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
   macos:
@@ -466,6 +490,25 @@ jobs:
           path: decorated-window-core/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build system-info macOS dylibs
+        run: bash system-info/src/main/native/macos/build.sh
+
+      - name: Verify system-info macOS natives
+        run: |
+          for f in \
+            system-info/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_system_info.dylib \
+            system-info/src/main/resources/nucleus/native/darwin-x64/libnucleus_system_info.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload system-info macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-info-macos
+          path: system-info/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -615,6 +658,22 @@ jobs:
         with:
           name: decorated-window-core-linux-${{ matrix.arch }}
           path: decorated-window-core/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build system-info Linux native shared library
+        run: bash system-info/src/main/native/linux/build.sh
+
+      - name: Verify system-info Linux native
+        run: |
+          f="system-info/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_system_info.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload system-info Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-info-linux-${{ matrix.arch }}
+          path: system-info/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
 
       - name: Build global-hotkey Linux native shared library

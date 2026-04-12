@@ -1,6 +1,7 @@
 package jewelsample
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -9,6 +10,7 @@ import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
@@ -61,6 +63,10 @@ fun main() {
                 onCloseRequest = { exitApplication() },
                 title = "Jewel standalone sample",
                 icon = icon,
+                state =
+                    androidx.compose.ui.window.rememberWindowState(
+                        position = WindowPosition.Aligned(Alignment.Center),
+                    ),
                 onKeyEvent = { keyEvent ->
                     processKeyShortcuts(keyEvent = keyEvent, onNavigateTo = MainViewModel::onNavigateTo)
                 },
