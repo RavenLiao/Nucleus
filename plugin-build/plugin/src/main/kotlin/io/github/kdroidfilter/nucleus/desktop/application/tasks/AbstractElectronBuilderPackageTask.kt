@@ -306,7 +306,7 @@ abstract class AbstractElectronBuilderPackageTask
             outputDir: File,
             dist: JvmApplicationDistributions,
         ) {
-            if (!targetFormat.isAutoUpdateSupported) return
+            if (!targetFormat.needsPluginUpdateYml) return
             val channel = resolveUpdateChannel(dist)
             val ymlFilename = targetFormat.updateYmlFilename(channel)
             val version = packageVersion.orNull ?: "0.0.0"
