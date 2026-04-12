@@ -11,46 +11,52 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-7F52FF?logo=kotlin&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
 
-**The all-in-one toolkit for shipping JVM desktop applications.** Gradle plugin + runtime libraries + GitHub Actions — everything you need to go from `./gradlew run` to a signed, notarized, auto-updating app on every store.
+**Nucleus is the native desktop platform for the JVM.** Combined with Compose Multiplatform, it forms the most complete, most performant, and most deeply integrated desktop application stack ever built.
 
-Compatible with any JVM application. Optimized for **Compose Desktop**.
+Java evolved into Kotlin. JavaScript evolved into TypeScript. Desktop development is going through the same shift: Electron was the pioneer. **Nucleus + Compose** is what comes next.
 
 ---
 
-## Why Nucleus?
+## Why Nucleus
 
-### Fast Cold Start
+**Native on every OS** — Your app doesn't emulate native — it *is* native. Window decorations, notifications, taskbar badges, dock menus, dark mode, accent colors, global hotkeys — everything behaves exactly as users expect on their OS.
 
-- **JDK 25+ AOT Cache (Project Leyden)** — Eliminates the JVM cold start penalty with a single Gradle flag. No GraalVM, no native-image, no compromise — your app launches almost instantly
-- **ProGuard** — Built-in integration for release builds: obfuscation, optimization, and JAR joining
-- **Native library cleanup** — Automatically strips non-target-platform `.dll`/`.so`/`.dylib` from dependency JARs, reducing app size
+**Performance that rivals C++** — The HotSpot JVM is the most advanced JIT compiler ever built, delivering performance approaching C++ and Rust levels — with the simplicity of Kotlin. True parallelism with coroutines and virtual threads, not a single-threaded event loop.
 
-### Distributable
+**Maximum lightness** — GraalVM native image compiles your entire app into a standalone binary. ~0.5s cold start, 100–150 MB RAM, tiny bundle. Compare that to 500 MB–1.5 GB for a typical Electron app.
 
-- **17 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, ZIP, TAR, 7z, and more
-- **Store-ready outputs** — Sandboxed PKG for the Mac App Store, AppX for the Microsoft Store, Snap for Snapcraft, Flatpak for Flathub — with automatic sandboxing pipelines
-- **Code signing & notarization** — macOS (Developer ID, notarization, App Store), Windows (PFX, Azure Trusted Signing)
-- **Auto-update** — Runtime library with SHA-512 verification, download progress, and platform-specific silent installation. Supports GitHub Releases and S3
-### Native
+**The most advanced desktop UI** — Compose Multiplatform with Skia GPU rendering, reactive state, and shared code across platforms. No frontend/backend split — your UI calls your logic directly. On top sits [Jewel](https://github.com/JetBrains/jewel), the desktop UI framework behind JetBrains IDEs.
 
-- **Decorated windows** — Draw anything in the title bar (icons, text, gradients) while keeping native window controls. Fork of [Jewel](https://github.com/JetBrains/intellij-community/tree/master/platform/jewel)'s decorated window, without any Jewel dependency, with full Linux rework (GNOME Adwaita, KDE Breeze) and added `DecoratedDialog` support
-- **Reactive dark mode** — OS-level theme listener via JNI that triggers Compose recomposition instantly. Unlike Compose's built-in `isSystemInDarkTheme()` which reads once and never updates
-- **Platform detection** — Runtime APIs for OS, desktop environment (GNOME/KDE/XFCE/...), executable type (18 formats), and AOT mode
-- **Single instance & deep links** — File-lock-based single instance enforcement with deep link forwarding between instances
-- **Deep links & file associations** — Cross-platform protocol handlers and file type registration in one DSL block
-- **System info** — CPU, memory, disks, GPU (NVIDIA/AMD/Intel), temperature sensors, network, processes, and hardware identifiers — all via JNI native bridges on each platform
+---
 
-### CI/CD Ready
+## What Nucleus provides
 
-| Action | Description |
-|--------|-------------|
-| `setup-nucleus` | Sets up JBR + all packaging tools on any runner (Linux, macOS, Windows) |
-| `build-macos-universal` | Merges arm64 + x64 into a universal binary with re-signing and notarization |
-| `build-windows-appxbundle` | Merges amd64 + arm64 AppX into a signed MSIX bundle |
-| `generate-update-yml` | Generates electron-builder-compatible update metadata with SHA-512 checksums |
-| `publish-release` | Creates/updates GitHub Releases and uploads all artifacts |
+### Ship everywhere
 
-Full 6-runner matrix build (Ubuntu amd64/arm64, Windows amd64/arm64, macOS arm64/Intel) out of the box.
+- **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, ZIP, TAR, 7Z
+- **Store-ready** — Mac App Store, Microsoft Store, Snapcraft, Flathub
+- **Code signing & notarization** — Windows and macOS, built into the pipeline
+- **Auto-update** — Check, download, verify, install — all built-in
+- **Deep links & file associations** — Protocol handlers and file type registration
+
+### Feel native
+
+- **Decorated windows** — Custom title bar with native window controls on every OS
+- **Notifications** — Native APIs on macOS, Windows, and Linux
+- **Launchers** — Badges, progress bars, jump lists, dock menus, quicklists
+- **System integration** — Dark mode, accent colors, high contrast, energy management, global hotkeys, taskbar progress, system info
+
+### Perform
+
+- **AOT Cache** — Near-instant cold startup with a single Gradle flag
+- **GraalVM Native Image** — Standalone binary with automatic metadata resolution — zero manual config for most apps
+- **ProGuard** — Built-in release builds with optimization and obfuscation
+
+### Go deeper
+
+- **[Native Access](https://nucleus.kdroidfilter.com/native-access/)** — Write Kotlin/Native, call it from the JVM. No C, no boilerplate.
+- **30+ runtime modules** — Intuitive Kotlin APIs for every OS integration
+- **CI/CD ready** — Reusable GitHub Actions, 6-runner matrix builds, universal macOS binaries, MSIX bundles
 
 ---
 
@@ -79,47 +85,37 @@ nucleus.application {
 
 ---
 
-## Runtime Libraries
+## Runtime Modules
 
-Use them independently or together — each module is published to Maven Central.
+Each module is published independently to Maven Central — use them together or standalone.
 
-| Module | Artifact | Description |
-|--------|----------|-------------|
-| **Core Runtime** | `nucleus.core-runtime` | Platform detection, single instance, deep links, executable type detection |
-| **AOT Runtime** | `nucleus.aot-runtime` | AOT cache mode detection (training / runtime / off) |
-| **Updater** | `nucleus.updater-runtime` | Auto-update engine with GitHub/S3 providers, progress tracking, SHA-512 verification |
-| **Dark Mode Detector** | `nucleus.darkmode-detector` | Reactive OS dark mode via JNI — macOS, Windows, Linux (D-Bus) |
-| **System Color** | `nucleus.system-color` | Reactive system accent color & high contrast detection via JNI |
-| **System Info** | `nucleus.system-info` | Cross-platform system information (CPU, memory, disks, GPU, temperature, network, processes) via JNI |
-| **Decorated Window** | `nucleus.decorated-window` | Custom title bar with native controls — design-system agnostic |
-| **Decorated Window Jewel** | `nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) integration for decorated windows and dialogs |
-| **Decorated Window Material 2** | `nucleus.decorated-window-material2` | Material 2 integration for decorated windows and dialogs |
-| **Decorated Window Material 3** | `nucleus.decorated-window-material3` | Material 3 integration for decorated windows and dialogs |
-| **Freedesktop Icons** | `nucleus.freedesktop-icons` | Type-safe [freedesktop icon naming](https://specifications.freedesktop.org/icon-naming/latest/) constants |
-| **Notification Linux** | `nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI |
-| **Notification Windows** | `nucleus.notification-windows` | Windows Toast Notifications API via JNI (WinRT) |
-| **Notification macOS** | `nucleus.notification-macos` | macOS User Notifications API via JNI (Objective-C) |
-| **Launcher Windows** | `nucleus.launcher-windows` | Windows Launcher API — badge notifications & jump lists (ICustomDestinationList) via JNI |
-| **Launcher Linux** | `nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI |
-| **Launcher macOS** | `nucleus.launcher-macos` | macOS Dock API — badge count & attention requests via JNI |
-| **Menu macOS** | `nucleus.menu-macos` | macOS native menu bar integration via JNI |
-| **Taskbar Progress** | `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |
-| **Global Hotkey** | `nucleus.global-hotkey` | System-wide keyboard shortcut registration via JNI |
-| **Energy Manager** | `nucleus.energy-manager` | Energy efficiency & screen-awake APIs |
-| **Native SSL** | `nucleus.native-ssl` | OS trust store integration for SSL/TLS |
-| **Native HTTP** | `nucleus.native-http` | HTTP client using OS-native SSL trust store |
-| **Linux HiDPI** | `nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux (JNI) |
-| **GraalVM Runtime** | `nucleus.graalvm-runtime` | Native-image bootstrap + font substitutions (includes linux-hidpi) |
-
----
-
-## Sponsor: Automatic GraalVM Reflection Plugin
-
-Nucleus already supports [GraalVM Native Image](https://nucleus.kdroidfilter.com/graalvm-native-image/) for instant startup and low memory usage — but configuring reflection metadata remains a major pain point.
-
-**I'm looking for sponsors** to fund the development of an **automatic reflection resolution plugin** that would eliminate most of the manual configuration work. This would make native-image practical for large Compose Desktop applications while keeping full compatibility with the Java ecosystem.
-
-If you or your company are interested, please reach out via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions). Read more about this in the [GraalVM Native Image docs](https://nucleus.kdroidfilter.com/graalvm-native-image/#future-automatic-reflection-resolution-plugin).
+| Module | Description |
+|--------|-------------|
+| `nucleus.core-runtime` | Platform detection, single instance, deep links, executable type |
+| `nucleus.aot-runtime` | AOT cache mode detection |
+| `nucleus.updater-runtime` | Auto-update engine with GitHub/S3, progress tracking, SHA-512 |
+| `nucleus.darkmode-detector` | Reactive OS dark mode detection |
+| `nucleus.system-color` | Reactive accent color & high contrast detection |
+| `nucleus.system-info` | CPU, memory, GPU (NVIDIA/AMD/Intel), temperature, network, processes |
+| `nucleus.decorated-window` | Custom title bar with native controls |
+| `nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) integration |
+| `nucleus.decorated-window-material2` | Material 2 integration |
+| `nucleus.decorated-window-material3` | Material 3 integration |
+| `nucleus.notification-macos` | macOS User Notifications |
+| `nucleus.notification-windows` | Windows Toast Notifications |
+| `nucleus.notification-linux` | Freedesktop Desktop Notifications |
+| `nucleus.launcher-macos` | macOS Dock API — badge, menus |
+| `nucleus.launcher-windows` | Windows taskbar — badges, jump lists, overlay icons, thumbnail toolbar |
+| `nucleus.launcher-linux` | Unity Launcher — badge, progress, urgency, quicklist |
+| `nucleus.menu-macos` | Native macOS menu bar |
+| `nucleus.freedesktop-icons` | Type-safe freedesktop icon naming constants |
+| `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |
+| `nucleus.global-hotkey` | System-wide keyboard shortcuts |
+| `nucleus.energy-manager` | Energy efficiency & screen-awake APIs |
+| `nucleus.native-ssl` | OS trust store integration |
+| `nucleus.native-http` | HTTP client with native SSL |
+| `nucleus.linux-hidpi` | Native HiDPI scale detection on Linux |
+| `nucleus.graalvm-runtime` | Native-image bootstrap, font fixes, automatic resource inclusion |
 
 ---
 
@@ -127,15 +123,13 @@ If you or your company are interested, please reach out via [GitHub Issues](http
 
 | Requirement | Version | Note |
 |-------------|---------|------|
-| JDK | 17+ (25+ for AOT cache) | JBR recommended |
+| JDK | 17+ (25+ for AOT cache) | JBR 25 recommended |
 | Gradle | 8.0+ | |
 | Kotlin | 2.0+ | |
 
----
-
 ## Documentation
 
-Full documentation is available at **[nucleus.kdroidfilter.com](https://nucleus.kdroidfilter.com/)**.
+Full documentation at **[nucleus.kdroidfilter.com](https://nucleus.kdroidfilter.com/)**.
 
 ## License
 
