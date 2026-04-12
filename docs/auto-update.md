@@ -7,20 +7,21 @@ Nucleus provides a complete auto-update solution compatible with the [electron-b
 
 ## How It Works
 
-```
-Build & Publish          Check & Install
-┌─────────────┐         ┌─────────────────┐
-│ Gradle build │────────▶│ GitHub Release,  │
-│ + YML files  │         │ S3, or HTTP host │
-└─────────────┘         └────────┬────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │ App fetches latest-*.yml │
-                    │ Compares versions        │
-                    │ Downloads new installer  │
-                    │ Verifies SHA-512         │
-                    │ Launches installer       │
-                    └─────────────────────────┘
+```mermaid
+flowchart LR
+    build["Gradle build\n+ YML files"] --> host["GitHub Release,\nS3, or HTTP host"]
+    host --> app["App at runtime"]
+
+    subgraph app ["App at runtime"]
+        direction TB
+        fetch["Fetch latest-*.yml"] --> compare["Compare versions"]
+        compare --> download["Download new installer"]
+        download --> verify["Verify SHA-512"]
+        verify --> launch["Launch installer"]
+    end
+
+    style build fill:#0f3460,stroke:#16213e,color:#e0e0e0
+    style host fill:#533483,stroke:#16213e,color:#e0e0e0
 ```
 
 !!! tip "Try it yourself"

@@ -16,33 +16,26 @@ Nucleus provides reusable composite actions and ready-to-use GitHub Actions work
 
 A typical release pipeline has four stages:
 
-```
-Tag push (v1.0.0)
-       │
-       ▼
-┌──────────────────────────────────┐
-│  Build (6 parallel runners)      │
-│  Ubuntu amd64 / arm64            │
-│  Windows amd64 / arm64           │
-│  macOS arm64 / x64               │
-│  (macOS: + sandboxed .app ZIP)   │
-└──────────┬───────────────────────┘
-           │
-     ┌─────┴──────┐
-     ▼            ▼
-┌─────────────┐ ┌──────────┐
-│ macOS       │ │ Windows  │
-│ Universal   │ │ MSIX     │
-│ Binary      │ │ Bundle   │
-│ + Signing   │ └────┬─────┘
-│ + Notarize  │      │
-└──────┬──────┘      │
-       │             │
-       ▼             ▼
-┌──────────────────────────────────┐
-│  Publish — GitHub Release        │
-│  + Update YML metadata           │
-└──────────────────────────────────┘
+```mermaid
+flowchart TB
+    tag["Tag push (v1.0.0)"] --> build
+
+    subgraph build ["Build (6 parallel runners)"]
+        direction LR
+        ubuntu["Ubuntu\namd64 / arm64"]
+        windows["Windows\namd64 / arm64"]
+        macos["macOS\narm64 / x64"]
+    end
+
+    build --> macos_sign["macOS Universal Binary\n+ Signing + Notarize"]
+    build --> msix["Windows MSIX Bundle"]
+
+    macos_sign --> publish["Publish — GitHub Release\n+ Update YML metadata"]
+    msix --> publish
+
+    style tag fill:#e94560,stroke:#16213e,color:#e0e0e0
+    style build fill:#1a1a2e,stroke:#16213e,color:#e0e0e0
+    style publish fill:#0f3460,stroke:#16213e,color:#e0e0e0
 ```
 
 ## `setup-nucleus` Action

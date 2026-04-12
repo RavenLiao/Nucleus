@@ -96,30 +96,35 @@ Implement this interface to receive toast lifecycle events. All callbacks are di
 
 The `ToastContent` data class maps the full [toast XML schema](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/app-notifications/toast-schema):
 
-```
-ToastContent
-├── visual: ToastVisual (required)
-│   └── binding: ToastBindingGeneric
-│       ├── children: List<ToastVisualChild>
-│       │   ├── AdaptiveText (up to 3 at top level)
-│       │   ├── AdaptiveImage (inline)
-│       │   ├── AdaptiveGroup (multi-column layout)
-│       │   └── AdaptiveProgressBar
-│       ├── appLogoOverride: ToastGenericAppLogo?
-│       ├── heroImage: ToastGenericHeroImage?
-│       └── attribution: ToastGenericAttributionText?
-├── actions: ToastActions?
-│   ├── inputs: List<ToastInput> (max 5)
-│   │   ├── ToastTextBox
-│   │   └── ToastSelectionBox
-│   ├── buttons: List<ToastButton> (max 5)
-│   └── contextMenuItems: List<ToastContextMenuItem>
-├── audio: ToastAudio?
-├── header: ToastHeader?
-├── launch: String
-├── activationType: ActivationType
-├── scenario: ToastScenario
-└── displayTimestamp: String?
+```mermaid
+graph TB
+    TC["ToastContent"] --> visual["visual: ToastVisual ⚠️ required"]
+    TC --> actions["actions: ToastActions?"]
+    TC --> audio["audio: ToastAudio?"]
+    TC --> header["header: ToastHeader?"]
+    TC --> props["launch / activationType\nscenario / displayTimestamp"]
+
+    visual --> binding["binding: ToastBindingGeneric"]
+    binding --> children["children: List&lt;ToastVisualChild&gt;"]
+    binding --> appLogo["appLogoOverride?"]
+    binding --> hero["heroImage?"]
+    binding --> attribution["attribution?"]
+
+    children --> text["AdaptiveText (max 3)"]
+    children --> image["AdaptiveImage"]
+    children --> group["AdaptiveGroup"]
+    children --> progress["AdaptiveProgressBar"]
+
+    actions --> inputs["inputs: List&lt;ToastInput&gt; (max 5)"]
+    actions --> buttons["buttons: List&lt;ToastButton&gt; (max 5)"]
+    actions --> ctx["contextMenuItems"]
+
+    inputs --> textbox["ToastTextBox"]
+    inputs --> selbox["ToastSelectionBox"]
+
+    style TC fill:#0f3460,stroke:#16213e,color:#e0e0e0
+    style visual fill:#533483,stroke:#16213e,color:#e0e0e0
+    style actions fill:#533483,stroke:#16213e,color:#e0e0e0
 ```
 
 ### Data Types

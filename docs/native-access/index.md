@@ -9,19 +9,23 @@ Every now and then, no runtime library covers your exact native API need. Nucleu
 
 ## How It Works
 
+```mermaid
+flowchart TB
+    A["Your Kotlin/Native code"] --> B["Gradle plugin"]
+    B --> C["Your JVM code calls it like normal Kotlin"]
+
+    B@{ shape: rect }
+
+    style B fill:#0f3460,stroke:#16213e,color:#e0e0e0
 ```
-Your Kotlin/Native code
-        │
-        ▼
-  [ Gradle plugin ]
-        │  analyzes sources via Kotlin PSI
-        │  generates @CName bridge functions (native side)
-        │  generates FFM MethodHandle proxies (JVM side)
-        │  compiles → .so / .dylib / .dll
-        │  bundles into JAR under kne/native/{os}-{arch}/
-        ▼
-Your JVM code calls it like normal Kotlin
-```
+
+The plugin:
+
+1. Analyzes sources via **Kotlin PSI**
+2. Generates `@CName` bridge functions (native side)
+3. Generates FFM `MethodHandle` proxies (JVM side)
+4. Compiles to `.so` / `.dylib` / `.dll`
+5. Bundles into JAR under `kne/native/{os}-{arch}/`
 
 The generated JVM proxies have **the exact same API** as your native classes — same names, same types, same method signatures. No wrapper types, no casting, no boilerplate.
 
