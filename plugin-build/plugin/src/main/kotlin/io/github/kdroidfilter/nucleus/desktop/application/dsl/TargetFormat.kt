@@ -51,6 +51,25 @@ enum class TargetFormat(
     val isStoreFormat: Boolean
         get() = this in setOf(Pkg, AppX, Flatpak)
 
+    /**
+     * Whether this format supports auto-update but electron-builder does not generate latest-*.yml for it.
+     * electron-builder natively generates yml for: NSIS, NSIS-Web, DMG, AppImage, DEB, RPM.
+     * This property is true only for formats that need the plugin to generate it: MSI and Portable.
+     */
+    val needsPluginUpdateYml: Boolean
+        get() = this == Msi || this == Portable
+
+    /** Returns the auto-update YML filename for this format and channel. */
+    fun updateYmlFilename(channel: ReleaseChannel): String {
+        val prefix = channel.id
+        val suffix = when (targetOS) {
+            OS.Windows -> ""
+            OS.MacOS -> "-mac"
+            OS.Linux -> "-linux"
+        }
+        return "$prefix$suffix.yml"
+    }
+
     internal fun isCompatibleWith(os: OS): Boolean = os == targetOS
 
     val outputDirName: String

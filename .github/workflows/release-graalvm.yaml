@@ -237,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          find artifacts -type f \( -name '*.deb' -o -name '*.dmg' -o -name '*.exe' \) -exec cp {} release-assets/ \;
+          find artifacts -type f \( -name '*.deb' -o -name '*.dmg' -o -name '*.exe' -o -name 'latest*.yml' -o -name 'beta*.yml' -o -name 'alpha*.yml' \) -exec cp {} release-assets/ \;
           echo "==> Release assets:"
           ls -lh release-assets/
 

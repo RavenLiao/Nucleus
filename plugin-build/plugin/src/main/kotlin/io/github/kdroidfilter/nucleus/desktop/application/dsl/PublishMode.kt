@@ -9,7 +9,7 @@ package io.github.kdroidfilter.nucleus.desktop.application.dsl
 enum class PublishMode(
     internal val id: String,
 ) {
-    /** Disable auto-update publishing (no latest-*.yml generated). */
+    /** Disable auto-update publishing. latest-*.yml metadata is still generated locally for all updatable formats. */
     Never("never"),
 
     /** Publish to GitHub/S3 if configured (detects git tag). */
