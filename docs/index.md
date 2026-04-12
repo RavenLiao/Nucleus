@@ -51,6 +51,7 @@ Compose Multiplatform is not "React Native for desktop". It is a **compiled, typ
 - Hardware-accelerated rendering via Skia — animations at 120fps without thinking about it
 - Shared code across Android, iOS, desktop, and web — write once, render natively everywhere
 - **No frontend/backend split** — No REST API, no serialization layer, no JSON over HTTP between your UI and your logic. Your UI calls your business logic directly, in the same language, in the same process. Separate your concerns with **modules**, not with network boundaries.
+- **True parallelism** — Not just async callbacks like JavaScript. The JVM gives you real threads, real cores, real parallelism. Coroutines for structured concurrency, virtual threads for massive I/O, and the full power of every CPU core on the machine — your app uses the hardware, not a single-threaded event loop.
 
 And on top of Compose sits **[Jewel](https://github.com/JetBrains/jewel)** — the most advanced desktop UI framework in the world. Not a web framework adapted for desktop. A desktop framework, period. Jewel carries behind it the entire experience of JetBrains and its IDEs — IntelliJ IDEA, Android Studio, Fleet — applications used daily by millions of developers and built with desktop in mind from day one. It is the same design system, the same component library, the same pixel-perfect attention to detail that powers the tools professionals trust most.
 
