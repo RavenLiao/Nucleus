@@ -42,8 +42,14 @@ data class SystemInfoState(
     val gpuTempHistory: Map<Int, List<Float>> = emptyMap(),
 )
 
-private const val REFRESH_INTERVAL_MS = 2000L
-private const val HISTORY_MAX_SIZE = 60
+private const val REFRESH_INTERVAL_MS = 1000L
+private const val HISTORY_MAX_SIZE = 240
+
+// Number of fast sub-samples per refresh to smooth GPU usage.
+// Apple Silicon GPU works in bursts — a single IOKit snapshot often reads 0%
+// even under load. We take multiple quick readings and average them.
+private const val GPU_SUB_SAMPLES = 4
+private const val GPU_SUB_SAMPLE_DELAY_MS = 50L
 
 object SystemInfoViewModel {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -72,7 +78,24 @@ object SystemInfoViewModel {
         val mb = SystemInfo.motherboard()
         val product = SystemInfo.product()
         val procs = SystemInfo.processes()
-        val gpus = SystemInfo.gpus()
+
+        // Sample GPU multiple times quickly and average the usage readings.
+        // Each call to gpus() is a fast IOKit snapshot (~1ms), but Apple Silicon
+        // GPU utilization alternates between 0% and the real value in bursts.
+        val gpuSamples = (0 until GPU_SUB_SAMPLES).map {
+            if (it > 0) Thread.sleep(GPU_SUB_SAMPLE_DELAY_MS)
+            SystemInfo.gpus()
+        }
+
+        // Average usage across sub-samples for each GPU
+        val gpus = if (gpuSamples.isNotEmpty()) {
+            gpuSamples.first().mapIndexed { i, gpu ->
+                val avgUsage = gpuSamples.mapNotNull { it.getOrNull(i)?.gpuUsage }.average().toFloat()
+                gpu.copy(gpuUsage = if (avgUsage.isNaN()) gpu.gpuUsage else avgUsage)
+            }
+        } else {
+            SystemInfo.gpus()
+        }
 
         val current = _state.value
         val cpuHist = (current.cpuHistory + (cpu?.globalCpuUsage ?: 0f)).takeLast(HISTORY_MAX_SIZE)

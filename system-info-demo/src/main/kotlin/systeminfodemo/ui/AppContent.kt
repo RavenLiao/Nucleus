@@ -175,11 +175,9 @@ fun AppContent() {
                         overflow = TextOverflow.Ellipsis,
                         color = JewelTheme.globalColors.text.info,
                     )
-                    Text(
-                        "${gpus.size} adapter${if (gpus.size > 1) "s" else ""}",
-                        fontSize = 11.sp,
-                        color = JewelTheme.globalColors.text.info,
-                    )
+                    val usage = gpus.first().gpuUsage ?: 0f
+                    MiniProgressBar(usage / 100f, Color(0xFF9C6ADE))
+                    Text("%.0f%%".format(usage), fontSize = 11.sp, color = JewelTheme.globalColors.text.info)
                 } else {
                     Text("No GPU", fontSize = 11.sp, color = JewelTheme.globalColors.text.info)
                 }

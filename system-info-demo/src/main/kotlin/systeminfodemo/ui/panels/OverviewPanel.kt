@@ -73,7 +73,13 @@ fun OverviewPanel(state: SystemInfoState) {
                         InfoRow("Usage", "%.1f%%".format(usage))
                         ProgressBar(progress = usage / 100f, color = gpuColor(usage))
                     }
-                    gpu.temperature?.let { InfoRow("Temperature", "%.0f\u00B0C".format(it)) }
+                    gpu.temperature?.let { temp ->
+                        InfoRow("Temperature", "%.0f\u00B0C".format(temp))
+                        ProgressBar(
+                            progress = (temp / 100f).coerceIn(0f, 1f),
+                            color = gpuTempColor(temp),
+                        )
+                    }
                     gpu.memoryUsed?.let { used ->
                         if (gpu.dedicatedVideoMemory > 0) {
                             InfoRow("VRAM", "${formatBytes(used)} / ${formatBytes(gpu.dedicatedVideoMemory)}")
@@ -175,5 +181,12 @@ internal fun gpuColor(usage: Float): Color =
     when {
         usage < 30f -> Color(0xFF9C6ADE)
         usage < 70f -> Color(0xFFD4A843)
+        else -> Color(0xFFF75464)
+    }
+
+private fun gpuTempColor(temp: Float): Color =
+    when {
+        temp < 60f -> Color(0xFF5AB869)
+        temp < 80f -> Color(0xFFD4A843)
         else -> Color(0xFFF75464)
     }
