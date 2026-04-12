@@ -105,6 +105,13 @@ class SystemInfoSmokeTest {
             assertTrue(gpu.name.isNotEmpty(), "GPU name should not be empty")
             assertTrue(gpu.dedicatedVideoMemory > 0 || gpu.sharedSystemMemory > 0, "GPU should have some memory")
             println("GPU: ${gpu.name} VRAM=${gpu.dedicatedVideoMemory / 1024 / 1024}MB vendor=0x${gpu.vendorId.toString(16)} driver=${gpu.driverVersion}")
+            println("  temp=${gpu.temperature?.let { "%.0f°C".format(it) } ?: "N/A"} " +
+                "usage=${gpu.gpuUsage?.let { "%.1f%%".format(it) } ?: "N/A"} " +
+                "vramUsed=${gpu.memoryUsed?.let { "${it / 1024 / 1024}MB" } ?: "N/A"}")
+            println("  coreClock=${gpu.coreClockMhz?.let { "${it}MHz" } ?: "N/A"} " +
+                "memClock=${gpu.memoryClockMhz?.let { "${it}MHz" } ?: "N/A"} " +
+                "fan=${gpu.fanSpeedPercent?.let { "%.0f%%".format(it) } ?: "N/A"} " +
+                "power=${gpu.powerDrawWatts?.let { "%.1fW".format(it) } ?: "N/A"}")
         }
     }
 }

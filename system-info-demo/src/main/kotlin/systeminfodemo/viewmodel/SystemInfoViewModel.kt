@@ -38,6 +38,8 @@ data class SystemInfoState(
     val gpus: List<GpuInfo> = emptyList(),
     val cpuHistory: List<Float> = emptyList(),
     val memoryHistory: List<Float> = emptyList(),
+    val gpuUsageHistory: Map<Int, List<Float>> = emptyMap(),
+    val gpuTempHistory: Map<Int, List<Float>> = emptyMap(),
 )
 
 private const val REFRESH_INTERVAL_MS = 2000L
@@ -82,6 +84,17 @@ object SystemInfoViewModel {
             }
         val memHist = (current.memoryHistory + memPercent).takeLast(HISTORY_MAX_SIZE)
 
+        val gpuUsageHist = current.gpuUsageHistory.toMutableMap()
+        val gpuTempHist = current.gpuTempHistory.toMutableMap()
+        gpus.forEachIndexed { i, gpu ->
+            gpu.gpuUsage?.let { usage ->
+                gpuUsageHist[i] = ((gpuUsageHist[i] ?: emptyList()) + usage).takeLast(HISTORY_MAX_SIZE)
+            }
+            gpu.temperature?.let { temp ->
+                gpuTempHist[i] = ((gpuTempHist[i] ?: emptyList()) + temp).takeLast(HISTORY_MAX_SIZE)
+            }
+        }
+
         _state.value =
             SystemInfoState(
                 osInfo = os,
@@ -97,6 +110,8 @@ object SystemInfoViewModel {
                 gpus = gpus,
                 cpuHistory = cpuHist,
                 memoryHistory = memHist,
+                gpuUsageHistory = gpuUsageHist,
+                gpuTempHistory = gpuTempHist,
             )
     }
 }

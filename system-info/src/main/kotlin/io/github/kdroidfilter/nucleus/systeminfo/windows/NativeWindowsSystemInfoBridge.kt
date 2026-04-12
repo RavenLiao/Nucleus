@@ -203,7 +203,7 @@ internal object NativeWindowsSystemInfoBridge {
 
     @JvmStatic external fun nativeProcessByPidRoot(pid: Long): String?
 
-    // GPU (DXGI)
+    // GPU (DXGI + NVML)
     @JvmStatic external fun nativeGpuCount(): Int
 
     @JvmStatic external fun nativeGpuNames(): Array<String>?
@@ -219,4 +219,19 @@ internal object NativeWindowsSystemInfoBridge {
     @JvmStatic external fun nativeGpuSharedSystemMemories(): LongArray?
 
     @JvmStatic external fun nativeGpuDriverVersions(): Array<String>?
+
+    // GPU live metrics
+    @JvmStatic external fun nativeGpuTemperatures(): FloatArray?
+
+    @JvmStatic external fun nativeGpuUsages(): FloatArray?
+
+    @JvmStatic external fun nativeGpuMemoryUsed(): LongArray?
+
+    @JvmStatic external fun nativeGpuCoreClocks(): IntArray?
+
+    @JvmStatic external fun nativeGpuMemoryClocks(): IntArray?
+
+    @JvmStatic external fun nativeGpuFanSpeeds(): FloatArray?
+
+    @JvmStatic external fun nativeGpuPowerDraws(): FloatArray?
 }

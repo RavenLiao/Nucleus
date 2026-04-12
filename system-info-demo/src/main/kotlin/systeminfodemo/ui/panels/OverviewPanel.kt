@@ -69,10 +69,25 @@ fun OverviewPanel(state: SystemInfoState) {
             SectionCard("GPU", modifier = Modifier.weight(1f)) {
                 state.gpus.forEach { gpu ->
                     InfoRow("Name", gpu.name)
-                    if (gpu.dedicatedVideoMemory > 0) {
-                        InfoRow("VRAM", formatBytes(gpu.dedicatedVideoMemory))
+                    gpu.gpuUsage?.let { usage ->
+                        InfoRow("Usage", "%.1f%%".format(usage))
+                        ProgressBar(progress = usage / 100f, color = gpuColor(usage))
                     }
+                    gpu.temperature?.let { InfoRow("Temperature", "%.0f\u00B0C".format(it)) }
+                    gpu.memoryUsed?.let { used ->
+                        if (gpu.dedicatedVideoMemory > 0) {
+                            InfoRow("VRAM", "${formatBytes(used)} / ${formatBytes(gpu.dedicatedVideoMemory)}")
+                        }
+                    } ?: run {
+                        if (gpu.dedicatedVideoMemory > 0) InfoRow("VRAM", formatBytes(gpu.dedicatedVideoMemory))
+                    }
+                    gpu.coreClockMhz?.let { InfoRow("Core Clock", "$it MHz") }
+                    gpu.powerDrawWatts?.let { InfoRow("Power", "%.1f W".format(it)) }
                     gpu.driverVersion?.let { InfoRow("Driver", it) }
+                }
+                val gpuHistory = state.gpuUsageHistory[0]
+                if (gpuHistory != null && gpuHistory.size >= 2) {
+                    LineChart(data = gpuHistory, lineColor = Color(0xFF9C6ADE))
                 }
             }
         }
@@ -153,5 +168,12 @@ internal fun diskColor(fraction: Float): Color =
     when {
         fraction < 0.7f -> Color(0xFF5AB869)
         fraction < 0.9f -> Color(0xFFD4A843)
+        else -> Color(0xFFF75464)
+    }
+
+internal fun gpuColor(usage: Float): Color =
+    when {
+        usage < 30f -> Color(0xFF9C6ADE)
+        usage < 70f -> Color(0xFFD4A843)
         else -> Color(0xFFF75464)
     }
