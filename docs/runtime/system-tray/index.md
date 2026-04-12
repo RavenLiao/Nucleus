@@ -20,7 +20,6 @@ Where the standard Java `SystemTray` gives you a pixelated icon and a crude AWT 
 | Checkable items | Not available | Native checkable items |
 | Primary action (left-click) | Not available | Per-platform behavior |
 | Tray position detection | Not available | Built-in, for window positioning |
-| Single instance | Not available | Built-in with restore callback |
 | Popup window | Not available | `TrayApp` — Compose window anchored to tray |
 
 ## Quick example
@@ -62,4 +61,4 @@ dependencies {
 - [Tray API](tray-api.md) — `Tray()` composable, icon types, primary actions, platform-specific icons
 - [Menu DSL](menu-dsl.md) — Items, checkable items, submenus, dividers, icons in menus
 - [TrayApp](tray-app.md) — Popup window anchored to the tray icon
-- [Utilities](utilities.md) — Single instance management, tray position detection, dark mode detection
+- [Utilities](utilities.md) — Tray position detection, dark mode detection

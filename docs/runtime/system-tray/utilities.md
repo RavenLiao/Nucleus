@@ -2,57 +2,6 @@
 
 ComposeNativeTray includes several utilities that are essential for tray-based applications.
 
-## Single Instance Manager
-
-Most tray apps should only run one instance. `SingleInstanceManager` enforces this and lets the second launch restore the existing window:
-
-```kotlin
-fun main() {
-    val isSingleInstance = SingleInstanceManager.isSingleInstance(
-        onRestoreRequest = {
-            // Called when another instance tries to start
-            isWindowVisible = true
-        }
-    )
-
-    if (!isSingleInstance) {
-        // Another instance is already running — it received the restore request
-        return
-    }
-
-    application {
-        // Your app...
-    }
-}
-```
-
-### Custom configuration
-
-```kotlin
-SingleInstanceManager.configuration = SingleInstanceManager.Configuration(
-    lockDirectory = Path("/custom/lock/dir"),
-    appIdentifier = "com.example.myapp",
-)
-```
-
-### Data passing between instances
-
-The new instance can write data to a temporary file that the existing instance reads:
-
-```kotlin
-val isSingleInstance = SingleInstanceManager.isSingleInstance(
-    onRestoreFileCreated = { path ->
-        // New instance writes data here
-        path.writeText("open-file:/path/to/file.txt")
-    },
-    onRestoreRequest = { path ->
-        // Existing instance reads it
-        val data = path.readText()
-        handleDeepLink(data)
-    }
-)
-```
-
 ## Tray Position Detection
 
 Position a window next to the tray icon — essential for `TrayApp`-style popup windows:
