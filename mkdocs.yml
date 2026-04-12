@@ -86,10 +86,10 @@ nav:
           - Global Hotkey: runtime/global-hotkey.md
           - Notification (macOS): runtime/notification-macos.md
           - Notification (Windows): runtime/notification-windows.md
-          - Launcher (Windows): runtime/launcher-windows.md
           - Notification (Linux): runtime/notification-linux.md
-          - Launcher (Linux): runtime/launcher-linux.md
           - Launcher (macOS): runtime/launcher-macos.md
+          - Launcher (Windows): runtime/launcher-windows.md
+          - Launcher (Linux): runtime/launcher-linux.md
           - Menu (macOS): runtime/menu-macos.md
           - Freedesktop Icons: runtime/freedesktop-icons.md
           - System Info: runtime/system-info.md
