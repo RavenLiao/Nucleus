@@ -11,36 +11,76 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-7F52FF?logo=kotlin&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
 
-Nucleus is a toolkit for building production-ready **JVM desktop applications** on macOS, Windows, and Linux. It combines a **Gradle plugin**, **runtime libraries**, and **GitHub Actions** to tackle the three biggest pain points of desktop JVM development: **performance**, **distribution**, and **native look & feel**.
+**Nucleus is the native desktop platform for the JVM** — a complete toolkit that turns Compose Desktop into a production-grade alternative to Electron, with none of the compromises.
 
-Compatible with any JVM application, optimized for **Compose Desktop**.
+Electron brought cross-platform desktop apps to the masses, but at a cost: bloated bundles, sluggish performance, and a web runtime pretending to be native. Nucleus takes the opposite approach. It builds on the **JVM** — the most battle-tested runtime in history — and on **Compose Multiplatform** — the most advanced declarative UI framework available today — to deliver desktop applications that are truly native, truly fast, and truly lightweight.
 
-## Why Nucleus?
+Where Electron ships a browser, Nucleus ships a compiled application. Where Electron emulates, Nucleus integrates. Where Electron is an atom, **Nucleus is its full power unleashed**.
 
-### Performance
+## The Promise
 
-- **JDK 25+ AOT cache (Project Leyden)** — Dramatically faster cold startup with ahead-of-time class loading cache, enabled as a simple Gradle flag, no GraalVM required
+### Native without compromise
+
+Every pixel is rendered by Skia, the same engine behind Chrome and Android. But unlike Electron, there is no DOM, no JavaScript bridge, no web runtime overhead. Window decorations, notifications, taskbar integration, system tray, global hotkeys, dark mode detection, accent colors — everything talks directly to the OS through **JNI**, not through an abstraction layer pretending to be native.
+
+On macOS, Nucleus speaks Cocoa. On Windows, it speaks Win32 and WinRT. On Linux, it speaks D-Bus and X11. Natively. In each case.
+
+### Performance at every level
+
+- **~0.5s cold start** with GraalVM native image, **~1.5s** with AOT cache (Project Leyden) — faster than most Electron apps even after they've been "optimized"
+- **100–150 MB RAM** as a native image vs. **300+ MB** for a typical Electron app doing the same job
+- **No garbage collection pauses visible to the user** — the JVM's G1/ZGC collectors are decades ahead of anything in the browser runtime world
+- **Full JIT compilation** when running on the JVM — hot paths get optimized at runtime, something a static binary can never do
+
+### From high-level abstraction to bare metal
+
+Nucleus meets you where you are:
+
+- **Just ship an app?** — One Gradle DSL, 16 packaging formats, auto-update, code signing, notarization. Done.
+- **Need native OS integration?** — Runtime libraries for notifications, launchers, taskbar progress, system colors, energy management, dark mode — all cross-platform, all via JNI.
+- **Need to call a platform API directly?** — [Native Access](native-access/index.md) lets you write Kotlin/Native code and call it from the JVM with zero glue. No C, no JNI boilerplate, no build scripts.
+- **Need maximum performance?** — [GraalVM native image](graalvm/index.md) compiles your entire app ahead of time into a standalone binary. Instant startup, minimal RAM, no JRE bundled.
+
+### The most advanced UI framework
+
+Compose Multiplatform is not "React Native for desktop". It is a **compiled, type-safe, GPU-accelerated UI toolkit** with:
+
+- A reactive state model that makes React look verbose
+- Hardware-accelerated rendering via Skia — animations at 120fps without thinking about it
+- A component model that scales from a button to a full IDE (JetBrains builds their entire product line with it)
+- Shared code across Android, iOS, desktop, and web — write once, render natively everywhere
+
+Nucleus extends this foundation with decorated windows, platform-accurate window controls, Material 2/3 and Jewel (IntelliJ theme) integration, and deep OS hooks that make your Compose app feel indistinguishable from a native one.
+
+## What Nucleus provides
 
 ### Distribution
 
-- **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, and archives
-- **Plug-and-play store distribution** — Store-ready outputs for Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), and Flathub (Flatpak)
-- **Code signing & notarization** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID) with full notarization support
-- **Auto-update built-in** — Integrated update metadata generation and runtime update library; publish directly to GitHub Releases or S3
-- **One DSL** — Configure everything from a single `nucleus.application { }` block
+- **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, ZIP, TAR, 7Z
+- **Store-ready outputs** — Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), Flathub (Flatpak)
+- **Code signing & notarization** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID)
+- **Auto-update** — Built-in update metadata generation and runtime update library with SHA-512 verification; publish to GitHub Releases or S3
 
-### Native Look & Feel
+### Native integration
 
-- **Decorated windows** — Custom title bar content (icons, text, gradients) while preserving native window controls and behavior on all platforms
-- **Reactive dark mode detection** — OS-level dark mode listener via JNI (no JNA), triggers recomposition instantly when the user changes their theme
-- **Platform-accurate Linux rendering** — GNOME Adwaita and KDE Breeze window controls, proper window shape clipping, and focus-aware button states — all drawn with Compose
+- **Decorated windows** — Custom title bar content while preserving native window controls on all platforms
+- **Notifications** — Full native notification APIs on macOS (UserNotifications), Windows (Toast/WinRT), and Linux (freedesktop)
+- **Launchers** — Badge counts, progress bars, jump lists, overlay icons, dock menus, quicklists — per-platform, via JNI
+- **System APIs** — Dark mode detection, accent colors, high contrast, energy management, system info (CPU/GPU/memory metrics), global hotkeys, taskbar progress
+- **Native Access** — Write Kotlin/Native, call it from the JVM. The plugin generates the FFM bridge automatically.
+
+### Performance
+
+- **AOT Cache (Project Leyden)** — Near-instant cold startup with one Gradle flag, no GraalVM required
+- **GraalVM Native Image** — Standalone binary with transparent metadata resolution (5-level automatic analysis, zero manual config for most apps)
+- **Linux HiDPI** — Native scale detection via JNI for crisp rendering on high-DPI displays
 
 ### CI/CD
 
-- **Reusable GitHub Actions** — `setup-nucleus` composite action + workflows for multi-platform matrix builds, universal macOS binaries, and MSIX bundles
+- **Reusable GitHub Actions** — `setup-nucleus` composite action + workflows for multi-platform matrix builds, universal macOS binaries, MSIX bundles
 - **Deep links & file associations** — Cross-platform protocol handlers and file type registration
 
-## Quick Example
+## Quick start
 
 ```kotlin
 plugins {
@@ -59,44 +99,38 @@ nucleus.application {
 ```
 
 ```bash
-# Build for current OS
-./gradlew packageDistributionForCurrentOS
-
-# Run locally
-./gradlew run
+./gradlew run                           # Run locally
+./gradlew packageDistributionForCurrentOS  # Build installer for current OS
 ```
 
-## Try the Demo
+## Try the demo
 
-A pre-built demo application is available on the [GitHub Releases page](https://github.com/kdroidFilter/Nucleus/releases). Download the installer for your platform and see Nucleus features in action.
+A pre-built demo application is available on the [GitHub Releases page](https://github.com/kdroidFilter/Nucleus/releases). Download the installer for your platform and see Nucleus in action.
 
-**On macOS**, install and launch the demo with a single command:
+=== "macOS"
+    ```bash
+    curl -fsSL https://nucleus.kdroidfilter.com/install.sh | bash
+    ```
+    Detects your architecture (Apple Silicon or Intel), downloads, installs to `/Applications`, and launches.
 
-```bash
-curl -fsSL https://nucleus.kdroidfilter.com/install.sh | bash
-```
+=== "Linux"
+    ```bash
+    curl -fsSL https://nucleus.kdroidfilter.com/install-linux.sh | bash
+    ```
+    Detects your architecture and package manager, downloads and installs the appropriate `.deb` or `.rpm`.
 
-This automatically detects your architecture (Apple Silicon or Intel), downloads the latest release, installs it to `/Applications`, and launches the app.
+=== "Windows"
+    Download the installer from the [releases page](https://github.com/kdroidFilter/Nucleus/releases).
 
-**On Linux** (Debian/Ubuntu, Fedora, openSUSE, etc.):
+What you'll see:
 
-```bash
-curl -fsSL https://nucleus.kdroidfilter.com/install-linux.sh | bash
-```
-
-This detects your architecture and package manager, then downloads and installs the appropriate `.deb` or `.rpm` package.
-
-**On Windows**, download the appropriate installer from the [releases page](https://github.com/kdroidFilter/Nucleus/releases).
-
-Here's what you'll see:
-
-- **AOT Cache** — Near-instant cold startup powered by JDK 25+ ahead-of-time class loading
-- **Material Decorated Window** — Custom title bar with native window controls, automatically themed with Material 3
+- **AOT Cache** — Near-instant cold startup powered by JDK 25+
+- **Decorated Window** — Custom title bar with native window controls, Material 3 themed
 - **Dark Mode Detection** — Toggle your OS theme and watch the app switch in real time
-- **Auto-Update** — The app checks for updates on launch, downloads them with progress tracking, and can install & restart in one click
+- **Auto-Update** — Checks for updates on launch, downloads with progress tracking, installs & restarts in one click
 
-!!! tip "Test auto-update yourself"
-    Download an **older release** from the [releases page](https://github.com/kdroidFilter/Nucleus/releases), install it, and launch the app. It will detect the newer version, download the update, and offer to install it — all automatically.
+!!! tip "Test auto-update"
+    Download an **older release**, install it, and launch. It will detect the newer version and offer to update — automatically.
 
 The demo source code is in the [`example/`](https://github.com/kdroidFilter/Nucleus/tree/main/example) directory.
 
