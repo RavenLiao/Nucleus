@@ -11,7 +11,7 @@ And the menu isn't a static list of strings you rebuild on every change. It's a 
 
 But ComposeNativeTray goes further. **TrayApp** turns a tray icon into a full menu bar application — a Compose window that pops up right next to the tray icon, like the best macOS menu bar apps. Click the icon, a window appears with smooth animations. Click outside, it disappears. The entire window is a Compose canvas: dashboards, controls, media players, quick actions — anything you can build with Compose, anchored to the tray.
 
-Native menus rendered by the OS. Dark mode detection and automatic icon adaptation. Tray position detection for precise window placement. Left-click actions, right-click menus, checkable items, nested submenus with icons. Everything a system tray framework should be — and nothing you have to wire up yourself.
+Native menus rendered by the OS. Dark mode detection and automatic icon adaptation. Tray position detection for precise window placement. Left-click actions, right-click menus, checkable items, nested submenus with icons. Full [GraalVM native image](../../graalvm/index.md) compatibility for instant-launch tray apps with minimal memory footprint. Everything a system tray framework should be — and nothing you have to wire up yourself.
 
 ## In action
 
