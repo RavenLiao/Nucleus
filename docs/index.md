@@ -23,7 +23,9 @@ Electron gave developers reach but asked them to accept a browser as a runtime, 
 
 ### Native on every OS
 
-Your app doesn't emulate native — it *is* native. Window decorations, notifications, taskbar badges, dock menus, dark mode, accent colors, global hotkeys — everything behaves exactly as users expect on their OS. Not a web view wearing a disguise. A real desktop citizen, on every platform, on every screen.
+Your app doesn't emulate native — it *is* native. Window decorations, notifications, taskbar badges, dock menus, dark mode, accent colors, global hotkeys, [system tray](runtime/system-tray/index.md) — everything behaves exactly as users expect on their OS. Not a web view wearing a disguise. A real desktop citizen, on every platform, on every screen.
+
+And Nucleus doesn't just expose native APIs — it **makes them simpler than the originals**. Windows Toast Notifications, macOS UserNotifications, Linux D-Bus StatusNotifierItem, Win32 ITaskbarList3, Unity LauncherEntry — each of these is a complex, platform-specific API with its own conventions, threading model, and pitfalls. Nucleus wraps every single one behind a clean, intuitive Kotlin API that feels the same everywhere. The result is paradoxical: a **cross-platform framework that makes native APIs easier to use than native development itself**. Writing a notification, managing a system tray, or showing taskbar progress takes a few lines of Kotlin — not pages of platform documentation. No compromise on capability. No lowest-common-denominator abstraction. Every platform feature, exposed in full, but through an API that any Kotlin developer can pick up in minutes.
 
 ### Performance that rivals C++ — with the simplicity of Kotlin
 

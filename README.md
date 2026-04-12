@@ -19,7 +19,7 @@ Java evolved into Kotlin. JavaScript evolved into TypeScript. Desktop developmen
 
 ## Why Nucleus
 
-**Native on every OS** — Your app doesn't emulate native — it *is* native. Window decorations, notifications, taskbar badges, dock menus, dark mode, accent colors, global hotkeys — everything behaves exactly as users expect on their OS.
+**Native on every OS** — Your app doesn't emulate native — it *is* native. Window decorations, notifications, taskbar badges, dock menus, system tray, dark mode, accent colors, global hotkeys — everything behaves exactly as users expect on their OS. And Nucleus makes it **simpler than the native APIs themselves** — Windows Toast, macOS UserNotifications, Linux D-Bus SNI, Win32 ITaskbarList3, Unity LauncherEntry — all behind clean, intuitive Kotlin APIs. Cross-platform that's **easier to use than native development itself** — without compromise.
 
 **Performance that rivals C++** — The HotSpot JVM is the most advanced JIT compiler ever built, delivering performance approaching C++ and Rust levels — with the simplicity of Kotlin. True parallelism with coroutines and virtual threads, not a single-threaded event loop.
 
