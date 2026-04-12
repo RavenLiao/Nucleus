@@ -59,7 +59,12 @@ nav:
       - Publishing: publishing.md
       - Trusted CA Certificates: trusted-certificates.md
       - AOT Cache: runtime/aot-cache.md
-      - GraalVM Native Image: graalvm-native-image.md
+      - GraalVM Native Image:
+          - Overview: graalvm/index.md
+          - Configuration: graalvm/configuration.md
+          - Automatic Metadata: graalvm/automatic-metadata.md
+          - Runtime Bootstrap: graalvm/runtime-bootstrap.md
+          - Tasks & CI/CD: graalvm/tasks-ci.md
       - Native Access: native-access.md
       - CI/CD: ci-cd.md
       - Runtime APIs:
@@ -100,7 +105,11 @@ plugins:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
