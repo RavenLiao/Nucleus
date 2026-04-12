@@ -38,6 +38,7 @@ Compatible with any JVM application. Optimized for **Compose Desktop**.
 - **Platform detection** — Runtime APIs for OS, desktop environment (GNOME/KDE/XFCE/...), executable type (18 formats), and AOT mode
 - **Single instance & deep links** — File-lock-based single instance enforcement with deep link forwarding between instances
 - **Deep links & file associations** — Cross-platform protocol handlers and file type registration in one DSL block
+- **System info** — CPU, memory, disks, GPU (NVIDIA/AMD/Intel), temperature sensors, network, processes, and hardware identifiers — all via JNI native bridges on each platform
 
 ### CI/CD Ready
 
@@ -88,6 +89,8 @@ Use them independently or together — each module is published to Maven Central
 | **AOT Runtime** | `nucleus.aot-runtime` | AOT cache mode detection (training / runtime / off) |
 | **Updater** | `nucleus.updater-runtime` | Auto-update engine with GitHub/S3 providers, progress tracking, SHA-512 verification |
 | **Dark Mode Detector** | `nucleus.darkmode-detector` | Reactive OS dark mode via JNI — macOS, Windows, Linux (D-Bus) |
+| **System Color** | `nucleus.system-color` | Reactive system accent color & high contrast detection via JNI |
+| **System Info** | `nucleus.system-info` | Cross-platform system information (CPU, memory, disks, GPU, temperature, network, processes) via JNI |
 | **Decorated Window** | `nucleus.decorated-window` | Custom title bar with native controls — design-system agnostic |
 | **Decorated Window Jewel** | `nucleus.decorated-window-jewel` | Jewel (IntelliJ theme) integration for decorated windows and dialogs |
 | **Decorated Window Material 2** | `nucleus.decorated-window-material2` | Material 2 integration for decorated windows and dialogs |
@@ -95,11 +98,16 @@ Use them independently or together — each module is published to Maven Central
 | **Freedesktop Icons** | `nucleus.freedesktop-icons` | Type-safe [freedesktop icon naming](https://specifications.freedesktop.org/icon-naming/latest/) constants |
 | **Notification Linux** | `nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI |
 | **Notification Windows** | `nucleus.notification-windows` | Windows Toast Notifications API via JNI (WinRT) |
+| **Notification macOS** | `nucleus.notification-macos` | macOS User Notifications API via JNI (Objective-C) |
 | **Launcher Windows** | `nucleus.launcher-windows` | Windows Launcher API — badge notifications & jump lists (ICustomDestinationList) via JNI |
 | **Launcher Linux** | `nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI |
+| **Launcher macOS** | `nucleus.launcher-macos` | macOS Dock API — badge count & attention requests via JNI |
+| **Menu macOS** | `nucleus.menu-macos` | macOS native menu bar integration via JNI |
 | **Taskbar Progress** | `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |
-| **System Color** | `nucleus.system-color` | Reactive system accent color & high contrast detection via JNI |
+| **Global Hotkey** | `nucleus.global-hotkey` | System-wide keyboard shortcut registration via JNI |
 | **Energy Manager** | `nucleus.energy-manager` | Energy efficiency & screen-awake APIs |
+| **Native SSL** | `nucleus.native-ssl` | OS trust store integration for SSL/TLS |
+| **Native HTTP** | `nucleus.native-http` | HTTP client using OS-native SSL trust store |
 | **Linux HiDPI** | `nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux (JNI) |
 | **GraalVM Runtime** | `nucleus.graalvm-runtime` | Native-image bootstrap + font substitutions (includes linux-hidpi) |
 
