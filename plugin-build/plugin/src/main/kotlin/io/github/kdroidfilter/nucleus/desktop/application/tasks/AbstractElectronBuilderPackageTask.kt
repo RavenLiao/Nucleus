@@ -8,7 +8,9 @@ package io.github.kdroidfilter.nucleus.desktop.application.tasks
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.CompressionLevel
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationDistributions
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.MacOSSigningSettings
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.ReleaseChannel
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
+import io.github.kdroidfilter.nucleus.desktop.application.internal.UpdateYmlGenerator
 import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSigner
 import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSignerImpl
 import io.github.kdroidfilter.nucleus.desktop.application.internal.NoCertificateSigner
@@ -296,7 +298,28 @@ abstract class AbstractElectronBuilderPackageTask
             cleanupBuildTemporaries(outputDir)
             configFile.delete()
             exportPackagingMetadata(outputDir, dist)
+            generateUpdateYmlIfNeeded(outputDir, dist)
             logger.lifecycle("nucleus builder package written to ${outputDir.canonicalPath}")
+        }
+
+        private fun generateUpdateYmlIfNeeded(
+            outputDir: File,
+            dist: JvmApplicationDistributions,
+        ) {
+            if (!targetFormat.isAutoUpdateSupported) return
+            val channel = resolveUpdateChannel(dist)
+            val ymlFilename = targetFormat.updateYmlFilename(channel)
+            val version = packageVersion.orNull ?: "0.0.0"
+            UpdateYmlGenerator.generateIfMissing(outputDir, ymlFilename, version, logger)
+        }
+
+        private fun resolveUpdateChannel(dist: JvmApplicationDistributions): ReleaseChannel {
+            val publish = dist.publish
+            return when {
+                publish.github.enabled -> publish.github.channel
+                publish.generic.enabled -> publish.generic.channel
+                else -> ReleaseChannel.Latest
+            }
         }
 
         private fun resolvePublishFlag(): String {

@@ -51,6 +51,21 @@ enum class TargetFormat(
     val isStoreFormat: Boolean
         get() = this in setOf(Pkg, AppX, Flatpak)
 
+    /** Whether this format supports auto-update metadata (latest-*.yml). */
+    val isAutoUpdateSupported: Boolean
+        get() = this !in setOf(RawAppImage, AppX, Pkg, Flatpak, Snap, Zip, Tar, SevenZ)
+
+    /** Returns the auto-update YML filename for this format and channel. */
+    fun updateYmlFilename(channel: ReleaseChannel): String {
+        val prefix = channel.id
+        val suffix = when (targetOS) {
+            OS.Windows -> ""
+            OS.MacOS -> "-mac"
+            OS.Linux -> "-linux"
+        }
+        return "$prefix$suffix.yml"
+    }
+
     internal fun isCompatibleWith(os: OS): Boolean = os == targetOS
 
     val outputDirName: String
