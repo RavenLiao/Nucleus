@@ -6,8 +6,15 @@ Nucleus provides machine-readable documentation files designed for Large Languag
 
 | File | Description | Use Case |
 |------|-------------|----------|
-| [`llms.txt`](../llms.txt) | Concise overview (~145 lines) | Quick context for simple questions |
-| [`llms-full.txt`](../llms-full.txt) | Complete documentation (~1900 lines) | Full reference for code generation and in-depth tasks |
+| [`llms.txt`](../llms.txt) | Concise overview with links to all sections | Quick context for simple questions |
+| [`llms-full.txt`](../llms-full.txt) | Complete documentation (all pages concatenated) | Full reference for code generation and in-depth tasks |
+
+## How They Stay Up to Date
+
+Both files are **auto-generated** from the MkDocs documentation pages by the [`scripts/generate-llms-docs.py`](https://github.com/kdroidFilter/Nucleus/blob/main/scripts/generate-llms-docs.py) script. A GitHub Actions workflow runs this script on every push to `main` that touches `docs/`, so `llms.txt` and `llms-full.txt` are always in sync with the documentation.
+
+!!! tip "Contributing"
+    Never edit `llms.txt` or `llms-full.txt` manually — edit the source `.md` files in `docs/` and the script regenerates them automatically.
 
 ## Usage
 
@@ -43,11 +50,12 @@ curl -s https://nucleus.kdroidfilter.com/llms-full.txt   # complete
 
 - Project overview and key features
 - Quick start snippet
-- Runtime libraries summary (all 18 libraries)
-- Links to all documentation pages
+- Getting started guide with prerequisites and installation
+- Runtime libraries summary (all libraries)
 - Migration guide from `org.jetbrains.compose`
+- Links to all documentation pages
 
-**`llms-full.txt`** covers everything above plus:
+**`llms-full.txt`** covers everything in the documentation:
 
 - Full Gradle DSL reference (all properties and enums)
 - Platform-specific configuration (macOS, Windows, Linux)
@@ -58,13 +66,15 @@ curl -s https://nucleus.kdroidfilter.com/llms-full.txt   # complete
 - Publishing to GitHub Releases and S3
 - CI/CD workflows and all composite actions
 - GraalVM Native Image configuration and DSL reference
+- Native Access (Kotlin/Native bridge)
 - All runtime APIs with code examples:
-    - Executable type, AOT cache, single instance, deep links
-    - App metadata (`NucleusApp` — `appId`, `version`, `vendor`, `description`)
-    - Taskbar progress (Windows ITaskbarList3, macOS NSDockTile, Linux D-Bus)
-    - Auto-update with `UpdateLevel` (major/minor/patch) and post-update detection (`consumeUpdateEvent`, `wasJustUpdated`)
-    - Decorated window (JBR and JNI backends, fullscreen controls, large corner radius, `controlButtonsDirection`, `clientRegion`, `backgroundContent`)
-    - Design system wrappers (Material 3, Material 2, Jewel)
-    - Dark mode detector, system color, energy manager
+    - App metadata, executable type, single instance, deep links
+    - Decorated window (JBR and JNI backends, fullscreen controls, design system wrappers)
+    - System tray (ComposeNativeTray framework, Tray API, Menu DSL, TrayApp)
+    - Notifications (macOS, Windows, Linux)
+    - Launchers (macOS dock, Windows taskbar, Linux Unity)
+    - Taskbar progress, global hotkey, macOS menu
+    - Dark mode detector, system color, system info, energy manager
     - Native SSL, native HTTP (java.net.http, OkHttp, Ktor)
-    - Linux HiDPI, GraalVM runtime bootstrap
+    - Linux HiDPI, freedesktop icons
+    - GraalVM runtime bootstrap
