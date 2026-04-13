@@ -726,6 +726,7 @@ Everything from the official plugin works unchanged:
 - [Menu DSL](https://nucleus.kdroidfilter.com/runtime/system-tray/menu-dsl/)
 - [TrayApp](https://nucleus.kdroidfilter.com/runtime/system-tray/tray-app/)
 - [Utilities](https://nucleus.kdroidfilter.com/runtime/system-tray/utilities/)
+- [Notification (Common)](https://nucleus.kdroidfilter.com/runtime/notification-common/)
 - [Notification (macOS)](https://nucleus.kdroidfilter.com/runtime/notification-macos/)
 - [Notification (Windows)](https://nucleus.kdroidfilter.com/runtime/notification-windows/)
 - [Notification (Linux)](https://nucleus.kdroidfilter.com/runtime/notification-linux/)
