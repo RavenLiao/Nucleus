@@ -5308,6 +5308,7 @@ The following tables compare a standard Compose `Window()`, the JBR module (`dec
 | Custom title bar content | No | Yes (fully undecorated) | Yes (fully undecorated) |
 | Window controls | WM-provided | Compose `WindowControlArea` (SVG) | Compose `WindowControlArea` (SVG) |
 | Desktop environment styling | WM-provided | GNOME Adwaita / KDE Breeze icons | GNOME Adwaita / KDE Breeze icons |
+| System button layout | WM-provided | Reactive (GSettings observer) | Reactive (GSettings observer) |
 | Window shape | WM-provided | Rounded corners (GNOME 12dp, KDE 5dp top only) | Rounded corners (GNOME 12dp, KDE 5dp top only) |
 | Title bar drag | WM-provided | `JBR.getWindowMove()` | `_NET_WM_MOVERESIZE` via JNI or Compose fallback |
 | Double-click maximize | WM-provided | Compose detection | Compose detection |
@@ -5789,6 +5790,29 @@ On Linux, the module detects the current desktop environment and loads the appro
 - **Other** — Falls back to GNOME style
 
 Detection uses `XDG_CURRENT_DESKTOP` and `DESKTOP_SESSION` environment variables.
+
+### System Button Layout
+
+On GNOME, the module reads the `org.gnome.desktop.wm.preferences` → `button-layout` GSettings key to determine which titlebar buttons to display and on which side. This is done via `libgio` (`dlopen`, no hard compile-time dependency).
+
+The layout updates **reactively** — if the user changes the button configuration in GNOME Tweaks (or via `gsettings set`), the title bar updates in real time without restarting the application.
+
+Supported configurations include:
+
+- `:minimize,maximize,close` — right side, all buttons (GNOME with tweaks)
+- `close,minimize,maximize:` — left side, Ubuntu style
+- `appmenu:close` — right side, close only (GNOME default)
+
+On **KDE** and other desktop environments, the module falls back to the default layout (close, maximize, minimize on the right).
+
+If you need the layout value directly (e.g. for custom rendering), use the `rememberLinuxButtonLayout()` composable:
+
+```kotlin
+val layout = rememberLinuxButtonLayout()
+// layout.buttons — ordered list of visible buttons
+// layout.controlsOnRight — true if buttons are on the right side
+// layout.hasClose / layout.hasMinimize / layout.hasMaximize
+```
 
 ---
 
