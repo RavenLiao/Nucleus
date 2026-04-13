@@ -218,7 +218,7 @@ Nucleus is Gradle-only, which suits its Compose Desktop audience but limits adop
 
 | Tool | JLink | ProGuard | AOT Cache (Leyden) | GraalVM Native Image | Custom JVM | CA Cert Patching | Score |
 |------|:-----:|:--------:|:-------------------:|:--------------------:|:----------:|:----------------:|:-----:|
-| **Nucleus** | ✅ | ✅ | ✅ (JDK 25+) | ✅ (experimental) | ✅ (JBR / Liberica NIK) | ✅ (declarative DSL) | **10** |
+| **Nucleus** | ✅ | ✅ | ✅ (JDK 25+) | ✅ (alpha) | ✅ (JBR / Liberica NIK) | ✅ (declarative DSL) | **10** |
 | Conveyor | ✅ (auto) | ❌ | ❌ | ⚠️ (workaround¹) | ✅ (6 vendors) | ✅ (`app.jvm.additional-ca-certs`) | **6** |
 | install4j | ✅ | ❌ | ❌ | ❌ | ✅ | ❌² | **5** |
 | jpackage | ✅ | ❌ | ❌ | ❌ | ✅ | ⚠️³ | **4** |
@@ -239,7 +239,7 @@ Nucleus is Gradle-only, which suits its Compose Desktop audience but limits adop
     - **Compose MP**: [Native distributions](https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html) — ProGuard + jlink; no CA cert DSL; `jpackageResources` internal and cleared on each build ([open PR #2331](https://github.com/JetBrains/compose-multiplatform/pull/2331) for `--resource-dir` exposure, not merged)
     - **Badass-jlink**: [User guide](https://github.com/beryx/badass-jlink-plugin/blob/master/doc/user_guide.adoc) — task hooks on `jlink` task allow `doLast` keytool invocation against staged image
 
-Only **Nucleus** and **Conveyor** provide declarative, first-class CA cert patching: a single DSL property that automatically patches the bundled JVM's `cacerts` without any manual keytool scripts. Nucleus is the only JVM packaging tool with integrated Project Leyden AOT cache support, providing dramatically faster cold startup without requiring GraalVM. As of v1.3.0, Nucleus also offers **experimental GraalVM Native Image support** — compiling Compose Desktop apps into standalone native binaries with ~0.5s cold boot, ~100–150 MB memory usage, and no bundled JRE. This provides three startup tiers: standard JVM (~3–5s), AOT cache via Leyden (~1.5s), and native image (~0.5s).
+Only **Nucleus** and **Conveyor** provide declarative, first-class CA cert patching: a single DSL property that automatically patches the bundled JVM's `cacerts` without any manual keytool scripts. Nucleus is the only JVM packaging tool with integrated Project Leyden AOT cache support, providing dramatically faster cold startup without requiring GraalVM. As of v1.3.0, Nucleus also offers **alpha GraalVM Native Image support** — compiling Compose Desktop apps into standalone native binaries with ~0.5s cold boot, ~100–150 MB memory usage, and no bundled JRE. This provides three startup tiers: standard JVM (~3–5s), AOT cache via Leyden (~1.5s), and native image (~0.5s).
 
 ---
 
@@ -507,7 +507,7 @@ Bundles JRE with application into a directory structure. Game-focused (libGDX/LW
 2. **Gradle-only** — no Maven or CLI support
 3. **Young project** — smaller community, less battle-testing
 4. **Depends on electron-builder** — Electron ecosystem dependency used as backend
-5. **GraalVM Native Image is experimental** — requires BellSoft Liberica NIK 25, limited to DMG/NSIS/DEB packaging, and some Compose features may need additional reachability metadata
+5. **GraalVM Native Image is in alpha** — requires BellSoft Liberica NIK 25, limited to DMG/NSIS/DEB packaging, and some Compose features may need additional reachability metadata
 
 ---
 

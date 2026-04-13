@@ -1,7 +1,7 @@
 # GraalVM Native Image
 
-!!! danger "Experimental — for advanced developers only"
-    GraalVM Native Image compilation for Compose Desktop is **highly experimental**. If reflection is not fully resolved at build time, the application **will crash at runtime**. This mode requires significant effort to configure and debug. Proceed only if you are comfortable with native-image internals.
+!!! warning "Alpha"
+    GraalVM Native Image support is **in alpha**. Most Compose Desktop apps work out of the box thanks to centralized reachability metadata, but edge cases (uncommon libraries, custom reflection) may still require additional configuration.
 
 ## Why Native Image?
 
@@ -24,7 +24,7 @@ Native image is not a free lunch. In addition to significantly more complex conf
 | CPU throughput | Excellent (JIT) | Lower (no JIT) |
 | Bundle size | Larger (includes JRE) | Smaller |
 | Configuration | Simple (`enableAotCache = true`) | Simplified (centralized metadata) |
-| Stability | Stable | Experimental |
+| Stability | Stable | Alpha |
 
 **Choose native image when** startup speed and memory footprint are critical and CPU throughput is secondary. **Choose Leyden when** you want the best balance of performance, simplicity, and stability.
 

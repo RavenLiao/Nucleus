@@ -4,7 +4,7 @@ Standard OpenJDK does not detect the native display scale factor on Linux. On Hi
 
 The `linux-hidpi` module provides native scale factor detection using JNI, mirroring the detection logic built into JetBrains Runtime (`systemScale.c`). It queries multiple system sources and returns the correct scale so you can apply it via `sun.java2d.uiScale` before AWT initialises.
 
-This module was originally designed for running Compose Desktop applications compiled with **GraalVM Native Image** (experimental), where JBR is not available and scale detection must be handled manually.
+This module was originally designed for running Compose Desktop applications compiled with **GraalVM Native Image** (alpha), where JBR is not available and scale detection must be handled manually.
 
 !!! tip "JBR recommended for JVM-based applications"
     If your application runs on a standard JVM (not a native image), prefer using **JetBrains Runtime (JBR)** which handles HiDPI detection natively and provides stable, battle-tested support across Linux desktop environments. This module is only necessary when JBR is not an option — typically with GraalVM Native Image or other non-JBR runtimes.
