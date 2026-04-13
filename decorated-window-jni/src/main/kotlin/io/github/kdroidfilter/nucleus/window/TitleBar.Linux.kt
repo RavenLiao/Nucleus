@@ -14,7 +14,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
-import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import io.github.kdroidfilter.nucleus.window.utils.linux.JniLinuxWindowBridge
 import java.awt.Frame
@@ -95,11 +94,7 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
         style = linuxStyle,
         controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
-            if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
-                PaddingValues(end = 4.dp)
-            } else {
-                PaddingValues(0.dp)
-            }
+            kdePaddingForButtonLayout()
         },
         backgroundContent = {
             backgroundContent()
@@ -190,11 +185,7 @@ private fun DecoratedWindowScope.FallbackLinuxTitleBar(
         style = linuxStyle,
         controlButtonsDirection = controlButtonsDirection.resolve(),
         applyTitleBar = { _, _ ->
-            if (LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE) {
-                PaddingValues(end = 4.dp)
-            } else {
-                PaddingValues(0.dp)
-            }
+            kdePaddingForButtonLayout()
         },
         backgroundContent = {
             backgroundContent()

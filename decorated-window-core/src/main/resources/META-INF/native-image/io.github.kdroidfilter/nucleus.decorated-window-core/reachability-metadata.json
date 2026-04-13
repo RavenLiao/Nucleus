@@ -7,6 +7,10 @@
                 {
                     "name": "nativeIsRTL",
                     "parameterTypes": []
+                },
+                {
+                    "name": "nativeGetButtonLayout",
+                    "parameterTypes": []
                 }
             ]
         }

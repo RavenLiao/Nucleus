@@ -11,4 +11,12 @@ internal object NativeLayoutDirectionBridge {
 
     @JvmStatic
     external fun nativeIsRTL(): Boolean
+
+    /**
+     * Returns the GNOME `button-layout` GSettings value
+     * (e.g. `"appmenu:close"` or `"close,minimize,maximize:"`),
+     * or `null` if the schema is unavailable (non-GNOME desktop).
+     */
+    @JvmStatic
+    external fun nativeGetButtonLayout(): String?
 }

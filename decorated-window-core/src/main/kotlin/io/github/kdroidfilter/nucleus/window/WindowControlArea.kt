@@ -25,6 +25,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
+import io.github.kdroidfilter.nucleus.window.utils.linux.LinuxButtonLayout
+import io.github.kdroidfilter.nucleus.window.utils.linux.LinuxTitleBarButton
 import io.github.kdroidfilter.nucleus.window.utils.linux.linuxTitleBarIcons
 import java.awt.Frame
 import java.awt.event.WindowEvent
@@ -42,75 +44,87 @@ fun TitleBarScope.WindowControlArea(
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LocalControlButtonsDirection.current) {
         val icons = linuxTitleBarIcons()
+        val layout = LinuxButtonLayout.System
+        val buttonAlignment = if (layout.controlsOnRight) Alignment.End else Alignment.Start
 
-        // Close button (placed first with Alignment.End, so it's rightmost)
-        // On KDE, focused windows show a softer pink hover, unfocused show bright red
-        val closeHover = if (state.isActive) icons.closeHoverFocused else icons.closeHover
-        val closePressed = if (state.isActive) icons.closePressedFocused else icons.closePressed
-        ControlButton(
-            onClick = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
-            state = state,
-            icon = icons.close,
-            iconHover = closeHover,
-            iconPressed = closePressed,
-            contentDescription = "Close",
-            style = style,
-            isCloseButton = true,
-        )
-
-        // In fullscreen: show maximize icon but click exits fullscreen
-        if (isFullscreen && onExitFullscreen != null) {
-            ControlButton(
-                onClick = onExitFullscreen,
-                state = state,
-                icon = icons.maximize,
-                iconHover = icons.maximizeHover,
-                iconPressed = icons.maximizePressed,
-                contentDescription = "Exit fullscreen",
-                style = style,
-            )
-        } else {
-            // Maximize/Restore button (only if resizable)
-            val frame = window as? Frame
-            if (frame != null && frame.isResizable) {
-                if (state.isMaximized) {
+        for (button in layout.buttons) {
+            when (button) {
+                LinuxTitleBarButton.CLOSE -> {
+                    val closeHover = if (state.isActive) icons.closeHoverFocused else icons.closeHover
+                    val closePressed = if (state.isActive) icons.closePressedFocused else icons.closePressed
                     ControlButton(
-                        onClick = { frame.extendedState = Frame.NORMAL },
+                        onClick = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
                         state = state,
-                        icon = icons.restore,
-                        iconHover = icons.restoreHover,
-                        iconPressed = icons.restorePressed,
-                        contentDescription = "Restore",
+                        icon = icons.close,
+                        iconHover = closeHover,
+                        iconPressed = closePressed,
+                        contentDescription = "Close",
                         style = style,
+                        alignment = buttonAlignment,
+                        isCloseButton = true,
                     )
-                } else {
+                }
+
+                LinuxTitleBarButton.MAXIMIZE -> {
+                    if (isFullscreen && onExitFullscreen != null) {
+                        ControlButton(
+                            onClick = onExitFullscreen,
+                            state = state,
+                            icon = icons.maximize,
+                            iconHover = icons.maximizeHover,
+                            iconPressed = icons.maximizePressed,
+                            contentDescription = "Exit fullscreen",
+                            style = style,
+                            alignment = buttonAlignment,
+                        )
+                    } else {
+                        val frame = window as? Frame
+                        if (frame != null && frame.isResizable) {
+                            if (state.isMaximized) {
+                                ControlButton(
+                                    onClick = { frame.extendedState = Frame.NORMAL },
+                                    state = state,
+                                    icon = icons.restore,
+                                    iconHover = icons.restoreHover,
+                                    iconPressed = icons.restorePressed,
+                                    contentDescription = "Restore",
+                                    style = style,
+                                    alignment = buttonAlignment,
+                                )
+                            } else {
+                                ControlButton(
+                                    onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
+                                    state = state,
+                                    icon = icons.maximize,
+                                    iconHover = icons.maximizeHover,
+                                    iconPressed = icons.maximizePressed,
+                                    contentDescription = "Maximize",
+                                    style = style,
+                                    alignment = buttonAlignment,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                LinuxTitleBarButton.MINIMIZE -> {
                     ControlButton(
-                        onClick = { frame.extendedState = Frame.MAXIMIZED_BOTH },
+                        onClick = {
+                            (window as? Frame)?.let {
+                                it.extendedState = it.extendedState or Frame.ICONIFIED
+                            }
+                        },
                         state = state,
-                        icon = icons.maximize,
-                        iconHover = icons.maximizeHover,
-                        iconPressed = icons.maximizePressed,
-                        contentDescription = "Maximize",
+                        icon = icons.minimize,
+                        iconHover = icons.minimizeHover,
+                        iconPressed = icons.minimizePressed,
+                        contentDescription = "Minimize",
                         style = style,
+                        alignment = buttonAlignment,
                     )
                 }
             }
         }
-
-        // Minimize button (placed last with Alignment.End, so it's leftmost)
-        ControlButton(
-            onClick = {
-                (window as? Frame)?.let {
-                    it.extendedState = it.extendedState or Frame.ICONIFIED
-                }
-            },
-            state = state,
-            icon = icons.minimize,
-            iconHover = icons.minimizeHover,
-            iconPressed = icons.minimizePressed,
-            contentDescription = "Minimize",
-            style = style,
-        )
     }
 }
 
@@ -155,6 +169,7 @@ private fun TitleBarScope.ControlButton(
     iconPressed: Painter,
     contentDescription: String,
     style: TitleBarStyle,
+    alignment: Alignment.Horizontal = Alignment.End,
     isCloseButton: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -162,7 +177,7 @@ private fun TitleBarScope.ControlButton(
     Box(
         modifier =
             Modifier
-                .align(Alignment.End)
+                .align(alignment)
                 .focusable(false)
                 .let { if (isKde) it.offset(y = (-2).dp) else it }
                 .size(style.metrics.titlePaneButtonSize)

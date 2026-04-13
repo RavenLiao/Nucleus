@@ -111,3 +111,71 @@ Java_io_github_kdroidfilter_nucleus_window_NativeLayoutDirectionBridge_nativeIsR
     }
     return result ? JNI_TRUE : JNI_FALSE;
 }
+
+/* ------------------------------------------------------------------ */
+/*  readGnomeButtonLayout                                              */
+/*  Queries org.gnome.desktop.wm.preferences → button-layout          */
+/*  via libgio (dlopen, no hard dependency).                           */
+/*  Returns a newly allocated string or NULL.                          */
+/* ------------------------------------------------------------------ */
+static char *readGnomeButtonLayout(void) {
+    void *libgio = dlopen("libgio-2.0.so.0", RTLD_LAZY | RTLD_LOCAL);
+    if (!libgio) return NULL;
+
+    typedef void*  (*fn_schema_source_get_default)(void);
+    typedef void*  (*fn_schema_source_lookup)(void*, const char*, int);
+    typedef void*  (*fn_settings_new)(const char*);
+    typedef char*  (*fn_settings_get_string)(void*, const char*);
+    typedef void   (*fn_object_unref)(void*);
+
+    fn_schema_source_get_default gssg =
+        (fn_schema_source_get_default)dlsym(libgio, "g_settings_schema_source_get_default");
+    fn_schema_source_lookup gssl =
+        (fn_schema_source_lookup)dlsym(libgio, "g_settings_schema_source_lookup");
+    fn_settings_new gsn =
+        (fn_settings_new)dlsym(libgio, "g_settings_new");
+    fn_settings_get_string gsgs =
+        (fn_settings_get_string)dlsym(libgio, "g_settings_get_string");
+    fn_object_unref gou =
+        (fn_object_unref)dlsym(libgio, "g_object_unref");
+
+    /* g_free may differ from libc free on some platforms */
+    typedef void (*fn_g_free)(void*);
+    fn_g_free gfree = (fn_g_free)dlsym(libgio, "g_free");
+
+    char *result = NULL;
+
+    if (gssg && gssl && gsn && gsgs && gou && gfree) {
+        void *source = gssg();
+        if (source) {
+            void *schema = gssl(source, "org.gnome.desktop.wm.preferences", 1);
+            if (schema) {
+                void *settings = gsn("org.gnome.desktop.wm.preferences");
+                if (settings) {
+                    char *val = gsgs(settings, "button-layout");
+                    if (val) {
+                        /* Copy to libc-allocated memory before closing libgio */
+                        result = strdup(val);
+                        gfree(val);
+                    }
+                    gou(settings);
+                }
+            }
+        }
+    }
+
+    dlclose(libgio);
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_io_github_kdroidfilter_nucleus_window_NativeLayoutDirectionBridge_nativeGetButtonLayout(
+    JNIEnv *env, jclass clazz)
+{
+    (void)clazz;
+    char *layout = readGnomeButtonLayout();
+    if (!layout) return NULL;
+    jstring jstr = (*env)->NewStringUTF(env, layout);
+    free(layout);
+    return jstr;
+}
