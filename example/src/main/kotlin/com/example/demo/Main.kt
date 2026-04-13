@@ -155,7 +155,7 @@ fun main(args: Array<String>) {
                     ThemeMode.Light -> false
                 }
             val accentColor = systemAccentColor()
-            val seedColor = accentColor ?: Color(0xFF6750A4)
+            val seedColor = accentColor ?: Color.Yellow
 
             var isRtl by remember { mutableStateOf(false) }
 

@@ -10,7 +10,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_8;
 }
 
-// Helper: call back into Kotlin with accent color RGB floats
+// Returns YES if the user has chosen a specific accent color, NO if multicolor mode is active.
+static BOOL isAccentColorSet(void) {
+    return [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleAccentColor"] != nil;
+}
+
+// Helper: call back into Kotlin with accent color RGB floats (or null if multicolor)
 static void notifyAccentColorChanged(void) {
     if (g_jvm == NULL) return;
 
@@ -24,17 +29,24 @@ static void notifyAccentColorChanged(void) {
         return;
     }
 
-    if (@available(macOS 10.14, *)) {
-        NSColor *color = [[NSColor controlAccentColor]
-            colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
-        if (color != nil) {
-            jfloat r = (jfloat)[color redComponent];
-            jfloat g = (jfloat)[color greenComponent];
-            jfloat b = (jfloat)[color blueComponent];
+    jclass bridgeClass = (*env)->FindClass(env,
+        "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeMacSystemColorBridge");
+    if (bridgeClass != NULL) {
+        if (!isAccentColorSet()) {
+            // Multicolor mode: notify with null
+            jmethodID method = (*env)->GetStaticMethodID(env,
+                bridgeClass, "onAccentColorCleared", "()V");
+            if (method != NULL) {
+                (*env)->CallStaticVoidMethod(env, bridgeClass, method);
+            }
+        } else if (@available(macOS 10.14, *)) {
+            NSColor *color = [[NSColor controlAccentColor]
+                colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+            if (color != nil) {
+                jfloat r = (jfloat)[color redComponent];
+                jfloat g = (jfloat)[color greenComponent];
+                jfloat b = (jfloat)[color blueComponent];
 
-            jclass bridgeClass = (*env)->FindClass(env,
-                "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeMacSystemColorBridge");
-            if (bridgeClass != NULL) {
                 jmethodID method = (*env)->GetStaticMethodID(env,
                     bridgeClass, "onAccentColorChanged", "(FFF)V");
                 if (method != NULL) {
@@ -93,6 +105,10 @@ JNIEXPORT jboolean JNICALL
 Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeGetAccentColor(
     JNIEnv *env, jclass clazz, jfloatArray out) {
     @autoreleasepool {
+        // In multicolor mode, AppleAccentColor is absent — return false so Kotlin gets null
+        if (!isAccentColorSet()) {
+            return JNI_FALSE;
+        }
         if (@available(macOS 10.14, *)) {
             NSColor *color = [[NSColor controlAccentColor]
                 colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];

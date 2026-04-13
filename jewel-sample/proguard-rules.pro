@@ -278,6 +278,7 @@
 -keep class io.github.kdroidfilter.nucleus.systemcolor.mac.NativeMacSystemColorBridge {
     native <methods>;
     static void onAccentColorChanged(float, float, float);
+    static void onAccentColorCleared();
     static void onContrastChanged(boolean);
 }
 

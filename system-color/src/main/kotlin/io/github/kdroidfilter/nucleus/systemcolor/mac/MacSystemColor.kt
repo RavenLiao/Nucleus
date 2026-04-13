@@ -22,11 +22,11 @@ internal object MacSystemColorDetector {
 
     fun isHighContrast(): Boolean = NativeMacSystemColorBridge.nativeIsHighContrast()
 
-    fun registerAccentListener(listener: Consumer<Color>) {
+    fun registerAccentListener(listener: Consumer<Color?>) {
         NativeMacSystemColorBridge.registerAccentListener(listener)
     }
 
-    fun removeAccentListener(listener: Consumer<Color>) {
+    fun removeAccentListener(listener: Consumer<Color?>) {
         NativeMacSystemColorBridge.removeAccentListener(listener)
     }
 
@@ -44,7 +44,7 @@ internal fun macOsAccentColor(): Color? {
     val colorState = remember { mutableStateOf(MacSystemColorDetector.getAccentColor()) }
     DisposableEffect(Unit) {
         val listener =
-            Consumer<Color> { newColor ->
+            Consumer<Color?> { newColor ->
                 colorState.value = newColor
             }
         MacSystemColorDetector.registerAccentListener(listener)

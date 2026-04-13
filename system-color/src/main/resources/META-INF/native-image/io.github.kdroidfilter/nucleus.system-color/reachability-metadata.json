@@ -25,6 +25,10 @@
                         "float",
                         "float"
                     ]
+                },
+                {
+                    "name": "onAccentColorCleared",
+                    "parameterTypes": []
                 }
             ]
         },

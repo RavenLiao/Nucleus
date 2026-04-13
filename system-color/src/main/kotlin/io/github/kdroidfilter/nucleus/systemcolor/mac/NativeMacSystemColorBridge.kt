@@ -12,7 +12,7 @@ private const val LIBRARY_NAME = "nucleus_systemcolor"
 
 @Suppress("TooManyFunctions")
 internal object NativeMacSystemColorBridge {
-    private val accentListeners: MutableSet<Consumer<Color>> = ConcurrentHashMap.newKeySet()
+    private val accentListeners: MutableSet<Consumer<Color?>> = ConcurrentHashMap.newKeySet()
     private val contrastListeners: MutableSet<Consumer<Boolean>> = ConcurrentHashMap.newKeySet()
     private val loaded = NativeLibraryLoader.load(LIBRARY_NAME, NativeMacSystemColorBridge::class.java)
 
@@ -60,16 +60,22 @@ internal object NativeMacSystemColorBridge {
     }
 
     @JvmStatic
+    fun onAccentColorCleared() {
+        debugln(TAG) { "Accent color cleared (multicolor mode)" }
+        accentListeners.forEach { it.accept(null) }
+    }
+
+    @JvmStatic
     fun onContrastChanged(isHigh: Boolean) {
         debugln(TAG) { "Contrast mode changed: high=$isHigh" }
         contrastListeners.forEach { it.accept(isHigh) }
     }
 
-    fun registerAccentListener(listener: Consumer<Color>) {
+    fun registerAccentListener(listener: Consumer<Color?>) {
         accentListeners.add(listener)
     }
 
-    fun removeAccentListener(listener: Consumer<Color>) {
+    fun removeAccentListener(listener: Consumer<Color?>) {
         accentListeners.remove(listener)
     }
 
