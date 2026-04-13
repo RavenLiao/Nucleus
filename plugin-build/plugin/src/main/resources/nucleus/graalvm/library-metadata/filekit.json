@@ -99,6 +99,24 @@
                     "io.github.vinceglb.filekit.dialogs.platform.windows.jna.Shell32"
                 ]
             }
+        },
+        {
+            "type": "io.github.vinceglb.filekit.dialogs.platform.xdg.Pair",
+            "fields": [
+                {
+                    "name": "a"
+                },
+                {
+                    "name": "b"
+                }
+            ]
+        },
+        {
+            "type": {
+                "proxy": [
+                    "io.github.vinceglb.filekit.dialogs.platform.xdg.FileChooserDbusInterface"
+                ]
+            }
         }
     ]
 }

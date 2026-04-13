@@ -627,6 +627,24 @@
             ]
         },
         {
+            "type": "com.sun.security.auth.module.UnixSystem",
+            "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "gid"
+                },
+                {
+                    "name": "groups"
+                },
+                {
+                    "name": "uid"
+                },
+                {
+                    "name": "username"
+                }
+            ]
+        },
+        {
             "type": "sun.security.provider.NativePRNG",
             "methods": [
                 {
@@ -636,6 +654,20 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "sun.security.provider.NativePRNG$NonBlocking",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.security.SecureRandomParameters"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.text.resources.CollationData"
         },
         {
             "type": "sun.security.provider.SHA2$SHA256",

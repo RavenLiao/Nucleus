@@ -4,6 +4,7 @@ compose-mediaplayer.json
 compose-ui.json
 compose-webview-wry.json
 composetray.json
+dbus-java.json
 filekit.json
 intellij-compat.json
 jdk-awt.json

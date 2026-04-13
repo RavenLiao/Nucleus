@@ -1,0 +1,66 @@
+{
+    "_meta": {
+        "description": "dbus-java D-Bus bindings for Linux desktop portal integration",
+        "matchPackages": [
+            "org.freedesktop.dbus"
+        ]
+    },
+    "reflection": [
+        {
+            "type": "org.freedesktop.dbus.connections.base.GlobalHandler"
+        },
+        {
+            "type": "org.freedesktop.dbus.connections.impl.DBusConnection",
+            "allPublicMethods": true
+        },
+        {
+            "type": "org.freedesktop.dbus.interfaces.DBus$NameAcquired",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "org.freedesktop.dbus.interfaces.Introspectable"
+        },
+        {
+            "type": "org.freedesktop.dbus.interfaces.Peer"
+        },
+        {
+            "type": "org.freedesktop.dbus.interfaces.Properties"
+        },
+        {
+            "type": {
+                "proxy": [
+                    "org.freedesktop.dbus.interfaces.DBus"
+                ]
+            }
+        },
+        {
+            "type": {
+                "proxy": [
+                    "org.freedesktop.dbus.interfaces.Introspectable"
+                ]
+            }
+        },
+        {
+            "type": {
+                "proxy": [
+                    "org.freedesktop.dbus.interfaces.Peer"
+                ]
+            }
+        },
+        {
+            "type": {
+                "proxy": [
+                    "org.freedesktop.dbus.interfaces.Properties"
+                ]
+            }
+        }
+    ]
+}
