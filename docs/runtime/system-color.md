@@ -24,6 +24,7 @@ fun App() {
             // Build a dynamic color scheme from the system accent
             darkColorScheme(primary = accentColor)
         } else {
+            // null = unsupported platform or macOS multicolor mode
             darkColorScheme()
         }
     ) {
@@ -31,6 +32,9 @@ fun App() {
     }
 }
 ```
+
+!!! note "macOS Multicolor Mode"
+    On macOS, when the user selects **Multicolor** in System Settings → Appearance → Accent color, each app is expected to use its own default color. In this case, `systemAccentColor()` returns `null` so your app can fall back to its own brand color or a default palette.
 
 ### Check Support
 
@@ -98,7 +102,7 @@ The Nucleus example app uses this exact approach — you can test it by running:
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `systemAccentColor()` | `Color?` | Composable. Returns the current system accent color, or `null` if unsupported. Recomposes on change. |
+| `systemAccentColor()` | `Color?` | Composable. Returns the current system accent color, or `null` if unsupported or if the OS is in multicolor mode (macOS). Recomposes on change. |
 | `isSystemInHighContrast()` | `Boolean` | Composable. Returns `true` if the OS is in high contrast / increased contrast mode. Recomposes on change. |
 | `isSystemAccentColorSupported()` | `Boolean` | Non-composable. Returns whether the current platform supports accent color detection. |
 
@@ -106,7 +110,7 @@ The Nucleus example app uses this exact approach — you can test it by running:
 
 | Platform | Accent Color | High Contrast | Reactive |
 |----------|-------------|---------------|----------|
-| **macOS** | `NSColor.controlAccentColor` (macOS 10.14+) | `accessibilityDisplayShouldIncreaseContrast` | Yes — `NSSystemColorsDidChangeNotification` / `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification` |
+| **macOS** | `NSColor.controlAccentColor` (macOS 10.14+). Returns `null` in **multicolor mode** (detected via `AppleAccentColor` user default). | `accessibilityDisplayShouldIncreaseContrast` | Yes — `NSSystemColorsDidChangeNotification` / `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification` |
 | **Windows** | `HKCU\SOFTWARE\Microsoft\Windows\DWM\AccentColor` registry key (AABBGGRR) | `SystemParametersInfoW(SPI_GETHIGHCONTRAST)` | Yes — `RegNotifyChangeKeyValue` on background thread |
 | **Linux** | XDG Desktop Portal `org.freedesktop.appearance` / `accent-color` — RGB tuple (0.0–1.0) | XDG Desktop Portal `org.freedesktop.appearance` / `contrast` — uint32 (1 = high) | Yes — D-Bus `SettingChanged` signal listener |
 
@@ -142,6 +146,7 @@ When ProGuard is enabled, the native bridge classes must be preserved. The Nucle
 -keep class io.github.kdroidfilter.nucleus.systemcolor.mac.NativeMacSystemColorBridge {
     native <methods>;
     static void onAccentColorChanged(float, float, float);
+    static void onAccentColorCleared();
     static void onContrastChanged(boolean);
 }
 
