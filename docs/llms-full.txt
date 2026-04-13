@@ -3167,7 +3167,7 @@ import io.github.kdroidfilter.nucleus.aot.runtime.ExecutableRuntime
 
 # GraalVM Native Image
 
-**Experimental — for advanced developers only:** GraalVM Native Image compilation for Compose Desktop is **highly experimental**. If reflection is not fully resolved at build time, the application **will crash at runtime**. This mode requires significant effort to configure and debug. Proceed only if you are comfortable with native-image internals.
+**Alpha:** GraalVM Native Image support is **in alpha**. Most Compose Desktop apps work out of the box thanks to centralized reachability metadata, but edge cases (uncommon libraries, custom reflection) may still require additional configuration.
 ## Why Native Image?
 
 For most Compose Desktop applications, [AOT Cache (Leyden)](../runtime/aot-cache.md) is the recommended way to improve startup. It's simple to set up and provides a major boost. But there are cases where even Leyden isn't enough:
@@ -3189,7 +3189,7 @@ Native image is not a free lunch. In addition to significantly more complex conf
 | CPU throughput | Excellent (JIT) | Lower (no JIT) |
 | Bundle size | Larger (includes JRE) | Smaller |
 | Configuration | Simple (`enableAotCache = true`) | Simplified (centralized metadata) |
-| Stability | Stable | Experimental |
+| Stability | Stable | Alpha |
 
 **Choose native image when** startup speed and memory footprint are critical and CPU throughput is secondary. **Choose Leyden when** you want the best balance of performance, simplicity, and stability.
 
@@ -10104,7 +10104,7 @@ Standard OpenJDK does not detect the native display scale factor on Linux. On Hi
 
 The `linux-hidpi` module provides native scale factor detection using JNI, mirroring the detection logic built into JetBrains Runtime (`systemScale.c`). It queries multiple system sources and returns the correct scale so you can apply it via `sun.java2d.uiScale` before AWT initialises.
 
-This module was originally designed for running Compose Desktop applications compiled with **GraalVM Native Image** (experimental), where JBR is not available and scale detection must be handled manually.
+This module was originally designed for running Compose Desktop applications compiled with **GraalVM Native Image** (alpha), where JBR is not available and scale detection must be handled manually.
 
 **JBR recommended for JVM-based applications:** If your application runs on a standard JVM (not a native image), prefer using **JetBrains Runtime (JBR)** which handles HiDPI detection natively and provides stable, battle-tested support across Linux desktop environments. This module is only necessary when JBR is not an option — typically with GraalVM Native Image or other non-JBR runtimes.
 **Already handled by `GraalVmInitializer`:** If you use the [`graalvm-runtime`](../graalvm/runtime-bootstrap.md) module, `GraalVmInitializer.initialize()` already calls `getLinuxNativeScaleFactor()` and applies the scale factor automatically. You do **not** need to add `linux-hidpi` as a separate dependency or call the function manually — it is included transitively.
