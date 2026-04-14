@@ -11,20 +11,13 @@ internal object LaunchAgentPlistGenerator {
 
     fun generate(agent: LaunchAgentDefinition, destDir: File, packageName: String) {
         destDir.mkdirs()
-        val resolvedAgent = resolveDefaults(agent, packageName)
-        val plist = buildPlistXml(resolvedAgent)
-        File(destDir, resolvedAgent.plistFileName).writeText(plist)
-    }
-
-    private fun resolveDefaults(agent: LaunchAgentDefinition, packageName: String): LaunchAgentDefinition {
-        if (agent.bundleProgram != null) return agent
-        // Auto-resolve bundleProgram from packageName
-        agent.bundleProgram("Contents/MacOS/$packageName")
-        return agent
+        val resolvedBundleProgram = agent.bundleProgram ?: "Contents/MacOS/$packageName"
+        val plist = buildPlistXml(agent, resolvedBundleProgram)
+        File(destDir, agent.plistFileName).writeText(plist)
     }
 
     @Suppress("NestedBlockDepth")
-    private fun buildPlistXml(agent: LaunchAgentDefinition): String = buildString {
+    private fun buildPlistXml(agent: LaunchAgentDefinition, resolvedBundleProgram: String): String = buildString {
         appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
         appendLine("""<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">""")
         appendLine("""<plist version="1.0">""")
@@ -32,11 +25,11 @@ internal object LaunchAgentPlistGenerator {
 
         plistKey("Label", agent.label)
 
-        agent.bundleProgram?.let { plistKey("BundleProgram", it) }
+        plistKey("BundleProgram", resolvedBundleProgram)
 
         // ProgramArguments — always include bundle program as first arg
         val allArgs = buildList {
-            agent.bundleProgram?.let { add(it) }
+            add(resolvedBundleProgram)
             addAll(agent.programArguments)
         }
         if (allArgs.isNotEmpty()) {
