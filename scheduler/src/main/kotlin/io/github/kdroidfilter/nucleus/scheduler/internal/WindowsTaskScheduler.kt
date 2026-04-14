@@ -148,7 +148,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         return schtasks(
             "/Create",
             "/TN", retryTaskPath(taskId),
-            "/TR", "\\\"$execPath\\\" $SCHEDULER_ARG \\\"$taskId\\\"",
+            "/TR", "\"$execPath\" $SCHEDULER_ARG \"$taskId\"",
             "/SC", "ONCE",
             "/SD", dateStr,
             "/ST", timeStr,
@@ -163,7 +163,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         val args = mutableListOf(
             "/Create",
             "/TN", taskPath(request.taskId),
-            "/TR", "\\\"$execPath\\\" $SCHEDULER_ARG \\\"${request.taskId}\\\"",
+            "/TR", "\"$execPath\" $SCHEDULER_ARG \"${request.taskId}\"",
             "/RL", "LIMITED",
             "/F",
         )

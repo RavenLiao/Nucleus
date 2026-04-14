@@ -4,7 +4,7 @@ import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 
 /**
- * No-op scheduler for platforms without a scheduler implementation (Windows, macOS).
+ * No-op scheduler for unsupported platforms.
  * All operations silently return failure/empty values.
  */
 internal object NoopScheduler : PlatformScheduler {
