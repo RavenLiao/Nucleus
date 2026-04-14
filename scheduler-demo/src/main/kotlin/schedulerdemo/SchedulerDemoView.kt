@@ -59,9 +59,9 @@ fun SchedulerDemoView() {
         GroupHeader("Platform")
         Text(
             if (scheduler.isAvailable()) {
-                "Scheduler available (Linux systemd)"
+                "Scheduler available"
             } else {
-                "Scheduler not available on this platform (noop)"
+                "Scheduler not available on this platform"
             },
         )
 

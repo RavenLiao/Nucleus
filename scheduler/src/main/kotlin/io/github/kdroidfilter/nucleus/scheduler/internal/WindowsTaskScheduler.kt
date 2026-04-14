@@ -15,8 +15,12 @@ import java.util.logging.Logger
 /**
  * Windows implementation using the Task Scheduler via `schtasks.exe`.
  *
- * Tasks are created under a `Nucleus\{appId}` folder in the Windows Task Scheduler.
+ * Tasks are created under a `\Nucleus\{appId}\` folder in the Windows Task Scheduler.
  * Each task invokes the application executable with `--nucleus-scheduler-run {taskId}`.
+ *
+ * Task listing uses [TaskMetadataStore] as the source of truth for registered task IDs
+ * (cross-referenced with `schtasks /Query` for existence), because `schtasks.exe` output
+ * field names are locale-dependent and unreliable to parse across languages.
  */
 @Suppress("TooManyFunctions")
 internal object WindowsTaskScheduler : PlatformScheduler {
@@ -46,6 +50,8 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
     override fun enqueue(request: TaskRequest): Boolean {
         if (request.existingTaskPolicy == ExistingTaskPolicy.KEEP && isScheduled(request.taskId)) {
+            // Task already exists — ensure metadata is registered so getAllTaskIds() finds it
+            TaskMetadataStore.save(appId, request.taskId, request.inputData)
             return true
         }
 
@@ -53,10 +59,6 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         if (execPath == null) {
             logger.warning("Cannot resolve executable path — task '${request.taskId}' not scheduled")
             return false
-        }
-
-        if (request.inputData.isNotEmpty()) {
-            TaskMetadataStore.save(appId, request.taskId, request.inputData)
         }
 
         // If replacing, delete the existing task first
@@ -70,7 +72,13 @@ internal object WindowsTaskScheduler : PlatformScheduler {
             return false
         }
 
-        return schtasks(*args.toTypedArray())
+        val created = schtasks(*args.toTypedArray())
+        if (created) {
+            // Register in metadata store so getAllTaskIds() can find this task.
+            // On Linux, systemd unit files serve as the registry; on Windows we use metadata.
+            TaskMetadataStore.save(appId, request.taskId, request.inputData)
+        }
+        return created
     }
 
     override fun cancel(taskId: String): Boolean {
@@ -98,12 +106,11 @@ internal object WindowsTaskScheduler : PlatformScheduler {
     override fun getTaskInfo(taskId: String): TaskInfo? {
         if (!isScheduled(taskId)) return null
 
-        val state = resolveState(taskId)
         val nextRunMs = parseNextRun(taskId)
 
         return TaskInfo(
             taskId = taskId,
-            state = state,
+            state = TaskState.SCHEDULED,
             lastRunMs = TaskMetadataStore.getLastRunMs(appId, taskId),
             nextRunMs = nextRunMs,
             runCount = TaskMetadataStore.getRunCount(appId, taskId),
@@ -291,65 +298,60 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
     // -- Introspection --------------------------------------------------------
 
-    private fun getAllTaskIds(): List<String> {
-        val folderPath = "\\$TASK_FOLDER\\$appId"
-        val output = schtasksQuery("/Query", "/TN", folderPath, "/FO", "LIST") ?: return emptyList()
+    /**
+     * Lists all registered task IDs by cross-referencing the metadata store
+     * (locale-independent) with actual Task Scheduler presence.
+     */
+    private fun getAllTaskIds(): List<String> =
+        TaskMetadataStore.listTaskIds(appId).filter { isScheduled(it) }
 
-        val prefix = "\\$TASK_FOLDER\\$appId\\"
-        return output.lines()
-            .filter { it.startsWith("TaskName:") }
-            .map { it.substringAfter("TaskName:").trim() }
-            .filter { it.startsWith(prefix) }
-            .map { it.removePrefix(prefix) }
-            .filter { !it.endsWith("-retry") && !it.contains("\\") }
-    }
-
-    private fun resolveState(taskId: String): TaskState {
-        val output = schtasksQuery(
-            "/Query", "/TN", taskPath(taskId), "/FO", "LIST", "/V",
-        ) ?: return TaskState.SCHEDULED
-
-        val statusLine = output.lines().firstOrNull { it.startsWith("Status:") }
-        val status = statusLine?.substringAfter("Status:")?.trim()
-
-        return when (status) {
-            "Running" -> TaskState.RUNNING
-            "Disabled" -> TaskState.INACTIVE
-            else -> TaskState.SCHEDULED
-        }
-    }
-
-    @Suppress("TooGenericExceptionCaught", "MagicNumber")
+    /**
+     * Parses the next run time from `schtasks /Query` CSV output.
+     *
+     * CSV column order is fixed regardless of locale:
+     * column 0 = task name, column 1 = next run time, column 2 = status.
+     * The date/time *values* are still locale-formatted, so we try several patterns.
+     */
+    @Suppress("TooGenericExceptionCaught")
     private fun parseNextRun(taskId: String): Long? {
         val output = schtasksQuery(
-            "/Query", "/TN", taskPath(taskId), "/FO", "LIST", "/V",
+            "/Query", "/TN", taskPath(taskId), "/FO", "CSV",
         ) ?: return null
 
-        val nextRunLine = output.lines().firstOrNull { it.startsWith("Next Run Time:") }
-        val nextRunStr = nextRunLine?.substringAfter("Next Run Time:")?.trim() ?: return null
+        // CSV: header line + data line
+        val dataLine = output.lines().getOrNull(1) ?: return null
+        val columns = parseCsvLine(dataLine)
+        val nextRunStr = columns.getOrNull(1) ?: return null
 
-        if (nextRunStr == "N/A" || nextRunStr == "Disabled") return null
+        if (nextRunStr == "N/A" || nextRunStr.isBlank()) return null
 
-        return try {
-            // schtasks outputs date/time in locale format — try common patterns
-            val formatters = listOf(
-                DateTimeFormatter.ofPattern("M/d/yyyy h:mm:ss a"),
-                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-                DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"),
-            )
-            var parsed: LocalDateTime? = null
-            for (fmt in formatters) {
-                try {
-                    parsed = LocalDateTime.parse(nextRunStr, fmt)
-                    break
-                } catch (_: Exception) {
-                    // Try next format
-                }
+        return tryParseDateTime(nextRunStr)
+    }
+
+    /**
+     * Minimal CSV line parser — splits on commas, strips surrounding quotes.
+     */
+    private fun parseCsvLine(line: String): List<String> =
+        line.split(",").map { it.trim().removeSurrounding("\"") }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun tryParseDateTime(text: String): Long? {
+        val formatters = listOf(
+            DateTimeFormatter.ofPattern("M/d/yyyy h:mm:ss a"),   // en-US
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),  // fr-FR, pt-BR
+            DateTimeFormatter.ofPattern("d/MM/yyyy HH:mm:ss"),   // fr-FR single-digit day
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),  // ISO-like
+            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"),    // en-US 24h
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"),  // de-DE
+        )
+        for (fmt in formatters) {
+            try {
+                val parsed = LocalDateTime.parse(text, fmt)
+                return parsed.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            } catch (_: Exception) {
+                // Try next format
             }
-            parsed?.atZone(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-        } catch (_: Exception) {
-            null
         }
+        return null
     }
 }
