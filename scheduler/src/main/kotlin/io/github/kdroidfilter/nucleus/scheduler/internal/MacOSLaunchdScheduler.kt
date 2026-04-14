@@ -106,15 +106,12 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         TaskMetadataStore.deleteAll(appId)
     }
 
-    override fun isScheduled(taskId: String): Boolean {
-        // Check if the plist file exists and the job is loaded
-        if (!plistFile(taskId).exists()) return false
-        return isLoaded(label(taskId))
-    }
+    override fun isScheduled(taskId: String): Boolean = plistFile(taskId).exists()
 
     override fun getTaskInfo(taskId: String): TaskInfo? {
         if (!plistFile(taskId).exists()) return null
 
+        // Plist exists → task is scheduled. Check if launchd has it loaded right now.
         val state = if (isLoaded(label(taskId))) TaskState.SCHEDULED else TaskState.INACTIVE
 
         return TaskInfo(
