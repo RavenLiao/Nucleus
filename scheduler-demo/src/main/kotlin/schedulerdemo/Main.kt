@@ -17,6 +17,7 @@ import org.jetbrains.jewel.intui.standalone.theme.default
 import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
 import org.jetbrains.jewel.ui.ComponentStyling
 import schedulerdemo.task.BackupTask
+import schedulerdemo.task.NotificationTask
 import schedulerdemo.task.SyncTask
 
 private fun buildRegistry() =
@@ -24,6 +25,7 @@ private fun buildRegistry() =
         .Builder()
         .register("sync") { SyncTask() }
         .register("backup") { BackupTask() }
+        .register("notification") { NotificationTask() }
         .build()
 
 fun main(args: Array<String>) {

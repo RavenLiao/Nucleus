@@ -97,6 +97,19 @@ fun SchedulerDemoView() {
             }) {
                 Text("Report (daily 9h)")
             }
+
+            DefaultButton(onClick = {
+                val ok = scheduler.enqueue(
+                    TaskRequest.periodic("notification", 15.minutes) {
+                        inputData("title", "Scheduled Notification")
+                        inputData("message", "This notification was scheduled 15 minutes ago!")
+                    },
+                )
+                log(if (ok) "Enqueued 'notification' (every 15min)" else "Failed to enqueue 'notification'")
+                refreshTasks()
+            }) {
+                Text("Notify (15min)")
+            }
         }
 
         Spacer(Modifier.height(8.dp))
