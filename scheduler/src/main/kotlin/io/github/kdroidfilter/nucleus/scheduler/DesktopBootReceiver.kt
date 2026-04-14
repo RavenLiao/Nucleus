@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.scheduler.internal.LinuxSystemdScheduler
+import io.github.kdroidfilter.nucleus.scheduler.internal.MacOSLaunchdScheduler
 import io.github.kdroidfilter.nucleus.scheduler.internal.TaskMetadataStore
 import io.github.kdroidfilter.nucleus.scheduler.internal.WindowsTaskScheduler
 import kotlinx.coroutines.runBlocking
@@ -107,6 +108,7 @@ public object DesktopBootReceiver {
         when (Platform.Current) {
             Platform.Linux -> LinuxSystemdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
             Platform.Windows -> WindowsTaskScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
+            Platform.MacOS -> MacOSLaunchdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
             else -> logger.warning("Retry scheduling not supported on ${Platform.Current}")
         }
     }

@@ -17,12 +17,15 @@ internal object TaskMetadataStore {
     private const val KEY_LAST_RESULT = "_lastResult"
 
     private fun storeDir(appId: String): File {
-        val baseDir = if (Platform.Current == Platform.Windows) {
-            System.getenv("LOCALAPPDATA")
-                ?: "${System.getProperty("user.home")}\\AppData\\Local"
-        } else {
-            System.getenv("XDG_DATA_HOME")
-                ?: "${System.getProperty("user.home")}/.local/share"
+        val baseDir = when (Platform.Current) {
+            Platform.Windows ->
+                System.getenv("LOCALAPPDATA")
+                    ?: "${System.getProperty("user.home")}\\AppData\\Local"
+            Platform.MacOS ->
+                "${System.getProperty("user.home")}/Library/Application Support"
+            else ->
+                System.getenv("XDG_DATA_HOME")
+                    ?: "${System.getProperty("user.home")}/.local/share"
         }
         return File(baseDir, "nucleus/scheduler/$appId")
     }
