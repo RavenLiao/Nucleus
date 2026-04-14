@@ -262,7 +262,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
      * - `Mon..Fri *-*-* HH:MM:00`   → weekdays at HH:MM (generates array of dicts)
      */
     @Suppress("CyclomaticComplexity")
-    private fun appendCalendarInterval(sb: StringBuilder, expression: String) {
+    internal fun appendCalendarInterval(sb: StringBuilder, expression: String) {
         val trimmed = expression.trim()
 
         // Pattern: every hour — *-*-* *:00:00

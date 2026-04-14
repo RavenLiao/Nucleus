@@ -196,7 +196,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             appendLine("WantedBy=default.target")
         }
 
-    private fun buildTimerUnit(request: TaskRequest): String =
+    internal fun buildTimerUnit(request: TaskRequest): String =
         buildString {
             appendLine("[Unit]")
             appendLine("Description=Nucleus timer: ${request.taskId}")

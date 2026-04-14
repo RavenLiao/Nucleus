@@ -208,7 +208,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
      * Returns null for unsupported expressions.
      */
     @Suppress("CyclomaticComplexity")
-    private fun convertCronToSchtasks(expression: String): List<String>? {
+    internal fun convertCronToSchtasks(expression: String): List<String>? {
         val trimmed = expression.trim()
 
         // Pattern: every hour — *-*-* *:00:00
