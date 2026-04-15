@@ -25,6 +25,7 @@ internal object WindowsTaskSchedulerJni {
         exePath: String,
         arguments: String,
         intervalMinutes: Int,
+        startDelayMinutes: Int,
     ): String?
 
     @JvmStatic

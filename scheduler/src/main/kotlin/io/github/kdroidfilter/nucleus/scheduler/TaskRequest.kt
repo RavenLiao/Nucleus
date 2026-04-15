@@ -17,6 +17,7 @@ public class TaskRequest private constructor(
     internal val inputData: Map<String, String>,
     internal val retryPolicy: RetryPolicy?,
     internal val existingTaskPolicy: ExistingTaskPolicy,
+    internal val runImmediately: Boolean,
 ) {
     internal enum class Type { PERIODIC, CALENDAR, ON_BOOT }
 
@@ -27,6 +28,7 @@ public class TaskRequest private constructor(
         internal val data = mutableMapOf<String, String>()
         internal var retryPolicy: RetryPolicy? = null
         internal var existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.KEEP
+        internal var runImmediately: Boolean = false
 
         /** Attach a key-value pair to the task, retrievable via [TaskContext.inputData]. */
         public fun inputData(
@@ -44,6 +46,14 @@ public class TaskRequest private constructor(
         /** Control behavior when a task with the same ID is already scheduled. */
         public fun existingTaskPolicy(policy: ExistingTaskPolicy) {
             existingTaskPolicy = policy
+        }
+
+        /**
+         * Run the task immediately when scheduled, in addition to the periodic interval.
+         * By default, the first execution waits for the full interval to elapse.
+         */
+        public fun runImmediately(value: Boolean = true) {
+            runImmediately = value
         }
     }
 
@@ -80,10 +90,10 @@ public class TaskRequest private constructor(
                 type = Type.PERIODIC,
                 interval = interval,
                 cronExpression = null,
-
                 inputData = builder.data.toMap(),
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
+                runImmediately = builder.runImmediately,
             )
         }
 
@@ -106,10 +116,10 @@ public class TaskRequest private constructor(
                 type = Type.CALENDAR,
                 interval = null,
                 cronExpression = expression,
-
                 inputData = builder.data.toMap(),
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
+                runImmediately = false,
             )
         }
 
@@ -133,6 +143,7 @@ public class TaskRequest private constructor(
                 inputData = builder.data.toMap(),
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
+                runImmediately = false,
             )
         }
     }

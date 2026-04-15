@@ -184,8 +184,9 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         return when (request.type) {
             TaskRequest.Type.PERIODIC -> {
                 val minutes = request.interval!!.inWholeMinutes.toInt()
+                val startDelay = if (request.runImmediately) 0 else minutes
                 WindowsTaskSchedulerJni.nativeCreatePeriodicTask(
-                    folder, name, exePath, args, minutes,
+                    folder, name, exePath, args, minutes, startDelay,
                 )
             }
 
@@ -196,7 +197,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
                 } else {
                     when (schedule) {
                         is CronSchedule.Hourly -> WindowsTaskSchedulerJni.nativeCreatePeriodicTask(
-                            folder, name, exePath, args, 60,
+                            folder, name, exePath, args, 60, 60,
                         )
                         is CronSchedule.Daily -> WindowsTaskSchedulerJni.nativeCreateDailyTask(
                             folder, name, exePath, args, schedule.hour, schedule.minute,

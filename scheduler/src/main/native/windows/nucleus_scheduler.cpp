@@ -162,6 +162,26 @@ static std::wstring nowBoundary() {
     return buf;
 }
 
+static std::wstring nowPlusMinutesBoundary(int minutes) {
+    if (minutes <= 0) return nowBoundary();
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    uli.QuadPart += static_cast<ULONGLONG>(minutes) * 60 * 10000000ULL;
+    ft.dwLowDateTime = uli.LowPart;
+    ft.dwHighDateTime = uli.HighPart;
+    SYSTEMTIME stUtc, stLocal;
+    FileTimeToSystemTime(&ft, &stUtc);
+    SystemTimeToTzSpecificLocalTime(nullptr, &stUtc, &stLocal);
+    wchar_t buf[64];
+    swprintf_s(buf, 64, L"%04d-%02d-%02dT%02d:%02d:%02d",
+               stLocal.wYear, stLocal.wMonth, stLocal.wDay,
+               stLocal.wHour, stLocal.wMinute, stLocal.wSecond);
+    return buf;
+}
+
 static std::wstring todayAtBoundary(int hour, int minute) {
     SYSTEMTIME st;
     GetLocalTime(&st);
@@ -199,6 +219,7 @@ enum TriggerKind { TK_PERIODIC, TK_DAILY, TK_WEEKLY, TK_LOGON, TK_ONCE };
 struct TriggerConfig {
     TriggerKind kind;
     int intervalMinutes;        // TK_PERIODIC
+    int startDelayMinutes;      // TK_PERIODIC: delay before first trigger (0 = immediate)
     int hour;                   // TK_DAILY, TK_WEEKLY
     int minute;                 // TK_DAILY, TK_WEEKLY
     int daysOfWeek;             // TK_WEEKLY (Task Scheduler bitmask)
@@ -221,7 +242,7 @@ static HRESULT applyTrigger(ITaskDefinition *task, const TriggerConfig &cfg) {
         hr = trigger->QueryInterface(IID_PPV_ARGS(&tt));
         if (FAILED(hr)) return hr;
 
-        std::wstring boundary = nowBoundary();
+        std::wstring boundary = nowPlusMinutesBoundary(cfg.startDelayMinutes);
         tt->put_StartBoundary(BStr(boundary));
 
         ComPtr<IRepetitionPattern> rep;
@@ -396,11 +417,12 @@ extern "C" JNI_FN(nativeCreatePeriodicTask)(
     JNIEnv *env, jclass,
     jstring jFolder, jstring jName,
     jstring jExe, jstring jArgs,
-    jint intervalMinutes) -> jstring
+    jint intervalMinutes, jint startDelayMinutes) -> jstring
 {
     TriggerConfig cfg{};
     cfg.kind = TK_PERIODIC;
     cfg.intervalMinutes = intervalMinutes;
+    cfg.startDelayMinutes = startDelayMinutes;
     return createTaskInternal(env,
         toWString(env, jFolder), toWString(env, jName),
         toWString(env, jExe), toWString(env, jArgs), cfg);

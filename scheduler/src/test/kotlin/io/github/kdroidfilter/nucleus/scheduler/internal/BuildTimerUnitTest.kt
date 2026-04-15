@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 import io.github.kdroidfilter.nucleus.scheduler.CronExpression
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -10,40 +11,38 @@ import kotlin.time.Duration.Companion.minutes
 class BuildTimerUnitTest {
 
     @Test
-    fun `periodic timer has OnUnitActiveSec`() {
+    fun `periodic timer has OnUnitInactiveSec`() {
         val request = TaskRequest.periodic("test-task", 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
-        assertTrue(unit.contains("OnUnitActiveSec=3600s"), "Expected OnUnitActiveSec=3600s")
+        assertTrue(unit.contains("OnUnitInactiveSec=3600s"), "Expected OnUnitInactiveSec=3600s")
     }
 
     @Test
-    fun `periodic timer has OnBootSec`() {
+    fun `periodic timer default OnActiveSec equals interval`() {
         val request = TaskRequest.periodic("test-task", 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
-        // 3600 / 10 = 360 → clamped to 300
-        assertTrue(unit.contains("OnBootSec=300s"), "Expected OnBootSec=300s (clamped)")
+        assertTrue(unit.contains("OnActiveSec=3600s"), "Expected OnActiveSec=3600s (full interval)")
     }
 
     @Test
-    fun `periodic timer boot delay minimum is 60s`() {
+    fun `periodic timer runImmediately sets OnActiveSec to 0`() {
+        val request = TaskRequest.periodic("test-task", 1.hours) {
+            runImmediately()
+        }
+        val unit = LinuxSystemdScheduler.buildTimerUnit(request)
+
+        assertTrue(unit.contains("OnActiveSec=0"), "Expected OnActiveSec=0")
+        assertFalse(unit.contains("OnActiveSec=3600s"), "Should not contain deferred OnActiveSec")
+    }
+
+    @Test
+    fun `periodic timer 15min default OnActiveSec`() {
         val request = TaskRequest.periodic("test-task", 15.minutes)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
-        // 900 / 10 = 90 → within [60, 300]
-        assertTrue(unit.contains("OnBootSec=90s"), "Expected OnBootSec=90s")
-    }
-
-    @Test
-    fun `periodic timer boot delay floors at 60s`() {
-        // Minimum allowed interval is 15 min = 900s → 900/10 = 90s, above floor.
-        // Test with exactly 15 min and verify it's >= 60
-        val request = TaskRequest.periodic("short-task", 15.minutes)
-        val unit = LinuxSystemdScheduler.buildTimerUnit(request)
-        val match = Regex("OnBootSec=(\\d+)s").find(unit)
-        val bootSec = match!!.groupValues[1].toLong()
-        assertTrue(bootSec >= 60, "OnBootSec should be at least 60s, was ${bootSec}s")
+        assertTrue(unit.contains("OnActiveSec=900s"), "Expected OnActiveSec=900s (full interval)")
     }
 
     @Test

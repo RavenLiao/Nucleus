@@ -249,6 +249,10 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
                     val seconds = request.interval!!.inWholeSeconds
                     appendLine("  <key>StartInterval</key>")
                     appendLine("  <integer>$seconds</integer>")
+                    if (request.runImmediately) {
+                        appendLine("  <key>RunAtLoad</key>")
+                        appendLine("  <true/>")
+                    }
                 }
                 TaskRequest.Type.CALENDAR -> {
                     appendCalendarInterval(this, request.cronExpression!!.expression)
