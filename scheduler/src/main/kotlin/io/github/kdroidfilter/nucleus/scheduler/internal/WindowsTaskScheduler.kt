@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
+import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
@@ -19,6 +20,7 @@ import java.util.logging.Logger
  * Requires `nucleus_scheduler.dll` — if the native library is not loaded, all operations
  * return failure (the scheduler is effectively unavailable).
  */
+@OptIn(InternalSchedulerApi::class)
 @Suppress("TooManyFunctions")
 internal object WindowsTaskScheduler : PlatformScheduler {
     private val logger = Logger.getLogger(WindowsTaskScheduler::class.java.name)

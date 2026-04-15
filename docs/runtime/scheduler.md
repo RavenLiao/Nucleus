@@ -347,3 +347,73 @@ Creates systemd user service and timer units in `~/.config/systemd/user/` (respe
 #### Windows (Task Scheduler)
 
 Registers tasks under `\Nucleus\<appId>\` via a JNI bridge (`WindowsTaskSchedulerJni`) that calls the Task Scheduler 2.0 COM API (`ITaskService`, `ITaskFolder`, `ITaskDefinition`) — no `schtasks.exe` subprocess. Supports periodic, daily, weekly, logon, and one-shot triggers natively.
+
+## Testing
+
+The `scheduler-testing` module provides two levels of test support, inspired by Android's `work-testing`.
+
+### Installation
+
+```kotlin
+dependencies {
+    testImplementation("io.github.kdroidfilter:nucleus.scheduler-testing:<version>")
+}
+```
+
+### Level 1 — Unit-test a task in isolation
+
+`TestTaskRunner` executes a `DesktopTask.doWork()` with a fabricated `TaskContext`, no scheduler involved:
+
+```kotlin
+val result = TestTaskRunner.runTask(
+    task = SyncTask(),
+    taskId = "sync",
+    inputData = mapOf("endpoint" to "https://test.api"),
+    runAttemptCount = 1,
+)
+assertEquals(TaskResult.Success, result)
+```
+
+### Level 2 — In-memory scheduler for integration tests
+
+`TestDesktopTaskScheduler` replaces the real platform backend so you can enqueue, query, and execute tasks entirely in memory:
+
+```kotlin
+val registry = TaskRegistry.Builder()
+    .register("sync") { SyncTask() }
+    .build()
+
+TestDesktopTaskScheduler().use { testScheduler ->
+    testScheduler.install()
+
+    // Enqueue through the real API — routed to in-memory backend
+    DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 1.hours))
+    assertTrue(DesktopTaskScheduler.isScheduled("sync"))
+
+    // Execute the task immediately
+    val result = testScheduler.runTask("sync", registry)
+    assertEquals(TaskResult.Success, result)
+
+    // Inspect state
+    val info = DesktopTaskScheduler.getTaskInfo("sync")
+    assertEquals(1, info?.runCount)
+} // .close() restores the platform-default backend
+```
+
+### `TestTaskRunner`
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `runTask(task, taskId?, inputData?, runAttemptCount?)` | `TaskResult` | Calls `doWork()` with a controlled `TaskContext`. |
+
+### `TestDesktopTaskScheduler`
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `install()` | `Unit` | Swaps the `DesktopTaskScheduler` backend with this in-memory implementation. |
+| `uninstall()` | `Unit` | Restores the platform-default backend. Also called by `close()`. |
+| `runTask(taskId, registry)` | `TaskResult` | Executes the task immediately, updates run count and attempt tracking. |
+| `getEnqueuedRequest(taskId)` | `TaskRequest?` | Returns the enqueued request for assertions. |
+| `getEnqueuedRequests()` | `List<TaskRequest>` | Returns all enqueued requests. |
+
+All standard `DesktopTaskScheduler` methods (`enqueue`, `cancel`, `isScheduled`, `getTaskInfo`, `getAllTasks`) work as expected after `install()`.

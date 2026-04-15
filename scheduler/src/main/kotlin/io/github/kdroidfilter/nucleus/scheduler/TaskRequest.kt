@@ -14,9 +14,11 @@ public class TaskRequest private constructor(
     internal val type: Type,
     internal val interval: Duration?,
     internal val cronExpression: CronExpression?,
-    internal val inputData: Map<String, String>,
+    /** Key-value pairs attached at enqueue time, retrievable via [TaskContext.inputData]. */
+    public val inputData: Map<String, String>,
     internal val retryPolicy: RetryPolicy?,
-    internal val existingTaskPolicy: ExistingTaskPolicy,
+    /** Policy for handling a task with the same ID already scheduled. */
+    public val existingTaskPolicy: ExistingTaskPolicy,
     internal val runImmediately: Boolean,
 ) {
     internal enum class Type { PERIODIC, CALENDAR, ON_BOOT }

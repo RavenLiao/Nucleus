@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
+import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
@@ -20,6 +21,7 @@ import java.util.logging.Logger
  * Each task creates a plist with label
  * `io.github.kdroidfilter.nucleus.{appId}.{taskId}`.
  */
+@OptIn(InternalSchedulerApi::class)
 @Suppress("TooManyFunctions")
 internal object MacOSLaunchdScheduler : PlatformScheduler {
     private val logger = Logger.getLogger(MacOSLaunchdScheduler::class.java.name)

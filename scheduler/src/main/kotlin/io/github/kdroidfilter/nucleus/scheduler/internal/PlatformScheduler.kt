@@ -3,10 +3,16 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 
+import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
+
 /**
  * Platform-specific scheduler backend.
+ *
+ * Application code should not implement this interface directly.
+ * Use the `scheduler-testing` module for test implementations.
  */
-internal interface PlatformScheduler {
+@InternalSchedulerApi
+public interface PlatformScheduler {
     /** Registers or updates a task with the OS scheduler. Returns true on success. */
     fun enqueue(request: TaskRequest): Boolean
 

@@ -20,16 +20,38 @@ import java.util.logging.Logger
  * scheduler.enqueue(TaskRequest.periodic("sync", 1.hours))
  * ```
  */
+@OptIn(InternalSchedulerApi::class)
 public object DesktopTaskScheduler {
     private val logger = Logger.getLogger(DesktopTaskScheduler::class.java.name)
 
-    private val delegate: PlatformScheduler =
+    private val platformDelegate: PlatformScheduler =
         when (Platform.Current) {
             Platform.Linux -> LinuxSystemdScheduler
             Platform.Windows -> if (WindowsTaskScheduler.isAvailable) WindowsTaskScheduler else NoopScheduler
             Platform.MacOS -> MacOSLaunchdScheduler
             else -> NoopScheduler
         }
+
+    private var delegate: PlatformScheduler = platformDelegate
+
+    /**
+     * Replaces the active scheduler backend with the given [scheduler].
+     *
+     * This is intended for testing only — use the `scheduler-testing` module
+     * which provides [TestDesktopTaskScheduler] to call this safely.
+     */
+    @InternalSchedulerApi
+    public fun setTestDelegate(scheduler: PlatformScheduler) {
+        delegate = scheduler
+    }
+
+    /**
+     * Restores the platform-default scheduler backend.
+     */
+    @InternalSchedulerApi
+    public fun resetDelegate() {
+        delegate = platformDelegate
+    }
 
     /**
      * Returns the singleton scheduler instance.
