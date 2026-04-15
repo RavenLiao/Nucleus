@@ -76,26 +76,16 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         // Save metadata
         TaskMetadataStore.save(appId, request.taskId, request.inputData)
 
-        // Generate wrapper script
-        val plistPath = plistFile(request.taskId).absolutePath
-        val retryPlistPath = retryPlistFile(request.taskId).absolutePath
-        val metadataDir = TaskMetadataStore.storeDir(appId).absolutePath
-        val wrapperScript = TaskWrapperScript.generateMacOSScript(
-            appId = appId,
-            taskId = request.taskId,
-            execPath = execPath,
-            plistPath = plistPath,
-            retryPlistPath = retryPlistPath,
-            metadataDir = metadataDir,
-        )
-
-        // Generate plist pointing to wrapper script
+        // Generate plist pointing directly to the app executable.
+        // No wrapper script on macOS — this ensures macOS displays the app name
+        // (not a script filename) in System Settings > Login Items.
+        // If the app is uninstalled, launchd silently fails (no popup, no CPU).
+        // Orphan plists are cleaned up on reinstall by DesktopBootReceiver.
         val plistContent =
             try {
-                buildPlist(request, wrapperScript.absolutePath)
+                buildPlist(request, execPath)
             } catch (e: IllegalArgumentException) {
                 logger.warning("Task '${request.taskId}' not scheduled: ${e.message}")
-                wrapperScript.delete()
                 return false
             }
         val file = plistFile(request.taskId)
@@ -116,7 +106,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             launchctl("unload", retryFile.absolutePath)
             retryFile.delete()
         }
-        TaskWrapperScript.deleteScript(appId, taskId)
         TaskMetadataStore.delete(appId, taskId)
         return true
     }
@@ -124,7 +113,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     override fun cancelAll() {
         val allIds = listScheduledTaskIds()
         allIds.forEach { cancel(it) }
-        TaskWrapperScript.deleteAllScripts(appId)
         TaskMetadataStore.deleteAll(appId)
     }
 
@@ -171,19 +159,11 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             retryFile.delete()
         }
 
-        // Use the wrapper script if it exists, otherwise fall back to direct exec
-        val wrapperScript = TaskWrapperScript.scriptFile(appId, taskId)
-        val programArgs = if (wrapperScript.exists()) {
-            buildString {
-                appendLine("    <string>${wrapperScript.absolutePath}</string>")
-            }.trimEnd()
-        } else {
-            buildString {
-                appendLine("    <string>$execPath</string>")
-                appendLine("    <string>$SCHEDULER_ARG</string>")
-                appendLine("    <string>$taskId</string>")
-            }.trimEnd()
-        }
+        val programArgs = buildString {
+            appendLine("    <string>$execPath</string>")
+            appendLine("    <string>$SCHEDULER_ARG</string>")
+            appendLine("    <string>$taskId</string>")
+        }.trimEnd()
 
         val plist = buildString {
             appendLine(PLIST_HEADER)
@@ -243,7 +223,15 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">"""
 
-    private fun buildPlist(request: TaskRequest, scriptPath: String): String =
+    /**
+     * Builds a plist that runs the app executable directly.
+     *
+     * No wrapper script — macOS displays the app name in System Settings > Login Items
+     * based on the executable path. If the app is uninstalled, launchd silently fails
+     * (no popup, no CPU usage). Orphan plists are cleaned up by [DesktopBootReceiver]
+     * if the app is reinstalled.
+     */
+    private fun buildPlist(request: TaskRequest, execPath: String): String =
         buildString {
             appendLine(PLIST_HEADER)
             appendLine("<dict>")
@@ -251,7 +239,9 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             appendLine("  <string>${label(request.taskId)}</string>")
             appendLine("  <key>ProgramArguments</key>")
             appendLine("  <array>")
-            appendLine("    <string>$scriptPath</string>")
+            appendLine("    <string>$execPath</string>")
+            appendLine("    <string>$SCHEDULER_ARG</string>")
+            appendLine("    <string>${request.taskId}</string>")
             appendLine("  </array>")
 
             when (request.type) {

@@ -103,37 +103,6 @@ internal object TaskWrapperScript {
     /** Escapes double quotes for use inside a VBS string literal. */
     private fun vbsEscape(s: String): String = s.replace("\"", "\"\"")
 
-    // -- macOS bash wrapper ---------------------------------------------------
-
-    fun generateMacOSScript(
-        appId: String,
-        taskId: String,
-        execPath: String,
-        plistPath: String,
-        retryPlistPath: String,
-        metadataDir: String,
-    ): File {
-        val file = scriptFile(appId, taskId)
-        file.parentFile.mkdirs()
-
-        val content = buildString {
-            appendLine("#!/bin/bash")
-            appendLine("EXEC=${quote(execPath)}")
-            appendLine("if [ ! -x \"${'$'}EXEC\" ]; then")
-            appendLine("    launchctl unload ${quote(plistPath)} 2>/dev/null")
-            appendLine("    rm -f ${quote(plistPath)}")
-            appendLine("    rm -f ${quote(retryPlistPath)}")
-            appendLine("    rm -f ${quote(metadataDir + "/" + taskId + ".properties")}")
-            appendLine("    rm -f ${quote(file.absolutePath)}")
-            appendLine("    exit 0")
-            appendLine("fi")
-            appendLine("\"${'$'}EXEC\" --nucleus-scheduler-run $taskId")
-        }
-        file.writeText(content)
-        file.setExecutable(true)
-        return file
-    }
-
     // -- Linux bash wrapper ---------------------------------------------------
 
     fun generateLinuxScript(
