@@ -1,5 +1,6 @@
 package io.github.kdroidfilter.nucleus.window
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -405,7 +406,7 @@ fun FrameWindowScope.DecoratedWindowBody(
                     }
                 scope.content()
             },
-            modifier = undecoratedWindowBorder,
+            modifier = Modifier.background(titleBarBackground).then(undecoratedWindowBorder),
             measurePolicy = DecoratedWindowMeasurePolicy,
         )
     }
