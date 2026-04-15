@@ -8,12 +8,13 @@ import kotlin.time.Duration.Companion.minutes
  *
  * Create instances via the companion factory methods: [periodic], [calendar], [onBoot].
  */
+@OptIn(InternalSchedulerApi::class)
 public class TaskRequest private constructor(
     /** Unique identifier — must match a [TaskRegistry] entry. */
     public val taskId: String,
-    internal val type: Type,
-    internal val interval: Duration?,
-    internal val cronExpression: CronExpression?,
+    @property:InternalSchedulerApi public val type: Type,
+    @property:InternalSchedulerApi public val interval: Duration?,
+    @property:InternalSchedulerApi public val cronExpression: CronExpression?,
     /** Key-value pairs attached at enqueue time, retrievable via [TaskContext.inputData]. */
     public val inputData: Map<String, String>,
     internal val retryPolicy: RetryPolicy?,
@@ -21,7 +22,8 @@ public class TaskRequest private constructor(
     public val existingTaskPolicy: ExistingTaskPolicy,
     internal val runImmediately: Boolean,
 ) {
-    internal enum class Type { PERIODIC, CALENDAR, ON_BOOT }
+    @InternalSchedulerApi
+    public enum class Type { PERIODIC, CALENDAR, ON_BOOT }
 
     /**
      * DSL builder for configuring a [TaskRequest].

@@ -11,24 +11,29 @@ import io.github.kdroidfilter.nucleus.scheduler.TaskResult
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
 import io.github.kdroidfilter.nucleus.scheduler.internal.PlatformScheduler
 import java.io.Closeable
+import kotlin.time.Duration
 
 /**
  * In-memory scheduler for integration tests.
  *
  * Replaces the real [DesktopTaskScheduler] backend so you can enqueue, query,
- * and execute tasks without touching the OS scheduler.
+ * and execute tasks without touching the OS scheduler. Supports virtual time
+ * advancement to test periodic and calendar schedules.
  *
  * ```kotlin
- * val testScheduler = TestDesktopTaskScheduler()
- * testScheduler.install()
+ * TestDesktopTaskScheduler().use { testScheduler ->
+ *     testScheduler.install()
  *
- * DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 1.hours))
- * assertTrue(DesktopTaskScheduler.isScheduled("sync"))
+ *     DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 2.hours))
  *
- * val result = testScheduler.runTask("sync", registry)
- * assertEquals(TaskResult.Success, result)
+ *     // Advance 6 hours — triggers 3 executions
+ *     val results = testScheduler.advanceTimeBy(6.hours, registry)
+ *     assertEquals(3, results.size)
  *
- * testScheduler.close() // restores platform default
+ *     // Inspect execution history
+ *     val history = testScheduler.getExecutionHistory("sync")
+ *     assertEquals(3, history.size)
+ * }
  * ```
  */
 @OptIn(InternalSchedulerApi::class)
@@ -36,12 +41,30 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
 
     private val tasks = mutableMapOf<String, TaskRequest>()
     private val metadata = mutableMapOf<String, TaskMetadata>()
+    private val executionHistories = mutableMapOf<String, MutableList<ExecutionRecord>>()
+    private var virtualTimeMs: Long = 0L
+    private val enqueueTimeMs = mutableMapOf<String, Long>()
 
     private data class TaskMetadata(
         var runCount: Int = 0,
         var runAttemptCount: Int = 1,
         var lastRunMs: Long? = null,
         var lastResult: String? = null,
+    )
+
+    /**
+     * A recorded task execution.
+     *
+     * @property taskId the task that was executed
+     * @property result the outcome of `doWork()`
+     * @property runAttemptCount the attempt number at the time of execution (1-based)
+     * @property virtualTimeMs the virtual time at which the execution occurred
+     */
+    public data class ExecutionRecord(
+        public val taskId: String,
+        public val result: TaskResult,
+        public val runAttemptCount: Int,
+        public val virtualTimeMs: Long,
     )
 
     // -- Install / Uninstall --------------------------------------------------
@@ -76,18 +99,23 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
         }
         tasks[request.taskId] = request
         metadata.getOrPut(request.taskId) { TaskMetadata() }
+        enqueueTimeMs[request.taskId] = virtualTimeMs
         return true
     }
 
     override fun cancel(taskId: String): Boolean {
         val removed = tasks.remove(taskId) != null
-        if (removed) metadata.remove(taskId)
+        if (removed) {
+            metadata.remove(taskId)
+            enqueueTimeMs.remove(taskId)
+        }
         return removed
     }
 
     override fun cancelAll() {
         tasks.clear()
         metadata.clear()
+        enqueueTimeMs.clear()
     }
 
     override fun isScheduled(taskId: String): Boolean = taskId in tasks
@@ -113,7 +141,9 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
      * Immediately executes the task identified by [taskId] using the given [registry].
      *
      * Builds a [TaskContext] from the stored input data, calls `doWork()`, and
-     * records the result in memory (accessible via [getTaskInfo]).
+     * records the result. On [TaskResult.Retry], `runAttemptCount` is automatically
+     * incremented for the next call to `runTask()`. On [TaskResult.Success] or
+     * [TaskResult.Failure], it resets to 1.
      *
      * @throws IllegalStateException if the task is not enqueued
      * @throws io.github.kdroidfilter.nucleus.scheduler.TaskNotFoundException if [taskId] is not in [registry]
@@ -135,27 +165,130 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
         val task = registry.create(taskId)
         val result = task.doWork(context)
 
+        val record = ExecutionRecord(
+            taskId = taskId,
+            result = result,
+            runAttemptCount = meta.runAttemptCount,
+            virtualTimeMs = virtualTimeMs,
+        )
+        executionHistories.getOrPut(taskId) { mutableListOf() }.add(record)
+
         when (result) {
             is TaskResult.Success -> {
                 meta.runCount++
                 meta.runAttemptCount = 1
-                meta.lastRunMs = System.currentTimeMillis()
+                meta.lastRunMs = virtualTimeMs
                 meta.lastResult = "Success"
             }
             is TaskResult.Retry -> {
                 meta.runAttemptCount++
-                meta.lastRunMs = System.currentTimeMillis()
+                meta.lastRunMs = virtualTimeMs
                 meta.lastResult = "Retry: ${result.message}"
             }
             is TaskResult.Failure -> {
                 meta.runAttemptCount = 1
-                meta.lastRunMs = System.currentTimeMillis()
+                meta.lastRunMs = virtualTimeMs
                 meta.lastResult = "Failure: ${result.message}"
             }
         }
 
         return result
     }
+
+    // -- Virtual time ---------------------------------------------------------
+
+    /**
+     * Returns the current virtual time.
+     */
+    public val currentVirtualTimeMs: Long get() = virtualTimeMs
+
+    /**
+     * Advances virtual time by [duration] and executes all periodic tasks whose
+     * interval has elapsed during that window.
+     *
+     * For a task with interval `I` enqueued at virtual time `T`, executions
+     * occur at `T + I`, `T + 2I`, etc. Only periodic tasks are triggered;
+     * calendar and on-boot tasks are skipped (use [runTask] for those).
+     *
+     * Returns all [ExecutionRecord]s produced during the time advancement,
+     * in chronological order.
+     *
+     * ```kotlin
+     * DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 2.hours))
+     * val results = testScheduler.advanceTimeBy(6.hours, registry)
+     * assertEquals(3, results.size)
+     * ```
+     */
+    public suspend fun advanceTimeBy(
+        duration: Duration,
+        registry: TaskRegistry,
+    ): List<ExecutionRecord> {
+        val targetMs = virtualTimeMs + duration.inWholeMilliseconds
+        val records = mutableListOf<ExecutionRecord>()
+
+        // Collect all periodic tasks and compute their fire times
+        data class PendingFire(val taskId: String, val fireAtMs: Long)
+
+        val fires = mutableListOf<PendingFire>()
+
+        for ((taskId, request) in tasks) {
+            if (request.type != TaskRequest.Type.PERIODIC) continue
+            val intervalMs = request.interval?.inWholeMilliseconds ?: continue
+            val baseMs = enqueueTimeMs[taskId] ?: 0L
+
+            // Compute the next fire time after current virtualTimeMs
+            val elapsedSinceEnqueue = virtualTimeMs - baseMs
+            val nextIndex = (elapsedSinceEnqueue / intervalMs) + 1
+            var nextFireMs = baseMs + nextIndex * intervalMs
+
+            while (nextFireMs <= targetMs) {
+                fires.add(PendingFire(taskId, nextFireMs))
+                nextFireMs += intervalMs
+            }
+        }
+
+        // Sort chronologically and execute
+        fires.sortBy { it.fireAtMs }
+
+        for (fire in fires) {
+            // Task may have been cancelled by a previous execution
+            if (fire.taskId !in tasks) continue
+            virtualTimeMs = fire.fireAtMs
+            runTask(fire.taskId, registry)
+            val history = executionHistories[fire.taskId]
+            if (history != null && history.isNotEmpty()) {
+                records.add(history.last())
+            }
+        }
+
+        virtualTimeMs = targetMs
+        return records
+    }
+
+    // -- Execution history ----------------------------------------------------
+
+    /**
+     * Returns the full execution history for [taskId], in chronological order.
+     *
+     * Each entry records the [TaskResult], `runAttemptCount`, and virtual time
+     * at which the execution occurred.
+     *
+     * ```kotlin
+     * val history = testScheduler.getExecutionHistory("sync")
+     * assertEquals(TaskResult.Success, history.last().result)
+     * assertEquals(1, history.last().runAttemptCount)
+     * ```
+     */
+    public fun getExecutionHistory(taskId: String): List<ExecutionRecord> =
+        executionHistories[taskId]?.toList() ?: emptyList()
+
+    /**
+     * Returns the full execution history across all tasks, in chronological order.
+     */
+    public fun getAllExecutionHistory(): List<ExecutionRecord> =
+        executionHistories.values.flatten().sortedBy { it.virtualTimeMs }
+
+    // -- Enqueue introspection ------------------------------------------------
 
     /**
      * Returns the [TaskRequest] for an enqueued task, or `null` if not found.

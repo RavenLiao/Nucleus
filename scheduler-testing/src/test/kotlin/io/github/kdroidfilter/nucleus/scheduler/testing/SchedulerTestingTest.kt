@@ -16,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 // -- Sample tasks for testing -------------------------------------------------
 
@@ -42,6 +43,14 @@ class InputEchoTask : DesktopTask {
 
     override suspend fun doWork(context: TaskContext): TaskResult {
         receivedData = context.inputData
+        return TaskResult.Success
+    }
+}
+
+class CountingTask : DesktopTask {
+    var executions = 0
+    override suspend fun doWork(context: TaskContext): TaskResult {
+        executions++
         return TaskResult.Success
     }
 }
@@ -151,23 +160,30 @@ class TestDesktopTaskSchedulerTest {
     }
 
     @Test
-    fun `runTask tracks retry attempts`() = runBlocking {
+    fun `runTask tracks retry attempts automatically`() = runBlocking {
         val scheduler = TestDesktopTaskScheduler()
         scheduler.install()
         try {
             DesktopTaskScheduler.enqueue(TaskRequest.periodic("retry", 1.hours))
 
-            // First attempt — retry
+            // First attempt — retry (runAttemptCount = 1)
             val r1 = scheduler.runTask("retry", registry)
             assertTrue(r1 is TaskResult.Retry)
 
-            // Second attempt — still retry (attempt count = 2)
+            // Second attempt — retry (runAttemptCount auto-incremented to 2)
             val r2 = scheduler.runTask("retry", registry)
             assertTrue(r2 is TaskResult.Retry)
 
-            // Third attempt — success (attempt count = 3)
+            // Third attempt — success (runAttemptCount auto-incremented to 3)
             val r3 = scheduler.runTask("retry", registry)
             assertEquals(TaskResult.Success, r3)
+
+            // Verify via execution history
+            val history = scheduler.getExecutionHistory("retry")
+            assertEquals(3, history.size)
+            assertEquals(1, history[0].runAttemptCount)
+            assertEquals(2, history[1].runAttemptCount)
+            assertEquals(3, history[2].runAttemptCount)
 
             val info = DesktopTaskScheduler.getTaskInfo("retry")
             assertNotNull(info)
@@ -249,6 +265,202 @@ class TestDesktopTaskSchedulerTest {
             scheduler.runTask("echo", customRegistry)
             assertEquals("https://test.api", task.receivedData["endpoint"])
             assertEquals("abc123", task.receivedData["token"])
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+}
+
+// -- advanceTimeBy tests ------------------------------------------------------
+
+class AdvanceTimeTest {
+
+    @Test
+    fun `advanceTimeBy triggers periodic task at correct intervals`() = runBlocking {
+        val task = CountingTask()
+        val registry = TaskRegistry.Builder()
+            .register("counter") { task }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 2.hours))
+
+            val results = scheduler.advanceTimeBy(6.hours, registry)
+            assertEquals(3, results.size)
+            assertEquals(3, task.executions)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy does not trigger before first interval`() = runBlocking {
+        val task = CountingTask()
+        val registry = TaskRegistry.Builder()
+            .register("counter") { task }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 2.hours))
+
+            val results = scheduler.advanceTimeBy(90.minutes, registry)
+            assertEquals(0, results.size)
+            assertEquals(0, task.executions)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy fires exactly on interval boundary`() = runBlocking {
+        val task = CountingTask()
+        val registry = TaskRegistry.Builder()
+            .register("counter") { task }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 1.hours))
+
+            // Exactly 1 hour = exactly 1 fire
+            val results = scheduler.advanceTimeBy(1.hours, registry)
+            assertEquals(1, results.size)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy with multiple tasks`() = runBlocking {
+        val fastTask = CountingTask()
+        val slowTask = CountingTask()
+        val registry = TaskRegistry.Builder()
+            .register("fast") { fastTask }
+            .register("slow") { slowTask }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("fast", 1.hours))
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("slow", 3.hours))
+
+            val results = scheduler.advanceTimeBy(6.hours, registry)
+            // fast: 1h, 2h, 3h, 4h, 5h, 6h = 6 fires
+            // slow: 3h, 6h = 2 fires
+            assertEquals(8, results.size)
+            assertEquals(6, fastTask.executions)
+            assertEquals(2, slowTask.executions)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy records virtual time in execution history`() = runBlocking {
+        val registry = TaskRegistry.Builder()
+            .register("task") { SuccessTask() }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("task", 1.hours))
+
+            scheduler.advanceTimeBy(3.hours, registry)
+
+            val history = scheduler.getExecutionHistory("task")
+            assertEquals(3, history.size)
+            assertEquals(1.hours.inWholeMilliseconds, history[0].virtualTimeMs)
+            assertEquals(2.hours.inWholeMilliseconds, history[1].virtualTimeMs)
+            assertEquals(3.hours.inWholeMilliseconds, history[2].virtualTimeMs)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy skips non-periodic tasks`() = runBlocking {
+        val registry = TaskRegistry.Builder()
+            .register("boot") { SuccessTask() }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.onBoot("boot"))
+
+            val results = scheduler.advanceTimeBy(5.hours, registry)
+            assertEquals(0, results.size)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `advanceTimeBy with retry tracks attempt count across fires`() = runBlocking {
+        // Task retries twice then succeeds on 3rd attempt
+        val registry = TaskRegistry.Builder()
+            .register("flaky") { RetryTask() }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("flaky", 1.hours))
+
+            // First fire at 1h — retry (attempt 1)
+            scheduler.advanceTimeBy(1.hours, registry)
+            var history = scheduler.getExecutionHistory("flaky")
+            assertEquals(1, history.size)
+            assertTrue(history[0].result is TaskResult.Retry)
+            assertEquals(1, history[0].runAttemptCount)
+
+            // Second fire at 2h — retry (attempt 2, auto-incremented)
+            scheduler.advanceTimeBy(1.hours, registry)
+            history = scheduler.getExecutionHistory("flaky")
+            assertEquals(2, history.size)
+            assertTrue(history[1].result is TaskResult.Retry)
+            assertEquals(2, history[1].runAttemptCount)
+
+            // Third fire at 3h — success (attempt 3, auto-incremented)
+            scheduler.advanceTimeBy(1.hours, registry)
+            history = scheduler.getExecutionHistory("flaky")
+            assertEquals(3, history.size)
+            assertEquals(TaskResult.Success, history[2].result)
+            assertEquals(3, history[2].runAttemptCount)
+        } finally {
+            scheduler.uninstall()
+        }
+    }
+
+    @Test
+    fun `getAllExecutionHistory returns chronologically sorted records`() = runBlocking {
+        val registry = TaskRegistry.Builder()
+            .register("a") { SuccessTask() }
+            .register("b") { SuccessTask() }
+            .build()
+
+        val scheduler = TestDesktopTaskScheduler()
+        scheduler.install()
+        try {
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("a", 1.hours))
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic("b", 2.hours))
+
+            scheduler.advanceTimeBy(4.hours, registry)
+
+            val all = scheduler.getAllExecutionHistory()
+            // a: 1h, 2h, 3h, 4h = 4 fires; b: 2h, 4h = 2 fires
+            assertEquals(6, all.size)
+            // Verify chronological order
+            for (i in 1 until all.size) {
+                assertTrue(all[i].virtualTimeMs >= all[i - 1].virtualTimeMs)
+            }
         } finally {
             scheduler.uninstall()
         }

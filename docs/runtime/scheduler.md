@@ -376,7 +376,7 @@ assertEquals(TaskResult.Success, result)
 
 ### Level 2 — In-memory scheduler for integration tests
 
-`TestDesktopTaskScheduler` replaces the real platform backend so you can enqueue, query, and execute tasks entirely in memory:
+`TestDesktopTaskScheduler` replaces the real platform backend so you can enqueue, query, and execute tasks entirely in memory. It supports **virtual time** and **execution history**.
 
 ```kotlin
 val registry = TaskRegistry.Builder()
@@ -387,17 +387,37 @@ TestDesktopTaskScheduler().use { testScheduler ->
     testScheduler.install()
 
     // Enqueue through the real API — routed to in-memory backend
-    DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 1.hours))
+    DesktopTaskScheduler.enqueue(TaskRequest.periodic("sync", 2.hours))
     assertTrue(DesktopTaskScheduler.isScheduled("sync"))
 
-    // Execute the task immediately
-    val result = testScheduler.runTask("sync", registry)
-    assertEquals(TaskResult.Success, result)
+    // Advance virtual time — automatically triggers periodic tasks
+    val results = testScheduler.advanceTimeBy(6.hours, registry)
+    assertEquals(3, results.size) // fired at 2h, 4h, 6h
 
-    // Inspect state
-    val info = DesktopTaskScheduler.getTaskInfo("sync")
-    assertEquals(1, info?.runCount)
+    // Inspect execution history
+    val history = testScheduler.getExecutionHistory("sync")
+    assertEquals(3, history.size)
+    assertEquals(TaskResult.Success, history.last().result)
 } // .close() restores the platform-default backend
+```
+
+#### Retry tracking
+
+When `doWork()` returns `TaskResult.Retry`, the `runAttemptCount` is automatically incremented for the next execution. On `Success` or `Failure`, it resets to 1:
+
+```kotlin
+TestDesktopTaskScheduler().use { testScheduler ->
+    testScheduler.install()
+    DesktopTaskScheduler.enqueue(TaskRequest.periodic("flaky", 1.hours))
+
+    // advanceTimeBy triggers the task each hour
+    testScheduler.advanceTimeBy(3.hours, registry)
+
+    val history = testScheduler.getExecutionHistory("flaky")
+    assertEquals(1, history[0].runAttemptCount) // attempt 1 → Retry
+    assertEquals(2, history[1].runAttemptCount) // attempt 2 → Retry
+    assertEquals(3, history[2].runAttemptCount) // attempt 3 → Success
+}
 ```
 
 ### `TestTaskRunner`
@@ -413,7 +433,11 @@ TestDesktopTaskScheduler().use { testScheduler ->
 | `install()` | `Unit` | Swaps the `DesktopTaskScheduler` backend with this in-memory implementation. |
 | `uninstall()` | `Unit` | Restores the platform-default backend. Also called by `close()`. |
 | `runTask(taskId, registry)` | `TaskResult` | Executes the task immediately, updates run count and attempt tracking. |
+| `advanceTimeBy(duration, registry)` | `List<ExecutionRecord>` | Advances virtual time and triggers all periodic tasks whose interval has elapsed. |
+| `getExecutionHistory(taskId)` | `List<ExecutionRecord>` | Full execution history for a task (result, attempt count, virtual time). |
+| `getAllExecutionHistory()` | `List<ExecutionRecord>` | Execution history across all tasks, sorted chronologically. |
 | `getEnqueuedRequest(taskId)` | `TaskRequest?` | Returns the enqueued request for assertions. |
 | `getEnqueuedRequests()` | `List<TaskRequest>` | Returns all enqueued requests. |
+| `currentVirtualTimeMs` | `Long` | The current virtual time in milliseconds. |
 
 All standard `DesktopTaskScheduler` methods (`enqueue`, `cancel`, `isScheduled`, `getTaskInfo`, `getAllTasks`) work as expected after `install()`.
