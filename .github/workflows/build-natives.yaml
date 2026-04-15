@@ -454,6 +454,25 @@ jobs:
           path: service-management-macos/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build scheduler macOS dylibs
+        run: bash scheduler/src/main/native/macos/build.sh
+
+      - name: Verify scheduler macOS natives
+        run: |
+          for f in \
+            scheduler/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_scheduler.dylib \
+            scheduler/src/main/resources/nucleus/native/darwin-x64/libnucleus_scheduler.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload scheduler macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduler-macos
+          path: scheduler/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
       - name: Build launcher-macos macOS dylibs
         run: bash launcher-macos/src/main/native/macos/build.sh
 

@@ -14,7 +14,10 @@ import java.util.logging.Logger
  * macOS implementation using launchd user agents.
  *
  * Generated plist files go to `~/Library/LaunchAgents/` and are managed via
- * `launchctl` commands. Each task creates a plist with label
+ * native JNI bridge (NSDictionary + SMJobCopyDictionary + NSTask) when available,
+ * falling back to shell commands otherwise.
+ *
+ * Each task creates a plist with label
  * `io.github.kdroidfilter.nucleus.{appId}.{taskId}`.
  */
 @Suppress("TooManyFunctions")
@@ -23,6 +26,9 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     private const val SCHEDULER_ARG = "--nucleus-scheduler-run"
     private const val COMMAND_TIMEOUT_SECONDS = 10L
     private const val LABEL_PREFIX = "io.github.kdroidfilter.nucleus"
+    private const val CAL_NOT_SET = -1
+
+    private val useNative: Boolean = MacOSLaunchdSchedulerJni.isLoaded
 
     private val launchAgentsDir: File
         get() = File(System.getProperty("user.home"), "Library/LaunchAgents")
@@ -52,6 +58,93 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 
     private fun retryPlistFile(taskId: String): File = File(launchAgentsDir, retryPlistFileName(taskId))
 
+    // -- Calendar config extraction -------------------------------------------
+
+    /**
+     * Structured representation of a launchd calendar interval,
+     * extracted from a systemd OnCalendar expression.
+     */
+    internal data class CalendarConfig(
+        val day: Int = CAL_NOT_SET,
+        val hour: Int = CAL_NOT_SET,
+        val minute: Int = CAL_NOT_SET,
+        val days: IntArray? = null,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is CalendarConfig) return false
+            return day == other.day &&
+                hour == other.hour &&
+                minute == other.minute &&
+                days.contentEquals(other.days)
+        }
+
+        override fun hashCode(): Int {
+            var result = day
+            result = 31 * result + hour
+            result = 31 * result + minute
+            result = 31 * result + (days?.contentHashCode() ?: 0)
+            return result
+        }
+    }
+
+    /**
+     * Parses a systemd OnCalendar expression into structured calendar fields
+     * suitable for both JNI and shell plist generation.
+     *
+     * @throws IllegalArgumentException if the expression is not supported
+     */
+    internal fun parseCalendarConfig(expression: String): CalendarConfig {
+        val trimmed = expression.trim()
+
+        // Pattern: every hour — *-*-* *:00:00
+        if (trimmed == "*-*-* *:00:00") {
+            return CalendarConfig(minute = 0)
+        }
+
+        // Pattern: day range (Mon..Fri) with time
+        val rangeMatch =
+            Regex("""^(\w{3})\.\.(\w{3})\s+\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""")
+                .matchEntire(trimmed)
+        if (rangeMatch != null) {
+            val destructured = rangeMatch.destructured
+            val days = expandDayRange(destructured.component1(), destructured.component2())
+            if (days != null) {
+                return CalendarConfig(
+                    hour = destructured.component3().toInt(),
+                    minute = destructured.component4().toInt(),
+                    days = days.toIntArray(),
+                )
+            }
+        }
+
+        // Pattern: specific weekday with time — Mon *-*-* HH:MM:00
+        val weekdayMatch =
+            Regex("""^(\w{3})\s+\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""")
+                .matchEntire(trimmed)
+        if (weekdayMatch != null) {
+            val (day, hour, minute) = weekdayMatch.destructured
+            val dayNum = dayToLaunchdWeekday(day)
+            if (dayNum != null) {
+                return CalendarConfig(day = dayNum, hour = hour.toInt(), minute = minute.toInt())
+            }
+        }
+
+        // Pattern: daily at specific time — *-*-* HH:MM:00
+        val dailyMatch = Regex("""^\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""").matchEntire(trimmed)
+        if (dailyMatch != null) {
+            val (hour, minute) = dailyMatch.destructured
+            return CalendarConfig(hour = hour.toInt(), minute = minute.toInt())
+        }
+
+        throw IllegalArgumentException(
+            "Unsupported cron expression '$expression' for macOS launchd. " +
+                "Supported patterns: '*-*-* HH:MM:00', '*-*-* *:00:00', " +
+                "'Mon *-*-* HH:MM:00', 'Mon..Fri *-*-* HH:MM:00'. " +
+                "Use CronExpression factory methods instead of CronExpression.custom().",
+        )
+    }
+
     // -- PlatformScheduler implementation -------------------------------------
 
     override fun enqueue(request: TaskRequest): Boolean {
@@ -66,21 +159,95 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             return false
         }
 
-        launchAgentsDir.mkdirs()
-
         // If replacing, unload and remove the existing plist first
         if (request.existingTaskPolicy == ExistingTaskPolicy.REPLACE && isScheduled(request.taskId)) {
             unloadAndDelete(request.taskId)
         }
 
-        // Save metadata
         TaskMetadataStore.save(appId, request.taskId, request.inputData)
 
-        // Generate plist pointing directly to the app executable.
-        // No wrapper script on macOS — this ensures macOS displays the app name
-        // (not a script filename) in System Settings > Login Items.
-        // If the app is uninstalled, launchd silently fails (no popup, no CPU).
-        // Orphan plists are cleaned up on reinstall by DesktopBootReceiver.
+        return if (useNative) {
+            enqueueNative(request, execPath)
+        } else {
+            enqueueShell(request, execPath)
+        }
+    }
+
+    private fun enqueueNative(
+        request: TaskRequest,
+        execPath: String,
+    ): Boolean {
+        val plistPath = plistFile(request.taskId).absolutePath
+        val programArgs = arrayOf(execPath, SCHEDULER_ARG, request.taskId)
+
+        var intervalSeconds = 0
+        var calDay = CAL_NOT_SET
+        var calHour = CAL_NOT_SET
+        var calMinute = CAL_NOT_SET
+        var calDays: IntArray? = null
+        var runAtLoad = false
+
+        when (request.type) {
+            TaskRequest.Type.PERIODIC -> {
+                intervalSeconds = request.interval!!.inWholeSeconds.toInt()
+                runAtLoad = request.runImmediately
+            }
+            TaskRequest.Type.CALENDAR -> {
+                val config =
+                    try {
+                        parseCalendarConfig(request.cronExpression!!.expression)
+                    } catch (e: IllegalArgumentException) {
+                        logger.warning("Task '${request.taskId}' not scheduled: ${e.message}")
+                        return false
+                    }
+                calDay = config.day
+                calHour = config.hour
+                calMinute = config.minute
+                calDays = config.days
+            }
+            TaskRequest.Type.ON_BOOT -> {
+                runAtLoad = true
+            }
+        }
+
+        // Persist schedule config so getTaskInfo() can compute next fire time
+        TaskMetadataStore.saveScheduleHint(
+            appId,
+            request.taskId,
+            TaskMetadataStore.ScheduleHint(intervalSeconds, calDay, calHour, calMinute, calDays),
+        )
+
+        val writeError =
+            MacOSLaunchdSchedulerJni.nativeWritePlist(
+                plistPath,
+                label(request.taskId),
+                programArgs,
+                intervalSeconds,
+                calDay,
+                calHour,
+                calMinute,
+                runAtLoad,
+                calDays,
+            )
+        if (writeError != null) {
+            logger.warning("Failed to write plist for task '${request.taskId}': $writeError")
+            return false
+        }
+
+        val loadError = MacOSLaunchdSchedulerJni.nativeLaunchctlLoad(plistPath)
+        if (loadError != null) {
+            logger.warning("Failed to load task '${request.taskId}': $loadError")
+            return false
+        }
+        return true
+    }
+
+    private fun enqueueShell(
+        request: TaskRequest,
+        execPath: String,
+    ): Boolean {
+        launchAgentsDir.mkdirs()
+
         val plistContent =
             try {
                 buildPlist(request, execPath)
@@ -91,7 +258,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         val file = plistFile(request.taskId)
         file.writeText(plistContent)
 
-        // Load into launchd
         return launchctl("load", "-w", file.absolutePath)
     }
 
@@ -103,8 +269,13 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         // Also clean up any pending retry
         val retryFile = retryPlistFile(taskId)
         if (retryFile.exists()) {
-            launchctl("unload", retryFile.absolutePath)
-            retryFile.delete()
+            if (useNative) {
+                MacOSLaunchdSchedulerJni.nativeLaunchctlUnload(retryFile.absolutePath)
+                MacOSLaunchdSchedulerJni.nativeDeleteFile(retryFile.absolutePath)
+            } else {
+                launchctl("unload", retryFile.absolutePath)
+                retryFile.delete()
+            }
         }
         TaskMetadataStore.delete(appId, taskId)
         return true
@@ -121,14 +292,13 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     override fun getTaskInfo(taskId: String): TaskInfo? {
         if (!plistFile(taskId).exists()) return null
 
-        // Plist exists → task is scheduled. Check if launchd has it loaded right now.
         val state = if (isLoaded(label(taskId))) TaskState.SCHEDULED else TaskState.INACTIVE
 
         return TaskInfo(
             taskId = taskId,
             state = state,
             lastRunMs = TaskMetadataStore.getLastRunMs(appId, taskId),
-            nextRunMs = null, // launchd does not expose next fire date via CLI
+            nextRunMs = computeNextRunMs(taskId),
             runCount = TaskMetadataStore.getRunCount(appId, taskId),
             lastResult = TaskMetadataStore.getLastResult(appId, taskId),
         )
@@ -136,14 +306,38 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 
     override fun getAllTasks(): List<TaskInfo> = listScheduledTaskIds().mapNotNull { getTaskInfo(it) }
 
+    // -- Next fire time -------------------------------------------------------
+
+    /**
+     * Computes the next fire time for a task by re-reading its schedule config.
+     * Returns null when the native library is unavailable or the config cannot be parsed.
+     */
+    private fun computeNextRunMs(taskId: String): Long? {
+        if (!useNative) return null
+
+        val metadata = TaskMetadataStore.loadScheduleHint(appId, taskId) ?: return null
+
+        val result =
+            MacOSLaunchdSchedulerJni.nativeComputeNextFireTime(
+                metadata.intervalSeconds,
+                metadata.calendarDay,
+                metadata.calendarHour,
+                metadata.calendarMinute,
+                metadata.calendarDays,
+            )
+        return if (result > 0) result else null
+    }
+
     // -- Retry support --------------------------------------------------------
 
     /**
      * Schedules a one-shot retry that fires after [delaySeconds].
      *
-     * Uses a background thread to wait for the delay, then loads a RunAtLoad-only
-     * plist that fires immediately. The retry plist is cleaned up after execution
-     * by [cleanupRetryPlist].
+     * When the native library is available, writes a RunAtLoad plist atomically
+     * and uses dispatch_after for the delayed load. Otherwise falls back to a
+     * background thread with Thread.sleep.
+     *
+     * The retry plist is cleaned up after execution by [cleanupRetryPlist].
      */
     fun scheduleRetry(
         taskId: String,
@@ -152,11 +346,44 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         val execPath = executablePath ?: return false
 
         // Remove any previous retry plist
-        val retryFile = retryPlistFile(taskId)
-        if (retryFile.exists()) {
-            launchctl("unload", retryFile.absolutePath)
-            retryFile.delete()
+        cleanupRetryPlist(taskId)
+
+        return if (useNative) {
+            scheduleRetryNative(taskId, execPath, delaySeconds)
+        } else {
+            scheduleRetryShell(taskId, execPath, delaySeconds)
         }
+    }
+
+    private fun scheduleRetryNative(
+        taskId: String,
+        execPath: String,
+        delaySeconds: Long,
+    ): Boolean {
+        val retryPath = retryPlistFile(taskId).absolutePath
+        val programArgs = arrayOf(execPath, SCHEDULER_ARG, taskId)
+
+        val error =
+            MacOSLaunchdSchedulerJni.nativeScheduleRetry(
+                retryPath,
+                retryLabel(taskId),
+                programArgs,
+                delaySeconds,
+            )
+        if (error != null) {
+            logger.warning("Native retry scheduling failed for task '$taskId': $error")
+            return false
+        }
+        return true
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun scheduleRetryShell(
+        taskId: String,
+        execPath: String,
+        delaySeconds: Long,
+    ): Boolean {
+        val retryFile = retryPlistFile(taskId)
 
         val programArgs =
             buildString {
@@ -188,7 +415,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         launchAgentsDir.mkdirs()
         retryFile.writeText(plist)
 
-        // Delay the load so the retry fires after the requested wait
         val thread =
             Thread({
                 try {
@@ -211,28 +437,25 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     fun cleanupRetryPlist(taskId: String) {
         val retryFile = retryPlistFile(taskId)
         if (retryFile.exists()) {
-            launchctl("unload", retryFile.absolutePath)
-            retryFile.delete()
+            if (useNative) {
+                MacOSLaunchdSchedulerJni.nativeLaunchctlUnload(retryFile.absolutePath)
+                MacOSLaunchdSchedulerJni.nativeDeleteFile(retryFile.absolutePath)
+            } else {
+                launchctl("unload", retryFile.absolutePath)
+                retryFile.delete()
+            }
         }
     }
 
     private const val MILLIS_PER_SECOND = 1000L
 
-    // -- Plist generation -----------------------------------------------------
+    // -- Shell fallback: plist generation -------------------------------------
 
     private const val PLIST_HEADER =
         """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">"""
 
-    /**
-     * Builds a plist that runs the app executable directly.
-     *
-     * No wrapper script — macOS displays the app name in System Settings > Login Items
-     * based on the executable path. If the app is uninstalled, launchd silently fails
-     * (no popup, no CPU usage). Orphan plists are cleaned up by [DesktopBootReceiver]
-     * if the app is reinstalled.
-     */
     private fun buildPlist(
         request: TaskRequest,
         execPath: String,
@@ -268,7 +491,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
                 }
             }
 
-            // Keep the agent loaded even after it exits
             appendLine("  <key>KeepAlive</key>")
             appendLine("  <false/>")
             appendLine("  <key>ProcessType</key>")
@@ -277,103 +499,48 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             appendLine("</plist>")
         }
 
-    /**
-     * Converts a systemd OnCalendar expression to launchd's StartCalendarInterval.
-     *
-     * Supported patterns:
-     * - `*-*-* HH:MM:00`            → every day at HH:MM
-     * - `*-*-* *:00:00`             → every hour
-     * - `Mon *-*-* HH:MM:00`        → every Monday at HH:MM
-     * - `Mon..Fri *-*-* HH:MM:00`   → weekdays at HH:MM (generates array of dicts)
-     */
-    @Suppress("CyclomaticComplexity")
     internal fun appendCalendarInterval(
         sb: StringBuilder,
         expression: String,
     ) {
-        val trimmed = expression.trim()
+        val config = parseCalendarConfig(expression)
+        val calDays = config.days
 
-        // Pattern: every hour — *-*-* *:00:00
-        if (trimmed == "*-*-* *:00:00") {
+        if (calDays != null) {
             sb.appendLine("  <key>StartCalendarInterval</key>")
-            sb.appendLine("  <dict>")
-            sb.appendLine("    <key>Minute</key>")
-            sb.appendLine("    <integer>0</integer>")
-            sb.appendLine("  </dict>")
-            return
-        }
-
-        // Pattern: day range (Mon..Fri) with time
-        val rangeMatch =
-            Regex("""^(\w{3})\.\.(\w{3})\s+\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""")
-                .matchEntire(trimmed)
-        if (rangeMatch != null) {
-            val destructured = rangeMatch.destructured
-            val startDay = destructured.component1()
-            val endDay = destructured.component2()
-            val hour = destructured.component3()
-            val minute = destructured.component4()
-            val days = expandDayRange(startDay, endDay)
-            if (days != null) {
-                sb.appendLine("  <key>StartCalendarInterval</key>")
-                sb.appendLine("  <array>")
-                for (dayNum in days) {
-                    sb.appendLine("    <dict>")
-                    sb.appendLine("      <key>Weekday</key>")
-                    sb.appendLine("      <integer>$dayNum</integer>")
+            sb.appendLine("  <array>")
+            for (dayNum in calDays) {
+                sb.appendLine("    <dict>")
+                sb.appendLine("      <key>Weekday</key>")
+                sb.appendLine("      <integer>$dayNum</integer>")
+                if (config.hour != CAL_NOT_SET) {
                     sb.appendLine("      <key>Hour</key>")
-                    sb.appendLine("      <integer>${hour.toInt()}</integer>")
-                    sb.appendLine("      <key>Minute</key>")
-                    sb.appendLine("      <integer>${minute.toInt()}</integer>")
-                    sb.appendLine("    </dict>")
+                    sb.appendLine("      <integer>${config.hour}</integer>")
                 }
-                sb.appendLine("  </array>")
-                return
+                if (config.minute != CAL_NOT_SET) {
+                    sb.appendLine("      <key>Minute</key>")
+                    sb.appendLine("      <integer>${config.minute}</integer>")
+                }
+                sb.appendLine("    </dict>")
             }
-        }
-
-        // Pattern: specific weekday with time — Mon *-*-* HH:MM:00
-        val weekdayMatch =
-            Regex("""^(\w{3})\s+\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""")
-                .matchEntire(trimmed)
-        if (weekdayMatch != null) {
-            val (day, hour, minute) = weekdayMatch.destructured
-            val dayNum = dayToLaunchdWeekday(day)
-            if (dayNum != null) {
-                sb.appendLine("  <key>StartCalendarInterval</key>")
-                sb.appendLine("  <dict>")
-                sb.appendLine("    <key>Weekday</key>")
-                sb.appendLine("    <integer>$dayNum</integer>")
-                sb.appendLine("    <key>Hour</key>")
-                sb.appendLine("    <integer>${hour.toInt()}</integer>")
-                sb.appendLine("    <key>Minute</key>")
-                sb.appendLine("    <integer>${minute.toInt()}</integer>")
-                sb.appendLine("  </dict>")
-                return
-            }
-        }
-
-        // Pattern: daily at specific time — *-*-* HH:MM:00
-        val dailyMatch = Regex("""^\*-\*-\*\s+(\d{2}):(\d{2}):\d{2}$""").matchEntire(trimmed)
-        if (dailyMatch != null) {
-            val (hour, minute) = dailyMatch.destructured
+            sb.appendLine("  </array>")
+        } else {
             sb.appendLine("  <key>StartCalendarInterval</key>")
             sb.appendLine("  <dict>")
-            sb.appendLine("    <key>Hour</key>")
-            sb.appendLine("    <integer>${hour.toInt()}</integer>")
-            sb.appendLine("    <key>Minute</key>")
-            sb.appendLine("    <integer>${minute.toInt()}</integer>")
+            if (config.day != CAL_NOT_SET) {
+                sb.appendLine("    <key>Weekday</key>")
+                sb.appendLine("    <integer>${config.day}</integer>")
+            }
+            if (config.hour != CAL_NOT_SET) {
+                sb.appendLine("    <key>Hour</key>")
+                sb.appendLine("    <integer>${config.hour}</integer>")
+            }
+            if (config.minute != CAL_NOT_SET) {
+                sb.appendLine("    <key>Minute</key>")
+                sb.appendLine("    <integer>${config.minute}</integer>")
+            }
             sb.appendLine("  </dict>")
-            return
         }
-
-        // Unsupported expression — fail explicitly instead of silently degrading
-        throw IllegalArgumentException(
-            "Unsupported cron expression '$expression' for macOS launchd. " +
-                "Supported patterns: '*-*-* HH:MM:00', '*-*-* *:00:00', " +
-                "'Mon *-*-* HH:MM:00', 'Mon..Fri *-*-* HH:MM:00'. " +
-                "Use CronExpression factory methods instead of CronExpression.custom().",
-        )
     }
 
     // -- Day mapping (launchd uses 0=Sunday, 1=Monday, ..., 6=Saturday) -------
@@ -411,7 +578,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         return orderedDays.subList(startIdx, endIdx + 1).mapNotNull { dayMap[it] }
     }
 
-    // -- launchctl helpers ----------------------------------------------------
+    // -- launchctl shell helpers (fallback) ------------------------------------
 
     @Suppress("TooGenericExceptionCaught")
     private fun launchctl(vararg args: String): Boolean =
@@ -420,7 +587,6 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
                 ProcessBuilder("launchctl", *args)
                     .redirectErrorStream(true)
                     .start()
-            // Drain output to prevent blocking
             process.inputStream.bufferedReader().readText()
             val exited = process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             if (!exited) {
@@ -435,11 +601,15 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             false
         }
 
-    /**
-     * Checks whether a job with the given label is currently loaded in launchd.
-     */
-    @Suppress("TooGenericExceptionCaught")
     private fun isLoaded(jobLabel: String): Boolean =
+        if (useNative) {
+            MacOSLaunchdSchedulerJni.nativeIsJobLoaded(jobLabel)
+        } else {
+            isLoadedShell(jobLabel)
+        }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun isLoadedShell(jobLabel: String): Boolean =
         try {
             val process =
                 ProcessBuilder("launchctl", "list", jobLabel)
@@ -460,8 +630,13 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     private fun unloadAndDelete(taskId: String) {
         val file = plistFile(taskId)
         if (file.exists()) {
-            launchctl("unload", file.absolutePath)
-            file.delete()
+            if (useNative) {
+                MacOSLaunchdSchedulerJni.nativeLaunchctlUnload(file.absolutePath)
+                MacOSLaunchdSchedulerJni.nativeDeleteFile(file.absolutePath)
+            } else {
+                launchctl("unload", file.absolutePath)
+                file.delete()
+            }
         }
     }
 

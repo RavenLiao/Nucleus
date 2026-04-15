@@ -15,6 +15,11 @@ internal object TaskMetadataStore {
     private const val KEY_RUN_ATTEMPT = "_runAttemptCount"
     private const val KEY_LAST_RUN_MS = "_lastRunMs"
     private const val KEY_LAST_RESULT = "_lastResult"
+    private const val KEY_SCHED_INTERVAL = "_schedInterval"
+    private const val KEY_SCHED_CAL_DAY = "_schedCalDay"
+    private const val KEY_SCHED_CAL_HOUR = "_schedCalHour"
+    private const val KEY_SCHED_CAL_MINUTE = "_schedCalMinute"
+    private const val KEY_SCHED_CAL_DAYS = "_schedCalDays"
 
     fun storeDir(appId: String): File {
         val baseDir =
@@ -153,6 +158,77 @@ internal object TaskMetadataStore {
         val dir = storeDir(appId)
         if (dir.isDirectory) {
             dir.listFiles()?.forEach { it.delete() }
+        }
+    }
+
+    /**
+     * Persists schedule parameters so [MacOSLaunchdScheduler] can compute
+     * the next fire time without re-parsing the plist.
+     */
+    fun saveScheduleHint(
+        appId: String,
+        taskId: String,
+        hint: ScheduleHint,
+    ) {
+        val file = taskFile(appId, taskId)
+        file.parentFile.mkdirs()
+        val props = load(file)
+        props.setProperty(KEY_SCHED_INTERVAL, hint.intervalSeconds.toString())
+        props.setProperty(KEY_SCHED_CAL_DAY, hint.calendarDay.toString())
+        props.setProperty(KEY_SCHED_CAL_HOUR, hint.calendarHour.toString())
+        props.setProperty(KEY_SCHED_CAL_MINUTE, hint.calendarMinute.toString())
+        if (hint.calendarDays != null) {
+            props.setProperty(KEY_SCHED_CAL_DAYS, hint.calendarDays.joinToString(","))
+        } else {
+            props.remove(KEY_SCHED_CAL_DAYS)
+        }
+        file.outputStream().use { props.store(it, null) }
+    }
+
+    fun loadScheduleHint(
+        appId: String,
+        taskId: String,
+    ): ScheduleHint? {
+        val props = load(taskFile(appId, taskId))
+        val interval = props.getProperty(KEY_SCHED_INTERVAL)?.toIntOrNull() ?: return null
+        return ScheduleHint(
+            intervalSeconds = interval,
+            calendarDay = props.getProperty(KEY_SCHED_CAL_DAY)?.toIntOrNull() ?: -1,
+            calendarHour = props.getProperty(KEY_SCHED_CAL_HOUR)?.toIntOrNull() ?: -1,
+            calendarMinute = props.getProperty(KEY_SCHED_CAL_MINUTE)?.toIntOrNull() ?: -1,
+            calendarDays =
+                props
+                    .getProperty(KEY_SCHED_CAL_DAYS)
+                    ?.split(",")
+                    ?.mapNotNull { it.trim().toIntOrNull() }
+                    ?.toIntArray(),
+        )
+    }
+
+    data class ScheduleHint(
+        val intervalSeconds: Int,
+        val calendarDay: Int,
+        val calendarHour: Int,
+        val calendarMinute: Int,
+        val calendarDays: IntArray?,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ScheduleHint) return false
+            return intervalSeconds == other.intervalSeconds &&
+                calendarDay == other.calendarDay &&
+                calendarHour == other.calendarHour &&
+                calendarMinute == other.calendarMinute &&
+                calendarDays.contentEquals(other.calendarDays)
+        }
+
+        override fun hashCode(): Int {
+            var result = intervalSeconds
+            result = 31 * result + calendarDay
+            result = 31 * result + calendarHour
+            result = 31 * result + calendarMinute
+            result = 31 * result + (calendarDays?.contentHashCode() ?: 0)
+            return result
         }
     }
 

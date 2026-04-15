@@ -49,6 +49,40 @@
                     "parameterTypes": ["java.lang.String"]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.scheduler.internal.MacOSLaunchdSchedulerJni",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "nativeWritePlist",
+                    "parameterTypes": ["java.lang.String", "java.lang.String", "[Ljava.lang.String;", "int", "int", "int", "int", "boolean", "[I"]
+                },
+                {
+                    "name": "nativeLaunchctlLoad",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeLaunchctlUnload",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeIsJobLoaded",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeDeleteFile",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeComputeNextFireTime",
+                    "parameterTypes": ["int", "int", "int", "int", "[I"]
+                },
+                {
+                    "name": "nativeScheduleRetry",
+                    "parameterTypes": ["java.lang.String", "java.lang.String", "[Ljava.lang.String;", "long"]
+                }
+            ]
         }
     ]
 }
