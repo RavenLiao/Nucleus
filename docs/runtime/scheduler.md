@@ -13,7 +13,7 @@ The `scheduler` module registers background tasks with the OS so they run even w
 | Calendar tasks | Task Scheduler triggers | launchd `StartCalendarInterval` | systemd `OnCalendar=` |
 | On-boot / login tasks | Task Scheduler logon trigger | launchd `RunAtLoad` | systemd `default.target` |
 | Retry scheduling | One-shot task | One-shot launchd agent | One-shot systemd timer |
-| Minimum interval | 15 minutes | 15 minutes | 15 minutes |
+| Minimum interval | 15 minutes (enforced by `require`) | 15 minutes (enforced by `require`) | 15 minutes (enforced by `require`) |
 
 ## Installation
 
