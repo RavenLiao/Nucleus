@@ -750,3 +750,19 @@ jobs:
           name: global-hotkey-linux-${{ matrix.arch }}
           path: global-hotkey/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
+
+      - name: Build scheduler Linux native shared library
+        run: bash scheduler/src/main/native/linux/build.sh
+
+      - name: Verify scheduler Linux native
+        run: |
+          f="scheduler/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_scheduler_linux.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload scheduler Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduler-linux-${{ matrix.arch }}
+          path: scheduler/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1

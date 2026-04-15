@@ -234,6 +234,8 @@ jobs:
             "scheduler/src/main/resources/nucleus/native/win32-aarch64/nucleus_scheduler.dll"
             "scheduler/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_scheduler.dylib"
             "scheduler/src/main/resources/nucleus/native/darwin-x64/libnucleus_scheduler.dylib"
+            "scheduler/src/main/resources/nucleus/native/linux-x64/libnucleus_scheduler_linux.so"
+            "scheduler/src/main/resources/nucleus/native/linux-aarch64/libnucleus_scheduler_linux.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do

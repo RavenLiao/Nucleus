@@ -6,24 +6,25 @@ import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
 import java.io.File
-import java.util.concurrent.TimeUnit
-import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
  * Linux implementation using systemd user timers.
  *
  * Generated unit files go to `~/.config/systemd/user/` and are managed via
- * `systemctl --user` commands.
+ * D-Bus calls to org.freedesktop.systemd1.Manager (through JNI).
+ *
+ * Requires `libnucleus_scheduler_linux.so` — if the native library is not loaded,
+ * all operations return failure (the scheduler is effectively unavailable).
  */
 @Suppress("TooManyFunctions")
 internal object LinuxSystemdScheduler : PlatformScheduler {
     private val logger = Logger.getLogger(LinuxSystemdScheduler::class.java.name)
-    private const val SCHEDULER_ARG = "--nucleus-scheduler-run"
-    private const val COMMAND_TIMEOUT_SECONDS = 10L
 
     internal const val UNIT_PREFIX = "nucleus"
     private const val USEC_PER_MS = 1000L
+
+    val isAvailable: Boolean get() = LinuxSystemdSchedulerJni.isLoaded
 
     private val systemdUserDir: File
         get() {
@@ -55,6 +56,11 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     // -- PlatformScheduler implementation -------------------------------------
 
     override fun enqueue(request: TaskRequest): Boolean {
+        if (!isAvailable) {
+            logger.warning("Native library not loaded — task '${request.taskId}' not scheduled")
+            return false
+        }
+
         if (request.existingTaskPolicy == ExistingTaskPolicy.KEEP && isScheduled(request.taskId)) {
             return true
         }
@@ -99,33 +105,59 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             File(systemdUserDir, timerFileName(request.taskId)).writeText(timerContent)
         }
 
-        // Reload and enable
-        systemctl("daemon-reload")
+        // Reload and enable via D-Bus
+        LinuxSystemdSchedulerJni.nativeReload()
 
         return if (needsTimer) {
-            systemctl("enable", "--now", timerFileName(request.taskId))
+            val error = LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
+                arrayOf(timerFileName(request.taskId)),
+                startNow = true,
+            )
+            if (error != null) {
+                logger.warning("Failed to enable timer '${request.taskId}': $error")
+                false
+            } else {
+                true
+            }
         } else {
             // onBoot: enable the service to start at user login
-            systemctl("enable", serviceFileName(request.taskId))
+            val error = LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
+                arrayOf(serviceFileName(request.taskId)),
+                startNow = false,
+            )
+            if (error != null) {
+                logger.warning("Failed to enable service '${request.taskId}': $error")
+                false
+            } else {
+                true
+            }
         }
     }
 
     override fun cancel(taskId: String): Boolean {
+        if (!isAvailable) return false
+
         val timerFile = File(systemdUserDir, timerFileName(taskId))
         val serviceFile = File(systemdUserDir, serviceFileName(taskId))
 
         if (!timerFile.exists() && !serviceFile.exists()) return false
 
         if (timerFile.exists()) {
-            systemctl("disable", "--now", timerFileName(taskId))
+            LinuxSystemdSchedulerJni.nativeDisableUnitFiles(
+                arrayOf(timerFileName(taskId)),
+                stopNow = true,
+            )
         }
         if (serviceFile.exists()) {
-            systemctl("disable", serviceFileName(taskId))
+            LinuxSystemdSchedulerJni.nativeDisableUnitFiles(
+                arrayOf(serviceFileName(taskId)),
+                stopNow = false,
+            )
         }
 
         timerFile.delete()
         serviceFile.delete()
-        systemctl("daemon-reload")
+        LinuxSystemdSchedulerJni.nativeReload()
         TaskWrapperScript.deleteScript(appId, taskId)
         TaskMetadataStore.delete(appId, taskId)
         return true
@@ -139,15 +171,16 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     }
 
     override fun isScheduled(taskId: String): Boolean {
+        if (!isAvailable) return false
         val timerFile = File(systemdUserDir, timerFileName(taskId))
         val serviceFile = File(systemdUserDir, serviceFileName(taskId))
         if (!timerFile.exists() && !serviceFile.exists()) return false
-        return systemctlQuery("is-enabled", timerFileName(taskId)) == "enabled" ||
-            systemctlQuery("is-enabled", serviceFileName(taskId)) == "enabled"
+        return LinuxSystemdSchedulerJni.nativeGetUnitFileState(timerFileName(taskId)) == "enabled" ||
+            LinuxSystemdSchedulerJni.nativeGetUnitFileState(serviceFileName(taskId)) == "enabled"
     }
 
     override fun getTaskInfo(taskId: String): TaskInfo? {
-        if (!isScheduled(taskId)) return null
+        if (!isAvailable || !isScheduled(taskId)) return null
 
         val state = resolveState(taskId)
         val nextRunMs = parseNextElapse(taskId)
@@ -173,6 +206,8 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         taskId: String,
         delaySeconds: Long,
     ): Boolean {
+        if (!isAvailable) return false
+
         val retryTimerName = "${unitBaseName(taskId)}-retry.timer"
         val content =
             buildString {
@@ -189,8 +224,8 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
 
         val retryTimerFile = File(systemdUserDir, retryTimerName)
         retryTimerFile.writeText(content)
-        systemctl("daemon-reload")
-        return systemctl("start", retryTimerName)
+        LinuxSystemdSchedulerJni.nativeReload()
+        return LinuxSystemdSchedulerJni.nativeStartUnit(retryTimerName)
     }
 
     // -- Unit file generation -------------------------------------------------
@@ -242,51 +277,6 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             appendLine("WantedBy=timers.target")
         }
 
-    // -- systemctl helpers ----------------------------------------------------
-
-    @Suppress("TooGenericExceptionCaught")
-    private fun systemctl(vararg args: String): Boolean =
-        try {
-            val process =
-                ProcessBuilder("systemctl", "--user", *args)
-                    .redirectErrorStream(true)
-                    .start()
-            val exited = process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            if (!exited) {
-                process.destroyForcibly()
-                logger.warning("systemctl --user ${args.joinToString(" ")} timed out")
-                false
-            } else {
-                process.exitValue() == 0
-            }
-        } catch (e: Exception) {
-            logger.log(Level.WARNING, "systemctl --user ${args.joinToString(" ")} failed", e)
-            false
-        }
-
-    @Suppress("TooGenericExceptionCaught")
-    private fun systemctlQuery(vararg args: String): String? =
-        try {
-            val process =
-                ProcessBuilder("systemctl", "--user", *args)
-                    .redirectErrorStream(true)
-                    .start()
-            val output =
-                process.inputStream
-                    .bufferedReader()
-                    .readText()
-                    .trim()
-            val exited = process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            if (!exited) {
-                process.destroyForcibly()
-                null
-            } else {
-                output
-            }
-        } catch (_: Exception) {
-            null
-        }
-
     // -- Introspection --------------------------------------------------------
 
     private fun listScheduledTaskIds(): List<String> {
@@ -302,36 +292,15 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     }
 
     private fun resolveState(taskId: String): TaskState {
-        val activeState =
-            systemctlQuery(
-                "show",
-                "-p",
-                "ActiveState",
-                "--value",
-                serviceFileName(taskId),
-            )
+        val activeState = LinuxSystemdSchedulerJni.nativeGetUnitActiveState(serviceFileName(taskId))
         return when (activeState) {
             "active", "activating" -> TaskState.RUNNING
             else -> TaskState.SCHEDULED
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun parseNextElapse(taskId: String): Long? {
-        val raw =
-            systemctlQuery(
-                "show",
-                "-p",
-                "NextElapseUSecRealtime",
-                "--value",
-                timerFileName(taskId),
-            ) ?: return null
-        return try {
-            // systemd returns microseconds since epoch
-            val usec = raw.toLong()
-            if (usec == 0L) null else usec / USEC_PER_MS
-        } catch (_: Exception) {
-            null
-        }
+        val usec = LinuxSystemdSchedulerJni.nativeGetTimerNextElapseUSec(timerFileName(taskId))
+        return if (usec == 0L) null else usec / USEC_PER_MS
     }
 }

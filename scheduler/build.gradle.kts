@@ -60,13 +60,26 @@ val buildNativeMacOS by tasks.registering(Exec::class) {
     commandLine("bash", File(nativeDir, "build.sh").absolutePath)
 }
 
+val buildNativeLinux by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into a Linux shared library"
+    group = "build"
+    val nativeDir = file("src/main/native/linux")
+    val outputDir = file("src/main/resources/nucleus/native")
+    val checkFile = File(outputDir, "linux-x64/libnucleus_scheduler_linux.so")
+    onlyIf { Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !checkFile.exists() }
+    inputs.dir(nativeDir)
+    outputs.dir(outputDir)
+    workingDir(nativeDir)
+    commandLine("bash", File(nativeDir, "build.sh").absolutePath)
+}
+
 tasks.processResources {
-    dependsOn(buildNativeWindows, buildNativeMacOS)
+    dependsOn(buildNativeWindows, buildNativeMacOS, buildNativeLinux)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeWindows, buildNativeMacOS)
+        dependsOn(buildNativeWindows, buildNativeMacOS, buildNativeLinux)
     }
 }
 

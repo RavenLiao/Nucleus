@@ -83,6 +83,40 @@
                     "parameterTypes": ["java.lang.String", "java.lang.String", "[Ljava.lang.String;", "long"]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.scheduler.internal.LinuxSystemdSchedulerJni",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "nativeReload",
+                    "parameterTypes": []
+                },
+                {
+                    "name": "nativeEnableUnitFiles",
+                    "parameterTypes": ["java.lang.String[]", "boolean"]
+                },
+                {
+                    "name": "nativeDisableUnitFiles",
+                    "parameterTypes": ["java.lang.String[]", "boolean"]
+                },
+                {
+                    "name": "nativeStartUnit",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeGetUnitFileState",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeGetUnitActiveState",
+                    "parameterTypes": ["java.lang.String"]
+                },
+                {
+                    "name": "nativeGetTimerNextElapseUSec",
+                    "parameterTypes": ["java.lang.String"]
+                }
+            ]
         }
     ]
 }
