@@ -75,9 +75,24 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             TaskMetadataStore.save(appId, request.taskId, request.inputData)
         }
 
-        // Generate .service file
-        val serviceContent = buildServiceUnit(request.taskId, execPath)
-        File(systemdUserDir, serviceFileName(request.taskId)).writeText(serviceContent)
+        // Generate wrapper script
+        val serviceFile = File(systemdUserDir, serviceFileName(request.taskId))
+        val timerFile = File(systemdUserDir, timerFileName(request.taskId))
+        val metadataDir = TaskMetadataStore.storeDir(appId).absolutePath
+        val wrapperScript = TaskWrapperScript.generateLinuxScript(
+            appId = appId,
+            taskId = request.taskId,
+            execPath = execPath,
+            timerUnit = timerFileName(request.taskId),
+            serviceUnit = serviceFileName(request.taskId),
+            serviceFilePath = serviceFile.absolutePath,
+            timerFilePath = timerFile.absolutePath,
+            metadataDir = metadataDir,
+        )
+
+        // Generate .service file pointing to wrapper script
+        val serviceContent = buildServiceUnit(request.taskId, wrapperScript.absolutePath)
+        serviceFile.writeText(serviceContent)
 
         // Generate .timer file (not needed for onBoot without timer)
         val needsTimer = request.type != TaskRequest.Type.ON_BOOT
@@ -113,6 +128,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         timerFile.delete()
         serviceFile.delete()
         systemctl("daemon-reload")
+        TaskWrapperScript.deleteScript(appId, taskId)
         TaskMetadataStore.delete(appId, taskId)
         return true
     }
@@ -120,6 +136,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     override fun cancelAll() {
         val allIds = listScheduledTaskIds()
         allIds.forEach { cancel(it) }
+        TaskWrapperScript.deleteAllScripts(appId)
         TaskMetadataStore.deleteAll(appId)
     }
 
@@ -182,7 +199,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
 
     private fun buildServiceUnit(
         taskId: String,
-        execPath: String,
+        scriptPath: String,
     ): String =
         buildString {
             appendLine("[Unit]")
@@ -190,7 +207,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             appendLine()
             appendLine("[Service]")
             appendLine("Type=oneshot")
-            appendLine("ExecStart=$execPath $SCHEDULER_ARG $taskId")
+            appendLine("ExecStart=$scriptPath")
             appendLine()
             appendLine("[Install]")
             appendLine("WantedBy=default.target")

@@ -59,7 +59,8 @@ public object DesktopBootReceiver {
             try {
                 registry.create(taskId)
             } catch (e: TaskNotFoundException) {
-                logger.log(Level.SEVERE, "Cannot resolve task '$taskId'", e)
+                logger.warning("Task '$taskId' not found in registry — cancelling orphan task")
+                DesktopTaskScheduler.cancel(taskId)
                 return
             }
 

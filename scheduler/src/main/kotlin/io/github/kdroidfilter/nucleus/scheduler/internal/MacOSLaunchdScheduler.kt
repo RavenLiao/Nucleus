@@ -76,12 +76,26 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         // Save metadata
         TaskMetadataStore.save(appId, request.taskId, request.inputData)
 
-        // Generate plist
+        // Generate wrapper script
+        val plistPath = plistFile(request.taskId).absolutePath
+        val retryPlistPath = retryPlistFile(request.taskId).absolutePath
+        val metadataDir = TaskMetadataStore.storeDir(appId).absolutePath
+        val wrapperScript = TaskWrapperScript.generateMacOSScript(
+            appId = appId,
+            taskId = request.taskId,
+            execPath = execPath,
+            plistPath = plistPath,
+            retryPlistPath = retryPlistPath,
+            metadataDir = metadataDir,
+        )
+
+        // Generate plist pointing to wrapper script
         val plistContent =
             try {
-                buildPlist(request, execPath)
+                buildPlist(request, wrapperScript.absolutePath)
             } catch (e: IllegalArgumentException) {
                 logger.warning("Task '${request.taskId}' not scheduled: ${e.message}")
+                wrapperScript.delete()
                 return false
             }
         val file = plistFile(request.taskId)
@@ -102,6 +116,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             launchctl("unload", retryFile.absolutePath)
             retryFile.delete()
         }
+        TaskWrapperScript.deleteScript(appId, taskId)
         TaskMetadataStore.delete(appId, taskId)
         return true
     }
@@ -109,6 +124,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     override fun cancelAll() {
         val allIds = listScheduledTaskIds()
         allIds.forEach { cancel(it) }
+        TaskWrapperScript.deleteAllScripts(appId)
         TaskMetadataStore.deleteAll(appId)
     }
 
@@ -155,6 +171,20 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             retryFile.delete()
         }
 
+        // Use the wrapper script if it exists, otherwise fall back to direct exec
+        val wrapperScript = TaskWrapperScript.scriptFile(appId, taskId)
+        val programArgs = if (wrapperScript.exists()) {
+            buildString {
+                appendLine("    <string>${wrapperScript.absolutePath}</string>")
+            }.trimEnd()
+        } else {
+            buildString {
+                appendLine("    <string>$execPath</string>")
+                appendLine("    <string>$SCHEDULER_ARG</string>")
+                appendLine("    <string>$taskId</string>")
+            }.trimEnd()
+        }
+
         val plist = buildString {
             appendLine(PLIST_HEADER)
             appendLine("<dict>")
@@ -162,9 +192,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             appendLine("  <string>${retryLabel(taskId)}</string>")
             appendLine("  <key>ProgramArguments</key>")
             appendLine("  <array>")
-            appendLine("    <string>$execPath</string>")
-            appendLine("    <string>$SCHEDULER_ARG</string>")
-            appendLine("    <string>$taskId</string>")
+            appendLine(programArgs)
             appendLine("  </array>")
             appendLine("  <key>RunAtLoad</key>")
             appendLine("  <true/>")
@@ -215,7 +243,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">"""
 
-    private fun buildPlist(request: TaskRequest, execPath: String): String =
+    private fun buildPlist(request: TaskRequest, scriptPath: String): String =
         buildString {
             appendLine(PLIST_HEADER)
             appendLine("<dict>")
@@ -223,9 +251,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             appendLine("  <string>${label(request.taskId)}</string>")
             appendLine("  <key>ProgramArguments</key>")
             appendLine("  <array>")
-            appendLine("    <string>$execPath</string>")
-            appendLine("    <string>$SCHEDULER_ARG</string>")
-            appendLine("    <string>${request.taskId}</string>")
+            appendLine("    <string>$scriptPath</string>")
             appendLine("  </array>")
 
             when (request.type) {

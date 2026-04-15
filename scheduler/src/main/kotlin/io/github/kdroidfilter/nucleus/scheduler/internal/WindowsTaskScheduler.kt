@@ -5,6 +5,7 @@ import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.logging.Logger
@@ -40,6 +41,12 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
     private fun arguments(taskId: String): String = "$SCHEDULER_ARG $taskId"
 
+    // -- WScript invocation ---------------------------------------------------
+
+    private const val WSCRIPT_EXE = "wscript.exe"
+
+    private fun wscriptArgs(script: File): String = "\"${script.absolutePath}\""
+
     // -- PlatformScheduler implementation -------------------------------------
 
     override fun enqueue(request: TaskRequest): Boolean {
@@ -63,9 +70,19 @@ internal object WindowsTaskScheduler : PlatformScheduler {
             deleteTask(request.taskId)
         }
 
-        val error = createTask(request, execPath)
+        val metadataDir = TaskMetadataStore.storeDir(appId).absolutePath
+        val wrapperScript = TaskWrapperScript.generateWindowsScript(
+            appId = appId,
+            taskId = request.taskId,
+            execPath = execPath,
+            taskFolder = folderPath(),
+            metadataDir = metadataDir,
+        )
+
+        val error = createTask(request, WSCRIPT_EXE, wscriptArgs(wrapperScript))
         if (error != null) {
             logger.warning("Failed to create task '${request.taskId}': $error")
+            wrapperScript.delete()
             return false
         }
 
@@ -77,6 +94,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         if (!isAvailable || !isScheduled(taskId)) return false
         val result = deleteTask(taskId)
         deleteTask(retryTaskName(taskId)) // Clean up retry task
+        TaskWrapperScript.deleteScript(appId, taskId)
         if (result) TaskMetadataStore.delete(appId, taskId)
         return result
     }
@@ -88,6 +106,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
             deleteTask(retryTaskName(taskId))
             if (deleted) TaskMetadataStore.delete(appId, taskId)
         }
+        TaskWrapperScript.deleteAllScripts(appId)
         // Delete the app folder (fails silently if not empty or missing)
         val error = WindowsTaskSchedulerJni.nativeDeleteFolder(folderPath())
         if (error != null) {
@@ -131,11 +150,22 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         // Delete any previous retry task
         deleteTask(retryTaskName(taskId))
 
+        val wrapperScript = TaskWrapperScript.scriptFile(appId, taskId)
+        val retryExe: String
+        val retryArgs: String
+        if (wrapperScript.exists()) {
+            retryExe = WSCRIPT_EXE
+            retryArgs = wscriptArgs(wrapperScript)
+        } else {
+            retryExe = execPath
+            retryArgs = arguments(taskId)
+        }
+
         val error = WindowsTaskSchedulerJni.nativeCreateOnceTask(
             folderPath = folderPath(),
             taskName = retryTaskName(taskId),
-            exePath = execPath,
-            arguments = arguments(taskId),
+            exePath = retryExe,
+            arguments = retryArgs,
             startBoundary = startBoundary,
         )
         if (error != null) {
@@ -147,16 +177,15 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
     // -- Task creation --------------------------------------------------------
 
-    private fun createTask(request: TaskRequest, execPath: String): String? {
+    private fun createTask(request: TaskRequest, exePath: String, args: String): String? {
         val folder = folderPath()
         val name = request.taskId
-        val args = arguments(request.taskId)
 
         return when (request.type) {
             TaskRequest.Type.PERIODIC -> {
                 val minutes = request.interval!!.inWholeMinutes.toInt()
                 WindowsTaskSchedulerJni.nativeCreatePeriodicTask(
-                    folder, name, execPath, args, minutes,
+                    folder, name, exePath, args, minutes,
                 )
             }
 
@@ -167,13 +196,13 @@ internal object WindowsTaskScheduler : PlatformScheduler {
                 } else {
                     when (schedule) {
                         is CronSchedule.Hourly -> WindowsTaskSchedulerJni.nativeCreatePeriodicTask(
-                            folder, name, execPath, args, 60,
+                            folder, name, exePath, args, 60,
                         )
                         is CronSchedule.Daily -> WindowsTaskSchedulerJni.nativeCreateDailyTask(
-                            folder, name, execPath, args, schedule.hour, schedule.minute,
+                            folder, name, exePath, args, schedule.hour, schedule.minute,
                         )
                         is CronSchedule.Weekly -> WindowsTaskSchedulerJni.nativeCreateWeeklyTask(
-                            folder, name, execPath, args,
+                            folder, name, exePath, args,
                             schedule.daysOfWeek, schedule.hour, schedule.minute,
                         )
                     }
@@ -182,7 +211,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
             TaskRequest.Type.ON_BOOT -> {
                 WindowsTaskSchedulerJni.nativeCreateLogonTask(
-                    folder, name, execPath, args,
+                    folder, name, exePath, args,
                 )
             }
         }

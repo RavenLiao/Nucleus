@@ -16,7 +16,7 @@ internal object TaskMetadataStore {
     private const val KEY_LAST_RUN_MS = "_lastRunMs"
     private const val KEY_LAST_RESULT = "_lastResult"
 
-    private fun storeDir(appId: String): File {
+    fun storeDir(appId: String): File {
         val baseDir = when (Platform.Current) {
             Platform.Windows ->
                 System.getenv("LOCALAPPDATA")
