@@ -42,4 +42,6 @@ internal interface PlatformSystemInfo {
     fun gpus(): List<GpuInfo>
 
     fun batteryInfo(): BatteryInfo?
+
+    fun idleTime(): Long
 }

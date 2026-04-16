@@ -42,6 +42,7 @@ SOURCES=(
     "$SCRIPT_DIR/nucleus_system_info_hardware.c"
     "$SCRIPT_DIR/nucleus_system_info_gpu.c"
     "$SCRIPT_DIR/nucleus_system_info_battery.c"
+    "$SCRIPT_DIR/nucleus_system_info_idle.c"
 )
 
 COMMON_FLAGS=(

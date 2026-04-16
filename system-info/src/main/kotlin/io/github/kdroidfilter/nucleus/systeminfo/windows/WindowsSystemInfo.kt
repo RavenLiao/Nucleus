@@ -251,6 +251,8 @@ internal object WindowsSystemInfo : PlatformSystemInfo {
         )
     }
 
+    override fun idleTime(): Long = -1L
+
     override fun batteryInfo(): BatteryInfo? {
         if (!bridge.isLoaded) return null
         if (!bridge.nativeBatteryPresent()) return null

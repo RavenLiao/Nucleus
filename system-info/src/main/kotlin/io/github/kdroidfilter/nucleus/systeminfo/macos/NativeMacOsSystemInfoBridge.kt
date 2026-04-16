@@ -265,4 +265,7 @@ internal object NativeMacOsSystemInfoBridge {
     @JvmStatic external fun nativeBatteryModelName(): String?
 
     @JvmStatic external fun nativeBatterySerialNumber(): String?
+
+    // Idle time
+    @JvmStatic external fun nativeIdleTimeSeconds(): Long
 }

@@ -54,4 +54,6 @@ object SystemInfo {
     fun gpus(): List<GpuInfo> = delegate?.gpus() ?: emptyList()
 
     fun batteryInfo(): BatteryInfo? = delegate?.batteryInfo()
+
+    fun idleTime(): Long = delegate?.idleTime() ?: -1L
 }

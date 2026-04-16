@@ -298,6 +298,11 @@ internal object MacOsSystemInfo : PlatformSystemInfo {
         )
     }
 
+    override fun idleTime(): Long {
+        if (!bridge.isLoaded) return -1L
+        return bridge.nativeIdleTimeSeconds()
+    }
+
     @Suppress("CyclomaticComplexMethod")
     override fun gpus(): List<GpuInfo> {
         if (!bridge.isLoaded) return emptyList()

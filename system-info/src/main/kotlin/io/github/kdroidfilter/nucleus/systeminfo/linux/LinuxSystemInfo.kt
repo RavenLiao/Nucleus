@@ -251,6 +251,8 @@ internal object LinuxSystemInfo : PlatformSystemInfo {
         )
     }
 
+    override fun idleTime(): Long = -1L
+
     @Suppress("CyclomaticComplexMethod")
     override fun batteryInfo(): BatteryInfo? {
         if (!bridge.isLoaded) return null

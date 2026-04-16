@@ -38,6 +38,7 @@ data class SystemInfoState(
     val processes: List<ProcessInfo> = emptyList(),
     val gpus: List<GpuInfo> = emptyList(),
     val batteryInfo: BatteryInfo? = null,
+    val idleTime: Long = -1L,
     val cpuHistory: List<Float> = emptyList(),
     val cpuTempHistory: List<Float> = emptyList(),
     val coreTempHistory: Map<Int, List<Float>> = emptyMap(),
@@ -78,6 +79,7 @@ object SystemInfoViewModel {
         val procs = SystemInfo.processes()
         val gpus = SystemInfo.gpus()
         val battery = SystemInfo.batteryInfo()
+        val idleTime = SystemInfo.idleTime()
 
         val current = _state.value
         val cpuHist = (current.cpuHistory + (cpu?.globalCpuUsage ?: 0f)).takeLast(HISTORY_MAX_SIZE)
@@ -127,6 +129,7 @@ object SystemInfoViewModel {
                 processes = procs,
                 gpus = gpus,
                 batteryInfo = battery,
+                idleTime = idleTime,
                 cpuHistory = cpuHist,
                 cpuTempHistory = cpuTempHist,
                 coreTempHistory = coreTempHist,

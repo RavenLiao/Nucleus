@@ -104,6 +104,7 @@ fun OverviewPanel(state: SystemInfoState) {
             InfoRow("Hostname", state.osInfo?.hostName)
             InfoRow("Architecture", state.osInfo?.cpuArch)
             InfoRow("Uptime", state.osInfo?.let { formatDuration(it.uptime) })
+            InfoRow("Idle", if (state.idleTime >= 0) formatDuration(state.idleTime) else "N/A")
         }
     }
 
