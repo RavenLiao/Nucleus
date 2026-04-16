@@ -5,6 +5,7 @@ package systeminfodemo.viewmodel
 import io.github.kdroidfilter.nucleus.systeminfo.SystemInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.ConnectivityInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.DiskInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.GpuInfo
@@ -38,6 +39,7 @@ data class SystemInfoState(
     val processes: List<ProcessInfo> = emptyList(),
     val gpus: List<GpuInfo> = emptyList(),
     val batteryInfo: BatteryInfo? = null,
+    val connectivityInfo: ConnectivityInfo? = null,
     val idleTime: Long = -1L,
     val cpuHistory: List<Float> = emptyList(),
     val cpuTempHistory: List<Float> = emptyList(),
@@ -79,6 +81,7 @@ object SystemInfoViewModel {
         val procs = SystemInfo.processes()
         val gpus = SystemInfo.gpus()
         val battery = SystemInfo.batteryInfo()
+        val connectivity = SystemInfo.connectivityInfo()
         val idleTime = SystemInfo.idleTime()
 
         val current = _state.value
@@ -129,6 +132,7 @@ object SystemInfoViewModel {
                 processes = procs,
                 gpus = gpus,
                 batteryInfo = battery,
+                connectivityInfo = connectivity,
                 idleTime = idleTime,
                 cpuHistory = cpuHist,
                 cpuTempHistory = cpuTempHist,

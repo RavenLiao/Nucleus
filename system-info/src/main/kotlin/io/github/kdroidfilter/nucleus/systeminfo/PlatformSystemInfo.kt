@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.systeminfo
 
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.ConnectivityInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.DiskInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.GpuInfo
@@ -44,4 +45,6 @@ internal interface PlatformSystemInfo {
     fun batteryInfo(): BatteryInfo?
 
     fun idleTime(): Long
+
+    fun connectivityInfo(): ConnectivityInfo?
 }

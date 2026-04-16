@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
 import systeminfodemo.ui.InfoRow
 import systeminfodemo.ui.LineChart
 import systeminfodemo.ui.ProgressBar
@@ -144,8 +145,19 @@ fun OverviewPanel(state: SystemInfoState) {
             }
         }
 
-        if (state.networks.any { it.name != "lo" }) {
+        if (state.networks.any { it.name != "lo" } || state.connectivityInfo != null) {
             SectionCard("Network", modifier = Modifier.weight(1f)) {
+                state.connectivityInfo?.let { conn ->
+                    InfoRow("Connected", if (conn.isConnected) "Yes" else "No")
+                    InfoRow(
+                        "Metered",
+                        when (conn.meteredStatus) {
+                            MeteredStatus.UNMETERED -> "No"
+                            MeteredStatus.METERED -> "Yes"
+                            MeteredStatus.UNKNOWN -> "Unknown"
+                        },
+                    )
+                }
                 state.networks.filter { it.name != "lo" }.take(4).forEach { net ->
                     InfoRow(
                         net.name,

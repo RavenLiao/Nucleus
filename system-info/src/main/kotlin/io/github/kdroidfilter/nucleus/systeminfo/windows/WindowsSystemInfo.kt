@@ -4,6 +4,8 @@ import io.github.kdroidfilter.nucleus.systeminfo.PlatformSystemInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryState
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.ConnectivityInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.DiskInfo
@@ -251,7 +253,10 @@ internal object WindowsSystemInfo : PlatformSystemInfo {
         )
     }
 
-    override fun idleTime(): Long = -1L
+    override fun idleTime(): Long {
+        if (!bridge.isLoaded) return -1L
+        return bridge.nativeIdleTimeSeconds()
+    }
 
     override fun batteryInfo(): BatteryInfo? {
         if (!bridge.isLoaded) return null
@@ -344,5 +349,18 @@ internal object WindowsSystemInfo : PlatformSystemInfo {
                 powerDrawWatts = if (power.isNaN()) null else power,
             )
         }
+    }
+
+    override fun connectivityInfo(): ConnectivityInfo? {
+        if (!bridge.isLoaded) return null
+        val metered = bridge.nativeGetMeteredStatus()
+        return ConnectivityInfo(
+            isConnected = bridge.nativeIsNetworkConnected(),
+            meteredStatus = when (metered) {
+                1 -> MeteredStatus.UNMETERED
+                2 -> MeteredStatus.METERED
+                else -> MeteredStatus.UNKNOWN
+            },
+        )
     }
 }

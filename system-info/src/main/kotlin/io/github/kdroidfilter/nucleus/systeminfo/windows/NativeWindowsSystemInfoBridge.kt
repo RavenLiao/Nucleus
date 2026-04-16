@@ -268,4 +268,9 @@ internal object NativeWindowsSystemInfoBridge {
 
     // Idle time
     @JvmStatic external fun nativeIdleTimeSeconds(): Long
+
+    // Connectivity
+    @JvmStatic external fun nativeIsNetworkConnected(): Boolean
+
+    @JvmStatic external fun nativeGetMeteredStatus(): Int
 }

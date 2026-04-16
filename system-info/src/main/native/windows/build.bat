@@ -35,9 +35,10 @@ cl /nologo /LD /O2 /W3 /D_CRT_SECURE_NO_WARNINGS ^
     "%SCRIPT_DIR%nucleus_system_info_gpu.c" ^
     "%SCRIPT_DIR%nucleus_system_info_battery.c" ^
     "%SCRIPT_DIR%nucleus_system_info_idle.c" ^
+    "%SCRIPT_DIR%nucleus_system_info_connectivity.c" ^
     /Fe"%OUT_DIR_X64%\nucleus_system_info.dll" ^
     /link /DLL ^
-    kernel32.lib advapi32.lib psapi.lib iphlpapi.lib ole32.lib oleaut32.lib wbemuuid.lib netapi32.lib powrprof.lib ws2_32.lib dxgi.lib
+    kernel32.lib user32.lib advapi32.lib psapi.lib iphlpapi.lib ole32.lib oleaut32.lib wbemuuid.lib netapi32.lib powrprof.lib ws2_32.lib dxgi.lib
 
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: Compilation failed. >&2

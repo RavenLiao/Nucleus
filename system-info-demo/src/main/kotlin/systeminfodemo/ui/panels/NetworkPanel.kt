@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
 import systeminfodemo.ui.InfoRow
 import systeminfodemo.ui.SectionCard
 import systeminfodemo.ui.formatBytes
@@ -13,6 +14,22 @@ import systeminfodemo.viewmodel.SystemInfoState
 
 @Composable
 fun NetworkPanel(state: SystemInfoState) {
+    state.connectivityInfo?.let { conn ->
+        SectionCard("Connectivity") {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                InfoRow("Connected", if (conn.isConnected) "Yes" else "No")
+                InfoRow(
+                    "Metered",
+                    when (conn.meteredStatus) {
+                        MeteredStatus.UNMETERED -> "No"
+                        MeteredStatus.METERED -> "Yes"
+                        MeteredStatus.UNKNOWN -> "Unknown"
+                    },
+                )
+            }
+        }
+    }
+
     state.networks.forEach { net ->
         SectionCard(net.name) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -26,7 +43,7 @@ fun NetworkPanel(state: SystemInfoState) {
         }
     }
 
-    if (state.networks.isEmpty()) {
+    if (state.networks.isEmpty() && state.connectivityInfo == null) {
         org.jetbrains.jewel.ui.component
             .Text("No network interfaces detected")
     }

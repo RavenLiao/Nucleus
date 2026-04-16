@@ -212,6 +212,13 @@ fun AppContent() {
             }
 
             SidebarItem("Network", currentNav == NavItem.Network, { currentNav = NavItem.Network }) {
+                state.connectivityInfo?.let { conn ->
+                    Text(
+                        if (conn.isConnected) "Connected" else "Disconnected",
+                        fontSize = 11.sp,
+                        color = JewelTheme.globalColors.text.info,
+                    )
+                }
                 val totalRx = state.networks.sumOf { it.receivedBytes }
                 val totalTx = state.networks.sumOf { it.transmittedBytes }
                 Text("TX: ${formatBytes(totalTx)}", fontSize = 11.sp, color = JewelTheme.globalColors.text.info)

@@ -4,6 +4,7 @@ import io.github.kdroidfilter.nucleus.systeminfo.PlatformSystemInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryState
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.ConnectivityInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.DiskInfo
@@ -346,4 +347,6 @@ internal object LinuxSystemInfo : PlatformSystemInfo {
             )
         }
     }
+
+    override fun connectivityInfo(): ConnectivityInfo? = null
 }
