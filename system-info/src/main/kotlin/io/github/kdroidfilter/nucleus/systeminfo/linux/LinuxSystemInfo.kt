@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.systeminfo.linux
 
 import io.github.kdroidfilter.nucleus.systeminfo.PlatformSystemInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryState
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuInfo
@@ -250,7 +251,53 @@ internal object LinuxSystemInfo : PlatformSystemInfo {
         )
     }
 
-    override fun batteryInfo(): BatteryInfo? = null
+    @Suppress("CyclomaticComplexMethod")
+    override fun batteryInfo(): BatteryInfo? {
+        if (!bridge.isLoaded) return null
+        if (!bridge.nativeBatteryPresent()) return null
+        val currentCapacity = bridge.nativeBatteryCurrentCapacity()
+        val maxCapacity = bridge.nativeBatteryMaxCapacity()
+        val designCapacity = bridge.nativeBatteryDesignCapacity()
+        val isCharging = bridge.nativeBatteryIsCharging()
+        val fullyCharged = bridge.nativeBatteryFullyCharged()
+        val isPluggedIn = bridge.nativeBatteryExternalConnected()
+        val timeRemaining = bridge.nativeBatteryTimeRemaining()
+        val temperature = bridge.nativeBatteryTemperature()
+        val state = when {
+            fullyCharged -> BatteryState.Full
+            isCharging -> BatteryState.Charging
+            !isPluggedIn -> BatteryState.Discharging
+            else -> BatteryState.Unknown
+        }
+        val stateOfCharge = if (maxCapacity > 0) {
+            (currentCapacity.toFloat() / maxCapacity).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+        val health = if (designCapacity > 0) {
+            (maxCapacity.toFloat() / designCapacity).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+        return BatteryInfo(
+            stateOfCharge = stateOfCharge,
+            state = state,
+            isPluggedIn = isPluggedIn,
+            currentCapacity = currentCapacity,
+            maxCapacity = maxCapacity,
+            designCapacity = designCapacity,
+            cycleCount = bridge.nativeBatteryCycleCount(),
+            voltage = bridge.nativeBatteryVoltage(),
+            amperage = bridge.nativeBatteryAmperage(),
+            temperature = if (temperature.isNaN()) null else temperature,
+            health = health,
+            timeToFull = if (state == BatteryState.Charging && timeRemaining >= 0) timeRemaining else null,
+            timeToEmpty = if (state == BatteryState.Discharging && timeRemaining >= 0) timeRemaining else null,
+            manufacturer = bridge.nativeBatteryManufacturer(),
+            modelName = bridge.nativeBatteryModelName(),
+            serialNumber = bridge.nativeBatterySerialNumber(),
+        )
+    }
 
     @Suppress("CyclomaticComplexMethod")
     override fun gpus(): List<GpuInfo> {
