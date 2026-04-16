@@ -191,6 +191,7 @@ SMTC requires a window handle (HWND) and a stable `AppUserModelID`. Since the pu
 - Creates a hidden top-level helper window (`WS_OVERLAPPEDWINDOW`, 1×1, never shown) on a dedicated background thread that pumps Windows messages.
 - Calls `RoInitialize(RO_INIT_SINGLETHREADED)` on that thread so WinRT events marshal correctly through the STA message pump.
 - Calls `SetCurrentProcessExplicitAppUserModelID` during `configure` — derived from the `dbusName` or `displayName` argument (sanitized to `[A-Za-z0-9._-]`). Without this, SMTC silently refuses to display anything because the process has no stable identity (the default AUMID is the `javaw.exe` path).
+- Patches the Start Menu shortcut `{displayName}.lnk` (user or system-wide) to carry the same AUMID in its `System.AppUserModel.ID` property. This is how SMTC resolves the AUMID to the app icon and display name for classic installers (NSIS, `jpackage`). APPX/MSIX packages don't need this — the package manifest already provides the identity mapping.
 - Binds SMTC to the helper window via `ISystemMediaTransportControlsInterop.GetForWindow`, then subscribes to `ButtonPressed` and `PlaybackPositionChangeRequested` events. Events are forwarded to Kotlin as JSON through a WRL `Callback<ITypedEventHandler>`.
 
 !!! info "No audio session required for display"
@@ -256,6 +257,9 @@ Requirements:
 - Windows 10 version 1809 (build 17763) or newer.
 - A stable `AppUserModelID` — set automatically by `configure()` from the `dbusName` or `displayName` argument. For packaged apps (`.msix`/`.appx`) the manifest AUMID is preferred, but the bridge's explicit call is compatible.
 - No audio session or special entitlements required. SMTC works for any JVM desktop app.
+
+!!! warning "Classic installers (NSIS / jpackage `.exe`)"
+    For the media overlay to show the correct app **icon and display name**, `displayName` passed to `configure()` must match the basename of the Start Menu shortcut created by the installer (e.g. pass `"Nucleus Demo"` if the shortcut is `Programs\Nucleus Demo.lnk`). The bridge patches the shortcut's `System.AppUserModel.ID` property on first launch. If you change the AUMID later, a shell re-login (or `taskkill /f /im explorer.exe && start explorer`) is needed for the cache to refresh.
 
 Testing from PowerShell:
 

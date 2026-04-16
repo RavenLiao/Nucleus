@@ -24,7 +24,10 @@
 #include <roapi.h>
 #include <winstring.h>
 #include <shobjidl.h>
+#include <shlobj.h>
 #include <propvarutil.h>
+#include <propkey.h>
+#include <strsafe.h>
 
 #include <wrl/implements.h>
 #include <wrl/event.h>
@@ -44,6 +47,7 @@
 #pragma comment(lib, "kernel32.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "propsys.lib")
 
 using namespace Microsoft::WRL;
 using namespace ABI::Windows::Media;
@@ -346,6 +350,70 @@ static void unhookListeners() {
 }
 
 // ============================================================================
+// Start Menu shortcut AUMID patching (NSIS/JPackage installers)
+// ============================================================================
+//
+// SMTC resolves an AUMID to an icon + display name by looking for a Start Menu
+// shortcut with a matching `System.AppUserModel.ID` property. APPX/MSIX sets
+// this via the package manifest, but classic installers (NSIS, jpackage)
+// create shortcuts without it — so the media overlay falls back to the bare
+// javaw.exe identity. We patch the existing shortcut here.
+
+static bool writeAumidToShortcut(const WCHAR *path, const std::wstring &aumid) {
+    ComPtr<IShellLinkW> link;
+    if (FAILED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&link)))) {
+        return false;
+    }
+    ComPtr<IPersistFile> file;
+    if (FAILED(link.As(&file))) return false;
+    if (FAILED(file->Load(path, STGM_READWRITE))) return false;
+
+    ComPtr<IPropertyStore> store;
+    if (FAILED(link.As(&store))) return false;
+
+    // Skip if the AUMID is already correct.
+    PROPVARIANT existing{};
+    PropVariantInit(&existing);
+    if (SUCCEEDED(store->GetValue(PKEY_AppUserModel_ID, &existing))) {
+        WCHAR current[MAX_PATH]{};
+        if (SUCCEEDED(PropVariantToString(existing, current, MAX_PATH)) && aumid == current) {
+            PropVariantClear(&existing);
+            return true;
+        }
+    }
+    PropVariantClear(&existing);
+
+    PROPVARIANT var{};
+    if (FAILED(InitPropVariantFromString(aumid.c_str(), &var))) return false;
+    HRESULT hr = store->SetValue(PKEY_AppUserModel_ID, var);
+    PropVariantClear(&var);
+    if (FAILED(hr)) return false;
+    if (FAILED(store->Commit())) return false;
+    return SUCCEEDED(file->Save(path, TRUE));
+}
+
+static bool tryPatchShortcutIn(int csidl, const std::wstring &appName, const std::wstring &aumid) {
+    WCHAR root[MAX_PATH]{};
+    if (FAILED(SHGetFolderPathW(nullptr, csidl, nullptr, 0, root))) return false;
+
+    WCHAR path[MAX_PATH]{};
+    if (FAILED(StringCchCopyW(path, MAX_PATH, root))) return false;
+    if (FAILED(StringCchCatW(path, MAX_PATH, L"\\Programs\\"))) return false;
+    if (FAILED(StringCchCatW(path, MAX_PATH, appName.c_str()))) return false;
+    if (FAILED(StringCchCatW(path, MAX_PATH, L".lnk"))) return false;
+
+    if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) return false;
+    return writeAumidToShortcut(path, aumid);
+}
+
+static void patchStartMenuShortcut(const std::wstring &appName, const std::wstring &aumid) {
+    if (appName.empty() || aumid.empty()) return;
+    // Prefer user Start Menu; fall back to system-wide (admin-installed).
+    if (tryPatchShortcutIn(CSIDL_STARTMENU, appName, aumid)) return;
+    tryPatchShortcutIn(CSIDL_COMMON_STARTMENU, appName, aumid);
+}
+
+// ============================================================================
 // JNI exports
 // ============================================================================
 
@@ -389,6 +457,15 @@ Java_io_github_kdroidfilter_nucleus_media_control_windows_NativeWindowsBridge_na
         if (FAILED(hr) && hr != RPC_E_CHANGED_MODE && hr != S_FALSE) return;
         g_initialized = true;
     }
+
+    // For non-packaged (NSIS/jpackage) installs, patch the existing Start Menu
+    // shortcut to carry our AUMID so SMTC can resolve it to the app icon+name.
+    // Safe if the shortcut is missing (APPX/MSIX don't need it — the package
+    // identity already maps the AUMID).
+    if (!disp.empty() && !aumid.empty()) {
+        patchStartMenuShortcut(disp, aumid);
+    }
+
     initSmtc();
 }
 
