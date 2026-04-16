@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":global-hotkey"))
     implementation(project(":menu-macos"))
     implementation(project(":sf-symbols"))
+    implementation(project(":media-control"))
     implementation(libs.coroutines.swing)
     implementation(project(":graalvm-runtime"))
     implementation(libs.reorderable)

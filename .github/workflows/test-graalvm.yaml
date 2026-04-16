@@ -173,6 +173,13 @@ jobs:
           pattern: 'scheduler-*'
           merge-multiple: true
 
+      - name: Download media-control artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: media-control/src/main/resources/nucleus/native/
+          pattern: 'media-control-*'
+          merge-multiple: true
+
       - name: Setup Nucleus (GraalVM)
         uses: ./.github/actions/setup-nucleus
         with:

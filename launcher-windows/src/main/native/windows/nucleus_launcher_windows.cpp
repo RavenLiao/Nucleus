@@ -882,9 +882,12 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_
             existingState->callbackRef = nullptr;
         }
         if (jCallback) {
-            jclass cbClass = env->GetObjectClass(jCallback);
-            jmethodID method = env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V");
-            env->DeleteLocalRef(cbClass);
+            // Resolve the method via the interface class, not GetObjectClass(jCallback).
+            // Kotlin's `fun interface` lambdas produce synthetic classes that are not
+            // registered as JNI-accessible under GraalVM native-image.
+            jclass cbClass = env->FindClass("io/github/kdroidfilter/nucleus/launcher/windows/ThumbBarClickListener");
+            jmethodID method = cbClass ? env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V") : nullptr;
+            if (cbClass) env->DeleteLocalRef(cbClass);
             if (method) {
                 existingState->callbackRef = env->NewGlobalRef(jCallback);
                 existingState->onClickMethod = method;
@@ -930,9 +933,9 @@ Java_io_github_kdroidfilter_nucleus_launcher_windows_NativeWindowsTaskbarBridge_
     state->buttonsAdded = true;
 
     if (jCallback) {
-        jclass cbClass = env->GetObjectClass(jCallback);
-        jmethodID method = env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V");
-        env->DeleteLocalRef(cbClass);
+        jclass cbClass = env->FindClass("io/github/kdroidfilter/nucleus/launcher/windows/ThumbBarClickListener");
+        jmethodID method = cbClass ? env->GetMethodID(cbClass, "onThumbButtonClick", "(I)V") : nullptr;
+        if (cbClass) env->DeleteLocalRef(cbClass);
         if (method) {
             state->callbackRef = env->NewGlobalRef(jCallback);
             state->onClickMethod = method;

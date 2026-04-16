@@ -177,7 +177,7 @@ fun main(args: Array<String>) {
                 ) {
                     // Set minimum window size (DPI-scaled automatically by JNI module)
                     LaunchedEffect(Unit) {
-                        window.minimumSize = java.awt.Dimension(1000, 480)
+                        window.minimumSize = java.awt.Dimension(1070, 480)
                     }
                     CompositionLocalProvider(
                         LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
@@ -198,6 +198,8 @@ fun main(args: Array<String>) {
                                 ) {
                                     add("Launcher")
                                 }
+                                add("Media Control")
+
                                 add("Hotkeys")
                                 if (Platform.Current == Platform.MacOS) {
                                     add("Menu")
@@ -344,6 +346,7 @@ fun main(args: Array<String>) {
                                     else -> {}
                                 }
                             }
+                            "Media Control" -> MediaControlScreen()
                             "Hotkeys" -> GlobalHotKeyScreen()
                             "Menu" -> MacOsMenuScreen()
                         }

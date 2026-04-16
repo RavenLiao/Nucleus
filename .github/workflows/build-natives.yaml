@@ -271,6 +271,27 @@ jobs:
           path: scheduler/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build media-control Windows DLLs
+        shell: cmd
+        run: call media-control\src\main\native\windows\build.bat
+
+      - name: Verify media-control Windows natives
+        shell: bash
+        run: |
+          for f in \
+            media-control/src/main/resources/nucleus/native/win32-x64/nucleus_media_control_windows.dll \
+            media-control/src/main/resources/nucleus/native/win32-aarch64/nucleus_media_control_windows.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload media-control Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-control-windows
+          path: media-control/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:
@@ -568,6 +589,25 @@ jobs:
           path: system-info/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build media-control macOS dylibs
+        run: bash media-control/src/main/native/macos/build.sh
+
+      - name: Verify media-control macOS natives
+        run: |
+          for f in \
+            media-control/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_media_control_macos.dylib \
+            media-control/src/main/resources/nucleus/native/darwin-x64/libnucleus_media_control_macos.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload media-control macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-control-macos
+          path: media-control/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -765,4 +805,20 @@ jobs:
         with:
           name: scheduler-linux-${{ matrix.arch }}
           path: scheduler/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build media-control Linux native shared library
+        run: bash media-control/src/main/native/linux/build.sh
+
+      - name: Verify media-control Linux native
+        run: |
+          f="media-control/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_media_control_linux.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload media-control Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-control-linux-${{ matrix.arch }}
+          path: media-control/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

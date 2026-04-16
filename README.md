@@ -44,6 +44,7 @@ Java evolved into Kotlin. JavaScript evolved into TypeScript. Desktop developmen
 - **Decorated windows** — Custom title bar with native window controls on every OS
 - **Notifications** — Native APIs on macOS, Windows, and Linux
 - **Launchers** — Badges, progress bars, jump lists, dock menus, quicklists
+- **Media controls** — OS media overlay integration (MPRIS, Now Playing, SMTC) with play/pause/seek events
 - **System integration** — Dark mode, accent colors, high contrast, energy management, global hotkeys, taskbar progress, system info
 
 ### Perform
@@ -107,6 +108,7 @@ Each module is published independently to Maven Central — use them together or
 | `nucleus.launcher-macos` | macOS Dock API — badge, menus |
 | `nucleus.launcher-windows` | Windows taskbar — badges, jump lists, overlay icons, thumbnail toolbar |
 | `nucleus.launcher-linux` | Unity Launcher — badge, progress, urgency, quicklist |
+| `nucleus.media-control` | OS media controls — MPRIS (Linux), Now Playing (macOS), SMTC (Windows) |
 | `nucleus.menu-macos` | Native macOS menu bar |
 | `nucleus.freedesktop-icons` | Type-safe freedesktop icon naming constants |
 | `nucleus.taskbar-progress` | Cross-platform taskbar progress bar & attention requests |

@@ -16,6 +16,7 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Notification (Linux) | `io.github.kdroidfilter:nucleus.notification-linux` | Freedesktop Desktop Notifications API via JNI (D-Bus) |
 | Launcher (Linux) | `io.github.kdroidfilter:nucleus.launcher-linux` | Unity Launcher API — badge, progress, urgency, quicklist via JNI (D-Bus) |
 | Launcher (macOS) | `io.github.kdroidfilter:nucleus.launcher-macos` | macOS dock context menu — custom items, submenus, click callbacks via JNI |
+| Media Control | `io.github.kdroidfilter:nucleus.media-control` | OS media controls (play/pause, metadata, seek) — MPRIS D-Bus on Linux, MPNowPlayingInfoCenter on macOS, SystemMediaTransportControls on Windows via JNI |
 | Menu (macOS) | `io.github.kdroidfilter:nucleus.menu-macos` | Complete NSMenu mapping — application menu bar, items, badges, delegates, SF Symbols via JNI |
 | SF Symbols | `io.github.kdroidfilter:nucleus.sf-symbols` | Type-safe Apple SF Symbols constants (6 195 symbols, 21 categories) |
 | Freedesktop Icons | `io.github.kdroidfilter:nucleus.freedesktop-icons` | Type-safe freedesktop Icon Naming Specification constants |
@@ -48,6 +49,7 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.notification-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-linux:<version>")
     implementation("io.github.kdroidfilter:nucleus.launcher-macos:<version>")
+    implementation("io.github.kdroidfilter:nucleus.media-control:<version>")
     implementation("io.github.kdroidfilter:nucleus.menu-macos:<version>")
     implementation("io.github.kdroidfilter:nucleus.sf-symbols:<version>")
     implementation("io.github.kdroidfilter:nucleus.freedesktop-icons:<version>")

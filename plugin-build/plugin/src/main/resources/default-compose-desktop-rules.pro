@@ -223,6 +223,50 @@
     native <methods>;
 }
 
+# Nucleus notification-windows JNI — static callbacks invoked from native via FindClass/GetStaticMethodID
+-keep class io.github.kdroidfilter.nucleus.notification.windows.NativeWindowsNotificationBridge {
+    native <methods>;
+    static void onToastActivated(java.lang.String, java.lang.String, java.lang.String, java.lang.String[], java.lang.String[]);
+    static void onToastDismissed(java.lang.String, java.lang.String, int);
+    static void onToastFailed(java.lang.String, java.lang.String, int);
+    static void onToastShown(long, java.lang.String);
+    static void onToastUpdated(long, java.lang.String);
+    static void onHistoryResult(long, java.lang.String[], java.lang.String[], java.lang.String);
+}
+-keep class io.github.kdroidfilter.nucleus.notification.windows.** { *; }
+-keep class io.github.kdroidfilter.nucleus.notification.common.** { *; }
+
+# Nucleus media-control JNI — native code uses FindClass(BRIDGE_CLASS) + static callbacks
+-keep class io.github.kdroidfilter.nucleus.mediacontrol.** { *; }
+
+# Nucleus scheduler JNI
+-keep class io.github.kdroidfilter.nucleus.scheduler.** { *; }
+
+# Nucleus global-hotkey JNI — onHotKey is invoked from native code via JNI
+-keep class io.github.kdroidfilter.nucleus.globalhotkey.windows.NativeWindowsHotKeyBridge {
+    native <methods>;
+    static void onHotKey(long, int, int);
+}
+-keep class io.github.kdroidfilter.nucleus.globalhotkey.macos.NativeMacOsHotKeyBridge {
+    native <methods>;
+    static void onHotKey(long, int, int);
+}
+-keep class io.github.kdroidfilter.nucleus.globalhotkey.linux.NativeLinuxHotKeyBridge {
+    native <methods>;
+    static void onHotKey(long, int, int);
+}
+
+# Nucleus launcher-windows JNI — ThumbBarClickListener.onThumbButtonClick is invoked from native
+-keep class io.github.kdroidfilter.nucleus.launcher.windows.NativeWindowsBadgeBridge { native <methods>; }
+-keep class io.github.kdroidfilter.nucleus.launcher.windows.NativeWindowsJumpListBridge { native <methods>; }
+-keep class io.github.kdroidfilter.nucleus.launcher.windows.NativeWindowsTaskbarBridge { native <methods>; }
+-keep interface io.github.kdroidfilter.nucleus.launcher.windows.ThumbBarClickListener {
+    void onThumbButtonClick(int);
+}
+-keep class * implements io.github.kdroidfilter.nucleus.launcher.windows.ThumbBarClickListener {
+    void onThumbButtonClick(int);
+}
+
 -dontwarn sun.misc.Unsafe
 -dontwarn sun.awt.**
 

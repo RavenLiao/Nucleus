@@ -22,6 +22,7 @@ jewel = "0.34.0-261.22158.19"
 reorderable = "3.0.0"
 thumbnailator = "0.4.21"
 asm = "9.9.1"
+kotlinxSerialization = "1.11.0"
 
 [plugins]
 detekt = { id = "dev.detekt", version.ref = "detekt"}
@@ -35,6 +36,7 @@ jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose"}
 graalvmNative = { id = "org.graalvm.buildtools.native", version.ref = "graalvmNative" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilVersion" }
@@ -74,3 +76,4 @@ compose-material-icons-extended = { module = "org.jetbrains.compose.material:mat
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 thumbnailator = { module = "net.coobird:thumbnailator", version.ref = "thumbnailator" }
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
