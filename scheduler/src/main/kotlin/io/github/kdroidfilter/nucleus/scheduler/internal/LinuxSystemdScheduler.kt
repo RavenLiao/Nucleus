@@ -79,6 +79,10 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         if (request.inputData.isNotEmpty()) {
             TaskMetadataStore.save(appId, request.taskId, request.inputData)
         }
+        TaskMetadataStore.saveTaskType(appId, request.taskId, request.type.name)
+        if (request.constraints.hasConstraints()) {
+            TaskMetadataStore.saveConstraints(appId, request.taskId, request.constraints)
+        }
 
         // Generate wrapper script
         val serviceFile = File(systemdUserDir, serviceFileName(request.taskId))

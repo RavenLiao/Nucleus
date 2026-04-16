@@ -66,6 +66,10 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
         if (request.existingTaskPolicy == ExistingTaskPolicy.KEEP && isScheduled(request.taskId)) {
             TaskMetadataStore.save(appId, request.taskId, request.inputData)
+            TaskMetadataStore.saveTaskType(appId, request.taskId, request.type.name)
+            if (request.constraints.hasConstraints()) {
+                TaskMetadataStore.saveConstraints(appId, request.taskId, request.constraints)
+            }
             return true
         }
 
@@ -97,6 +101,10 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         }
 
         TaskMetadataStore.save(appId, request.taskId, request.inputData)
+        TaskMetadataStore.saveTaskType(appId, request.taskId, request.type.name)
+        if (request.constraints.hasConstraints()) {
+            TaskMetadataStore.saveConstraints(appId, request.taskId, request.constraints)
+        }
         return true
     }
 

@@ -1,5 +1,6 @@
 package io.github.kdroidfilter.nucleus.scheduler.testing
 
+import io.github.kdroidfilter.nucleus.scheduler.Constraints
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
@@ -9,6 +10,8 @@ import io.github.kdroidfilter.nucleus.scheduler.TaskRegistry
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskResult
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
+import io.github.kdroidfilter.nucleus.scheduler.internal.ConstraintChecker
+import io.github.kdroidfilter.nucleus.scheduler.internal.ConstraintResult
 import io.github.kdroidfilter.nucleus.scheduler.internal.PlatformScheduler
 import java.io.Closeable
 import kotlin.time.Duration
@@ -44,6 +47,17 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
     private val executionHistories = mutableMapOf<String, MutableList<ExecutionRecord>>()
     private var virtualTimeMs: Long = 0L
     private val enqueueTimeMs = mutableMapOf<String, Long>()
+
+    /**
+     * Constraint checker used to evaluate task constraints before execution.
+     *
+     * Defaults to an all-satisfied checker. Set a [TestConstraintChecker] to
+     * simulate constraint failures.
+     */
+    public var constraintChecker: ConstraintChecker = object : ConstraintChecker {
+        override fun check(constraints: Constraints): ConstraintResult =
+            ConstraintResult(satisfied = true, unsatisfied = emptySet())
+    }
 
     private data class TaskMetadata(
         var runCount: Int = 0,
@@ -148,13 +162,49 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
      * @throws IllegalStateException if the task is not enqueued
      * @throws io.github.kdroidfilter.nucleus.scheduler.TaskNotFoundException if [taskId] is not in [registry]
      */
+    /**
+     * Immediately executes the task identified by [taskId] using the given [registry].
+     *
+     * If the task has [Constraints] and the [constraintChecker] reports them as unsatisfied,
+     * the task is **not** executed. For periodic tasks this returns `null` (silent skip).
+     * For calendar/on-boot tasks this returns [TaskResult.Retry].
+     *
+     * @throws IllegalStateException if the task is not enqueued
+     * @throws io.github.kdroidfilter.nucleus.scheduler.TaskNotFoundException if [taskId] is not in [registry]
+     */
     public suspend fun runTask(
         taskId: String,
         registry: TaskRegistry,
-    ): TaskResult {
+    ): TaskResult? {
         val request = tasks[taskId]
             ?: error("Task '$taskId' is not enqueued in the test scheduler")
         val meta = metadata.getOrPut(taskId) { TaskMetadata() }
+
+        // Check constraints before executing
+        if (request.constraints.hasConstraints()) {
+            val checkResult = constraintChecker.check(request.constraints)
+            if (!checkResult.satisfied) {
+                val isPeriodic = request.type == TaskRequest.Type.PERIODIC
+                if (isPeriodic) {
+                    meta.lastRunMs = virtualTimeMs
+                    meta.lastResult = "ConstraintsNotMet: ${checkResult.unsatisfied}"
+                    return null
+                } else {
+                    val retryResult = TaskResult.Retry("Constraints not met: ${checkResult.unsatisfied}")
+                    val record = ExecutionRecord(
+                        taskId = taskId,
+                        result = retryResult,
+                        runAttemptCount = meta.runAttemptCount,
+                        virtualTimeMs = virtualTimeMs,
+                    )
+                    executionHistories.getOrPut(taskId) { mutableListOf() }.add(record)
+                    meta.runAttemptCount++
+                    meta.lastRunMs = virtualTimeMs
+                    meta.lastResult = "Retry: Constraints not met: ${checkResult.unsatisfied}"
+                    return retryResult
+                }
+            }
+        }
 
         val context = TaskContext(
             taskId = taskId,
@@ -254,10 +304,12 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
             // Task may have been cancelled by a previous execution
             if (fire.taskId !in tasks) continue
             virtualTimeMs = fire.fireAtMs
-            runTask(fire.taskId, registry)
-            val history = executionHistories[fire.taskId]
-            if (history != null && history.isNotEmpty()) {
-                records.add(history.last())
+            val result = runTask(fire.taskId, registry)
+            if (result != null) {
+                val history = executionHistories[fire.taskId]
+                if (history != null && history.isNotEmpty()) {
+                    records.add(history.last())
+                }
             }
         }
 

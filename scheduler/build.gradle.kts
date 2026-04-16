@@ -15,6 +15,7 @@ val publishVersion =
 
 dependencies {
     compileOnly(project(":core-runtime"))
+    api(project(":system-info"))
     compileOnly(libs.coroutines.core)
     testImplementation(project(":core-runtime"))
     testImplementation(libs.coroutines.core)

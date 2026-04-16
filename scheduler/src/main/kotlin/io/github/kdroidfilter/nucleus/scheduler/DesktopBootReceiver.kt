@@ -2,8 +2,10 @@ package io.github.kdroidfilter.nucleus.scheduler
 
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.scheduler.internal.ConstraintChecker
 import io.github.kdroidfilter.nucleus.scheduler.internal.LinuxSystemdScheduler
 import io.github.kdroidfilter.nucleus.scheduler.internal.MacOSLaunchdScheduler
+import io.github.kdroidfilter.nucleus.scheduler.internal.SystemInfoConstraintChecker
 import io.github.kdroidfilter.nucleus.scheduler.internal.TaskMetadataStore
 import io.github.kdroidfilter.nucleus.scheduler.internal.WindowsTaskScheduler
 import kotlinx.coroutines.runBlocking
@@ -24,9 +26,28 @@ import java.util.logging.Logger
  * }
  * ```
  */
+@OptIn(InternalSchedulerApi::class)
 public object DesktopBootReceiver {
     private val logger = Logger.getLogger(DesktopBootReceiver::class.java.name)
     internal const val SCHEDULER_ARG = "--nucleus-scheduler-run"
+
+    internal var constraintChecker: ConstraintChecker = SystemInfoConstraintChecker
+
+    /**
+     * Replaces the constraint checker with a test implementation.
+     */
+    @InternalSchedulerApi
+    public fun setTestConstraintChecker(checker: ConstraintChecker) {
+        constraintChecker = checker
+    }
+
+    /**
+     * Restores the production constraint checker.
+     */
+    @InternalSchedulerApi
+    public fun resetConstraintChecker() {
+        constraintChecker = SystemInfoConstraintChecker
+    }
 
     /**
      * Returns `true` if the current process was invoked by the Nucleus scheduler
@@ -65,6 +86,19 @@ public object DesktopBootReceiver {
             }
 
         val context = TaskMetadataStore.loadContext(appId, taskId)
+
+        // Check constraints before executing the task
+        val constraints = TaskMetadataStore.loadConstraints(appId, taskId)
+        if (constraints.hasConstraints()) {
+            val checkResult = constraintChecker.check(constraints)
+            if (!checkResult.satisfied) {
+                logger.info(
+                    "Task '$taskId' skipped — constraints not met: ${checkResult.unsatisfied}",
+                )
+                handleConstraintsNotMet(appId, taskId, checkResult.unsatisfied)
+                return
+            }
+        }
 
         // Clean up any one-shot retry plist from a previous retry trigger
         if (Platform.Current == Platform.MacOS) {
@@ -116,6 +150,28 @@ public object DesktopBootReceiver {
             Platform.Windows -> WindowsTaskScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
             Platform.MacOS -> MacOSLaunchdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
             else -> logger.warning("Retry scheduling not supported on ${Platform.Current}")
+        }
+    }
+
+    private fun handleConstraintsNotMet(
+        appId: String,
+        taskId: String,
+        unsatisfied: Set<String>,
+    ) {
+        val taskType = TaskMetadataStore.loadTaskType(appId, taskId)
+        if (taskType == "PERIODIC") {
+            // Periodic: skip silently, the next trigger will re-check
+            TaskMetadataStore.recordConstraintSkip(appId, taskId, unsatisfied)
+            logger.info("Periodic task '$taskId' skipped, will re-check next trigger")
+        } else {
+            // Calendar / on-boot: schedule retry with backoff
+            TaskMetadataStore.recordRetry(appId, taskId, "Constraints not met: $unsatisfied")
+            when (Platform.Current) {
+                Platform.Linux -> LinuxSystemdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
+                Platform.Windows -> WindowsTaskScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
+                Platform.MacOS -> MacOSLaunchdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
+                else -> logger.warning("Retry scheduling not supported on ${Platform.Current}")
+            }
         }
     }
 }

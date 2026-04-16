@@ -1,6 +1,8 @@
 package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.scheduler.Constraints
+import io.github.kdroidfilter.nucleus.scheduler.NetworkType
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import java.io.File
 import java.util.Properties
@@ -20,6 +22,12 @@ internal object TaskMetadataStore {
     private const val KEY_SCHED_CAL_HOUR = "_schedCalHour"
     private const val KEY_SCHED_CAL_MINUTE = "_schedCalMinute"
     private const val KEY_SCHED_CAL_DAYS = "_schedCalDays"
+    private const val KEY_TASK_TYPE = "_taskType"
+    private const val KEY_CONSTRAINT_NETWORK = "_constraint_networkType"
+    private const val KEY_CONSTRAINT_BATTERY = "_constraint_batteryNotLow"
+    private const val KEY_CONSTRAINT_CHARGING = "_constraint_charging"
+    private const val KEY_CONSTRAINT_IDLE = "_constraint_deviceIdle"
+    private const val KEY_CONSTRAINT_MIN_STORAGE = "_constraint_minStorageBytes"
 
     fun storeDir(appId: String): File {
         val baseDir =
@@ -230,6 +238,80 @@ internal object TaskMetadataStore {
             result = 31 * result + (calendarDays?.contentHashCode() ?: 0)
             return result
         }
+    }
+
+    fun saveTaskType(
+        appId: String,
+        taskId: String,
+        type: String,
+    ) {
+        val file = taskFile(appId, taskId)
+        file.parentFile.mkdirs()
+        val props = load(file)
+        props.setProperty(KEY_TASK_TYPE, type)
+        file.outputStream().use { props.store(it, null) }
+    }
+
+    fun loadTaskType(
+        appId: String,
+        taskId: String,
+    ): String? {
+        val props = load(taskFile(appId, taskId))
+        return props.getProperty(KEY_TASK_TYPE)
+    }
+
+    fun saveConstraints(
+        appId: String,
+        taskId: String,
+        constraints: Constraints,
+    ) {
+        val file = taskFile(appId, taskId)
+        file.parentFile.mkdirs()
+        val props = load(file)
+        if (constraints.requiredNetworkType != NetworkType.NOT_REQUIRED) {
+            props.setProperty(KEY_CONSTRAINT_NETWORK, constraints.requiredNetworkType.name)
+        } else {
+            props.remove(KEY_CONSTRAINT_NETWORK)
+        }
+        props.setProperty(KEY_CONSTRAINT_BATTERY, constraints.requiresBatteryNotLow.toString())
+        props.setProperty(KEY_CONSTRAINT_CHARGING, constraints.requiresCharging.toString())
+        props.setProperty(KEY_CONSTRAINT_IDLE, constraints.requiresDeviceIdle.toString())
+        val minStorage = constraints.minimumStorageBytes
+        if (minStorage != null) {
+            props.setProperty(KEY_CONSTRAINT_MIN_STORAGE, minStorage.toString())
+        } else {
+            props.remove(KEY_CONSTRAINT_MIN_STORAGE)
+        }
+        file.outputStream().use { props.store(it, null) }
+    }
+
+    fun loadConstraints(
+        appId: String,
+        taskId: String,
+    ): Constraints {
+        val props = load(taskFile(appId, taskId))
+        return Constraints(
+            requiredNetworkType = props.getProperty(KEY_CONSTRAINT_NETWORK)
+                ?.let { runCatching { NetworkType.valueOf(it) }.getOrNull() }
+                ?: NetworkType.NOT_REQUIRED,
+            requiresBatteryNotLow = props.getProperty(KEY_CONSTRAINT_BATTERY)?.toBooleanStrictOrNull() ?: false,
+            requiresCharging = props.getProperty(KEY_CONSTRAINT_CHARGING)?.toBooleanStrictOrNull() ?: false,
+            requiresDeviceIdle = props.getProperty(KEY_CONSTRAINT_IDLE)?.toBooleanStrictOrNull() ?: false,
+            minimumStorageBytes = props.getProperty(KEY_CONSTRAINT_MIN_STORAGE)?.toLongOrNull(),
+        )
+    }
+
+    fun recordConstraintSkip(
+        appId: String,
+        taskId: String,
+        unsatisfied: Set<String>,
+    ) {
+        val file = taskFile(appId, taskId)
+        val props = load(file)
+        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
+        props.setProperty(KEY_LAST_RESULT, "ConstraintsNotMet: $unsatisfied")
+        file.parentFile.mkdirs()
+        file.outputStream().use { props.store(it, null) }
     }
 
     /** Lists all task IDs that have metadata stored. */

@@ -21,6 +21,8 @@ public class TaskRequest private constructor(
     /** Policy for handling a task with the same ID already scheduled. */
     public val existingTaskPolicy: ExistingTaskPolicy,
     internal val runImmediately: Boolean,
+    /** Conditions that must be met before the task executes. */
+    public val constraints: Constraints = Constraints.NONE,
 ) {
     @InternalSchedulerApi
     public enum class Type { PERIODIC, CALENDAR, ON_BOOT }
@@ -33,6 +35,7 @@ public class TaskRequest private constructor(
         internal var retryPolicy: RetryPolicy? = null
         internal var existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.KEEP
         internal var runImmediately: Boolean = false
+        internal var constraints: Constraints = Constraints.NONE
 
         /** Attach a key-value pair to the task, retrievable via [TaskContext.inputData]. */
         public fun inputData(
@@ -58,6 +61,16 @@ public class TaskRequest private constructor(
          */
         public fun runImmediately(value: Boolean = true) {
             runImmediately = value
+        }
+
+        /** Set pre-built [Constraints] for this task. */
+        public fun constraints(constraints: Constraints) {
+            this.constraints = constraints
+        }
+
+        /** Configure [Constraints] via a DSL block. */
+        public fun constraints(configure: ConstraintsBuilder.() -> Unit) {
+            this.constraints = ConstraintsBuilder().apply(configure).build()
         }
     }
 
@@ -98,6 +111,7 @@ public class TaskRequest private constructor(
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
                 runImmediately = builder.runImmediately,
+                constraints = builder.constraints,
             )
         }
 
@@ -124,6 +138,7 @@ public class TaskRequest private constructor(
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
                 runImmediately = false,
+                constraints = builder.constraints,
             )
         }
 
@@ -148,6 +163,7 @@ public class TaskRequest private constructor(
                 retryPolicy = builder.retryPolicy,
                 existingTaskPolicy = builder.existingTaskPolicy,
                 runImmediately = false,
+                constraints = builder.constraints,
             )
         }
     }

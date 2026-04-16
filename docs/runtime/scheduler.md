@@ -229,6 +229,88 @@ scheduler.enqueue(
 )
 ```
 
+### Constraints
+
+Constraints let you declare conditions that must be met before a task executes — similar to Android's WorkManager constraints. Constraints are checked **at execution time**: the OS still triggers the process on schedule, but `doWork()` is only called when all constraints are satisfied.
+
+The [`system-info`](system-info.md) module is included as a transitive dependency — no extra configuration needed.
+
+#### Basic usage
+
+```kotlin
+scheduler.enqueue(
+    TaskRequest.periodic("sync", 1.hours) {
+        constraints {
+            requiredNetworkType = NetworkType.CONNECTED
+            requiresBatteryNotLow = true
+        }
+    }
+)
+```
+
+#### Available constraints
+
+| Constraint | Type | Default | Description |
+|------------|------|---------|-------------|
+| `requiredNetworkType` | `NetworkType` | `NOT_REQUIRED` | Network connectivity requirement. |
+| `requiresBatteryNotLow` | `Boolean` | `false` | Battery must be above 15 %. Devices without a battery satisfy this. |
+| `requiresCharging` | `Boolean` | `false` | Device must be plugged in (charging or full). |
+| `requiresDeviceIdle` | `Boolean` | `false` | User must be idle for at least 5 minutes. |
+| `minimumStorageBytes` | `Long?` | `null` | Minimum available disk space (in bytes) on the app partition, or `null` for no requirement. |
+
+#### Network types
+
+| Value | Description |
+|-------|-------------|
+| `NOT_REQUIRED` | No network requirement (default). |
+| `CONNECTED` | Any active network connection. |
+| `UNMETERED` | Unmetered (non-cellular / non-tethered) connection only. |
+
+#### Behavior when constraints are not met
+
+| Task type | Behavior |
+|-----------|----------|
+| **Periodic** | Silently skipped — the next trigger re-checks constraints. |
+| **Calendar / On-boot** | A retry is scheduled with backoff (5 minutes). |
+
+In both cases, the metadata store records the skip with a `ConstraintsNotMet` result for observability.
+
+#### Examples
+
+```kotlin
+// Only sync when connected to Wi-Fi and charging
+scheduler.enqueue(
+    TaskRequest.periodic("cloud-sync", 2.hours) {
+        constraints {
+            requiredNetworkType = NetworkType.UNMETERED
+            requiresCharging = true
+        }
+    }
+)
+
+// Heavy backup only when idle with at least 1 GB free
+scheduler.enqueue(
+    TaskRequest.calendar("nightly-backup", CronExpression.everyDayAt(3)) {
+        constraints {
+            requiresDeviceIdle = true
+            minimumStorageBytes = 1_073_741_824 // 1 GB
+            requiresBatteryNotLow = true
+        }
+    }
+)
+
+// Pre-built Constraints object
+val syncConstraints = Constraints(
+    requiredNetworkType = NetworkType.CONNECTED,
+    requiresBatteryNotLow = true,
+)
+scheduler.enqueue(
+    TaskRequest.periodic("sync", 1.hours) {
+        constraints(syncConstraints)
+    }
+)
+```
+
 ## API Reference
 
 ### `DesktopTaskScheduler`
@@ -261,6 +343,8 @@ Builder DSL:
 | `retryPolicy(policy)` | Set the retry strategy (`ExponentialBackoff` or `Linear`). |
 | `existingTaskPolicy(policy)` | `KEEP` (default) or `REPLACE` if same task ID exists. |
 | `runImmediately(enabled)` | Run the task immediately when scheduled (periodic tasks only). Default: `false`. |
+| `constraints { ... }` | Set execution constraints via DSL (see [Constraints](#constraints)). |
+| `constraints(constraints)` | Set a pre-built `Constraints` object. |
 
 ### `CronExpression`
 
@@ -312,6 +396,29 @@ Builder DSL:
 | `ExponentialBackoff` | `initialDelay: Duration`, `maxAttempts: Int` | 30 min, 3 attempts |
 | `Linear` | `delay: Duration`, `maxAttempts: Int` | 15 min, 3 attempts |
 
+### `Constraints`
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `requiredNetworkType` | `NetworkType` | `NOT_REQUIRED` | Required network connectivity. |
+| `requiresBatteryNotLow` | `Boolean` | `false` | Battery above 15 % (no battery = satisfied). |
+| `requiresCharging` | `Boolean` | `false` | Device must be plugged in. |
+| `requiresDeviceIdle` | `Boolean` | `false` | User idle ≥ 5 minutes. |
+| `requiresStorageNotLow` | `Boolean` | `false` | Disk space ≥ 256 MB on app partition. |
+
+| Constant / Method | Description |
+|--------------------|-------------|
+| `Constraints.NONE` | No constraints — the task always executes. |
+| `hasConstraints()` | Returns `true` if at least one constraint is set. |
+
+### `NetworkType`
+
+| Value | Description |
+|-------|-------------|
+| `NOT_REQUIRED` | No network requirement. |
+| `CONNECTED` | Any active network connection. |
+| `UNMETERED` | Unmetered connection only. |
+
 ## How It Works
 
 ### Execution flow
@@ -322,7 +429,7 @@ When a task fires, the OS re-launches your application binary with arguments:
 /path/to/MyApp --nucleus-scheduler-run <taskId>
 ```
 
-`DesktopBootReceiver.isSchedulerInvocation()` detects these arguments and `handle()` resolves the task from the registry, loads its context from the metadata store, and calls `doWork()`.
+`DesktopBootReceiver.isSchedulerInvocation()` detects these arguments and `handle()` resolves the task from the registry, loads its context from the metadata store, checks any [constraints](#constraints) against the current system state, and — if all constraints are satisfied — calls `doWork()`.
 
 ### Metadata storage
 
@@ -442,6 +549,51 @@ TestDesktopTaskScheduler().use { testScheduler ->
 }
 ```
 
+#### Testing constraints
+
+Use `TestConstraintChecker` to simulate system state and verify that tasks respect their constraints:
+
+```kotlin
+val constraintChecker = TestConstraintChecker()
+constraintChecker.install()
+
+TestDesktopTaskScheduler().use { testScheduler ->
+    testScheduler.install()
+    testScheduler.constraintChecker = constraintChecker
+
+    DesktopTaskScheduler.enqueue(
+        TaskRequest.periodic("sync", 1.hours) {
+            constraints {
+                requiredNetworkType = NetworkType.CONNECTED
+            }
+        }
+    )
+
+    // Network is down — task should be skipped
+    constraintChecker.networkConnected = false
+    val results = testScheduler.advanceTimeBy(2.hours, registry)
+    assertEquals(0, results.size)
+
+    // Network is back — task executes
+    constraintChecker.networkConnected = true
+    val results2 = testScheduler.advanceTimeBy(1.hours, registry)
+    assertEquals(1, results2.size)
+}
+
+constraintChecker.uninstall()
+```
+
+`TestConstraintChecker` exposes mutable properties matching each constraint:
+
+| Property | Type | Default | Maps to |
+|----------|------|---------|---------|
+| `networkConnected` | `Boolean` | `true` | `NetworkType.CONNECTED` |
+| `networkUnmetered` | `Boolean` | `true` | `NetworkType.UNMETERED` |
+| `batteryLevel` | `Float?` | `1.0f` | `requiresBatteryNotLow` (threshold: 15 %) |
+| `isCharging` | `Boolean` | `false` | `requiresCharging` |
+| `idleTimeSeconds` | `Long` | `0` | `requiresDeviceIdle` (threshold: 300 s) |
+| `availableStorageBytes` | `Long` | `MAX_VALUE` | `minimumStorageBytes` |
+
 ### `TestTaskRunner`
 
 | Method | Returns | Description |
@@ -450,12 +602,13 @@ TestDesktopTaskScheduler().use { testScheduler ->
 
 ### `TestDesktopTaskScheduler`
 
-| Method | Returns | Description |
-|--------|---------|-------------|
+| Method / Property | Returns | Description |
+|-------------------|---------|-------------|
 | `install()` | `Unit` | Swaps the `DesktopTaskScheduler` backend with this in-memory implementation. |
 | `uninstall()` | `Unit` | Restores the platform-default backend. Also called by `close()`. |
-| `runTask(taskId, registry)` | `TaskResult` | Executes the task immediately, updates run count and attempt tracking. |
-| `advanceTimeBy(duration, registry)` | `List<ExecutionRecord>` | Advances virtual time and triggers all periodic tasks whose interval has elapsed. |
+| `constraintChecker` | `ConstraintChecker` | Constraint checker used before execution. Defaults to all-satisfied. Set a `TestConstraintChecker` to simulate failures. |
+| `runTask(taskId, registry)` | `TaskResult?` | Executes the task immediately. Returns `null` if a periodic task is skipped due to unsatisfied constraints. |
+| `advanceTimeBy(duration, registry)` | `List<ExecutionRecord>` | Advances virtual time and triggers all periodic tasks whose interval has elapsed. Tasks with unsatisfied constraints are skipped. |
 | `getExecutionHistory(taskId)` | `List<ExecutionRecord>` | Full execution history for a task. |
 | `getAllExecutionHistory()` | `List<ExecutionRecord>` | Execution history across all tasks, sorted chronologically. |
 | `getEnqueuedRequest(taskId)` | `TaskRequest?` | Returns the enqueued request for assertions. |
@@ -472,5 +625,18 @@ Returned by `advanceTimeBy()`, `getExecutionHistory()`, and `getAllExecutionHist
 | `result` | `TaskResult` | The outcome of `doWork()` (`Success`, `Failure`, or `Retry`). |
 | `runAttemptCount` | `Int` | The 1-based attempt number at the time of execution. |
 | `virtualTimeMs` | `Long` | The virtual time (in milliseconds) at which the execution occurred. |
+
+### `TestConstraintChecker`
+
+| Method / Property | Type | Description |
+|-------------------|------|-------------|
+| `networkConnected` | `Boolean` | Simulated network connectivity (default: `true`). |
+| `networkUnmetered` | `Boolean` | Simulated unmetered status (default: `true`). |
+| `batteryLevel` | `Float?` | Simulated battery level 0.0–1.0, `null` = no battery (default: `1.0f`). |
+| `isCharging` | `Boolean` | Simulated charging state (default: `false`). |
+| `idleTimeSeconds` | `Long` | Simulated idle time in seconds (default: `0`). |
+| `availableStorageBytes` | `Long` | Simulated disk space in bytes (default: `MAX_VALUE`). |
+| `install()` | `Unit` | Sets this checker as the active constraint checker in `DesktopBootReceiver`. |
+| `uninstall()` | `Unit` | Restores the production constraint checker. Also called by `close()`. |
 
 All standard `DesktopTaskScheduler` methods (`enqueue`, `cancel`, `isScheduled`, `getTaskInfo`, `getAllTasks`) work as expected after `install()`.
