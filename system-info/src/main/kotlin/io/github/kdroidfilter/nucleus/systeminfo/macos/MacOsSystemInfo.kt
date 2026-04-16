@@ -265,8 +265,8 @@ internal object MacOsSystemInfo : PlatformSystemInfo {
         val state = when {
             fullyCharged -> BatteryState.Full
             isCharging -> BatteryState.Charging
-            isPluggedIn -> BatteryState.Full
-            else -> BatteryState.Discharging
+            !isPluggedIn -> BatteryState.Discharging
+            else -> BatteryState.Unknown
         }
         val stateOfCharge = if (maxCapacity > 0) {
             (currentCapacity.toFloat() / maxCapacity).coerceIn(0f, 1f)
