@@ -5,6 +5,7 @@ package io.github.kdroidfilter.nucleus.servicemanagement
  *
  * Describes the current registration state of an app service.
  */
+@Suppress("MagicNumber")
 public enum class AppServiceStatus(
     public val rawValue: Int,
 ) {

@@ -76,7 +76,6 @@ nucleus.application {
         )
     }
 
-
     nativeDistributions {
         compressionLevel = CompressionLevel.Maximum
         targetFormats(TargetFormat.Dmg, TargetFormat.Nsis, TargetFormat.Deb)

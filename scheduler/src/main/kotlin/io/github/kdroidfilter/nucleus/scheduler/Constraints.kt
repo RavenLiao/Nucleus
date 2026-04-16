@@ -65,11 +65,12 @@ public class ConstraintsBuilder internal constructor() {
     public var requiresDeviceIdle: Boolean = false
     public var minimumStorageBytes: Long? = null
 
-    internal fun build(): Constraints = Constraints(
-        requiredNetworkType = requiredNetworkType,
-        requiresBatteryNotLow = requiresBatteryNotLow,
-        requiresCharging = requiresCharging,
-        requiresDeviceIdle = requiresDeviceIdle,
-        minimumStorageBytes = minimumStorageBytes,
-    )
+    internal fun build(): Constraints =
+        Constraints(
+            requiredNetworkType = requiredNetworkType,
+            requiresBatteryNotLow = requiresBatteryNotLow,
+            requiresCharging = requiresCharging,
+            requiresDeviceIdle = requiresDeviceIdle,
+            minimumStorageBytes = minimumStorageBytes,
+        )
 }

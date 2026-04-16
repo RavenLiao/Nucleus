@@ -5,7 +5,6 @@ import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 import io.github.kdroidfilter.nucleus.scheduler.NetworkType
 import io.github.kdroidfilter.nucleus.systeminfo.SystemInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
-import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -87,10 +86,11 @@ internal object SystemInfoConstraintChecker : ConstraintChecker {
         if (disks.isEmpty()) return true
 
         val appPath = System.getProperty("user.dir") ?: System.getProperty("user.home") ?: "/"
-        val disk = disks
-            .filter { appPath.startsWith(it.mountPoint) }
-            .maxByOrNull { it.mountPoint.length }
-            ?: disks.first()
+        val disk =
+            disks
+                .filter { appPath.startsWith(it.mountPoint) }
+                .maxByOrNull { it.mountPoint.length }
+                ?: disks.first()
 
         return disk.availableSpace >= minimumBytes
     }

@@ -40,8 +40,9 @@ import kotlin.time.Duration
  * ```
  */
 @OptIn(InternalSchedulerApi::class)
-public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
-
+public class TestDesktopTaskScheduler :
+    PlatformScheduler,
+    Closeable {
     private val tasks = mutableMapOf<String, TaskRequest>()
     private val metadata = mutableMapOf<String, TaskMetadata>()
     private val executionHistories = mutableMapOf<String, MutableList<ExecutionRecord>>()
@@ -54,10 +55,11 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
      * Defaults to an all-satisfied checker. Set a [TestConstraintChecker] to
      * simulate constraint failures.
      */
-    public var constraintChecker: ConstraintChecker = object : ConstraintChecker {
-        override fun check(constraints: Constraints): ConstraintResult =
-            ConstraintResult(satisfied = true, unsatisfied = emptySet())
-    }
+    public var constraintChecker: ConstraintChecker =
+        object : ConstraintChecker {
+            override fun check(constraints: Constraints): ConstraintResult =
+                ConstraintResult(satisfied = true, unsatisfied = emptySet())
+        }
 
     private data class TaskMetadata(
         var runCount: Int = 0,
@@ -154,17 +156,6 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
     /**
      * Immediately executes the task identified by [taskId] using the given [registry].
      *
-     * Builds a [TaskContext] from the stored input data, calls `doWork()`, and
-     * records the result. On [TaskResult.Retry], `runAttemptCount` is automatically
-     * incremented for the next call to `runTask()`. On [TaskResult.Success] or
-     * [TaskResult.Failure], it resets to 1.
-     *
-     * @throws IllegalStateException if the task is not enqueued
-     * @throws io.github.kdroidfilter.nucleus.scheduler.TaskNotFoundException if [taskId] is not in [registry]
-     */
-    /**
-     * Immediately executes the task identified by [taskId] using the given [registry].
-     *
      * If the task has [Constraints] and the [constraintChecker] reports them as unsatisfied,
      * the task is **not** executed. For periodic tasks this returns `null` (silent skip).
      * For calendar/on-boot tasks this returns [TaskResult.Retry].
@@ -176,8 +167,9 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
         taskId: String,
         registry: TaskRegistry,
     ): TaskResult? {
-        val request = tasks[taskId]
-            ?: error("Task '$taskId' is not enqueued in the test scheduler")
+        val request =
+            tasks[taskId]
+                ?: error("Task '$taskId' is not enqueued in the test scheduler")
         val meta = metadata.getOrPut(taskId) { TaskMetadata() }
 
         // Check constraints before executing
@@ -191,12 +183,13 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
                     return null
                 } else {
                     val retryResult = TaskResult.Retry("Constraints not met: ${checkResult.unsatisfied}")
-                    val record = ExecutionRecord(
-                        taskId = taskId,
-                        result = retryResult,
-                        runAttemptCount = meta.runAttemptCount,
-                        virtualTimeMs = virtualTimeMs,
-                    )
+                    val record =
+                        ExecutionRecord(
+                            taskId = taskId,
+                            result = retryResult,
+                            runAttemptCount = meta.runAttemptCount,
+                            virtualTimeMs = virtualTimeMs,
+                        )
                     executionHistories.getOrPut(taskId) { mutableListOf() }.add(record)
                     meta.runAttemptCount++
                     meta.lastRunMs = virtualTimeMs
@@ -206,21 +199,23 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
             }
         }
 
-        val context = TaskContext(
-            taskId = taskId,
-            inputData = request.inputData,
-            runAttemptCount = meta.runAttemptCount,
-        )
+        val context =
+            TaskContext(
+                taskId = taskId,
+                inputData = request.inputData,
+                runAttemptCount = meta.runAttemptCount,
+            )
 
         val task = registry.create(taskId)
         val result = task.doWork(context)
 
-        val record = ExecutionRecord(
-            taskId = taskId,
-            result = result,
-            runAttemptCount = meta.runAttemptCount,
-            virtualTimeMs = virtualTimeMs,
-        )
+        val record =
+            ExecutionRecord(
+                taskId = taskId,
+                result = result,
+                runAttemptCount = meta.runAttemptCount,
+                virtualTimeMs = virtualTimeMs,
+            )
         executionHistories.getOrPut(taskId) { mutableListOf() }.add(record)
 
         when (result) {
@@ -277,13 +272,16 @@ public class TestDesktopTaskScheduler : PlatformScheduler, Closeable {
         val records = mutableListOf<ExecutionRecord>()
 
         // Collect all periodic tasks and compute their fire times
-        data class PendingFire(val taskId: String, val fireAtMs: Long)
+        data class PendingFire(
+            val taskId: String,
+            val fireAtMs: Long,
+        )
 
         val fires = mutableListOf<PendingFire>()
 
         for ((taskId, request) in tasks) {
-            if (request.type != TaskRequest.Type.PERIODIC) continue
-            val intervalMs = request.interval?.inWholeMilliseconds ?: continue
+            if (request.type != TaskRequest.Type.PERIODIC || request.interval == null) continue
+            val intervalMs = request.interval.inWholeMilliseconds
             val baseMs = enqueueTimeMs[taskId] ?: 0L
 
             // Compute the next fire time after current virtualTimeMs

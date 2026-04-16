@@ -291,9 +291,11 @@ internal object TaskMetadataStore {
     ): Constraints {
         val props = load(taskFile(appId, taskId))
         return Constraints(
-            requiredNetworkType = props.getProperty(KEY_CONSTRAINT_NETWORK)
-                ?.let { runCatching { NetworkType.valueOf(it) }.getOrNull() }
-                ?: NetworkType.NOT_REQUIRED,
+            requiredNetworkType =
+                props
+                    .getProperty(KEY_CONSTRAINT_NETWORK)
+                    ?.let { runCatching { NetworkType.valueOf(it) }.getOrNull() }
+                    ?: NetworkType.NOT_REQUIRED,
             requiresBatteryNotLow = props.getProperty(KEY_CONSTRAINT_BATTERY)?.toBooleanStrictOrNull() ?: false,
             requiresCharging = props.getProperty(KEY_CONSTRAINT_CHARGING)?.toBooleanStrictOrNull() ?: false,
             requiresDeviceIdle = props.getProperty(KEY_CONSTRAINT_IDLE)?.toBooleanStrictOrNull() ?: false,

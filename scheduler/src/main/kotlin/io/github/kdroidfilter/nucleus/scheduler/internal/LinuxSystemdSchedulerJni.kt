@@ -22,14 +22,20 @@ internal object LinuxSystemdSchedulerJni {
      * Returns null on success, error message on failure.
      */
     @JvmStatic
-    external fun nativeEnableUnitFiles(unitFiles: Array<String>, startNow: Boolean): String?
+    external fun nativeEnableUnitFiles(
+        unitFiles: Array<String>,
+        startNow: Boolean,
+    ): String?
 
     /**
      * Disable unit files and optionally stop them first.
      * Returns null on success, error message on failure.
      */
     @JvmStatic
-    external fun nativeDisableUnitFiles(unitFiles: Array<String>, stopNow: Boolean): String?
+    external fun nativeDisableUnitFiles(
+        unitFiles: Array<String>,
+        stopNow: Boolean,
+    ): String?
 
     /** Start a unit. Returns true on success. */
     @JvmStatic

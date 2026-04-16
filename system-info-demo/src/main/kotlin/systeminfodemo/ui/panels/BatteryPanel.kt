@@ -26,11 +26,12 @@ fun BatteryPanel(state: SystemInfoState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionCard("Charge") {
             val pct = battery.stateOfCharge * 100f
-            val color = when {
-                pct < 20f -> Color(0xFFF75464)
-                pct < 50f -> Color(0xFFD4A843)
-                else -> Color(0xFF5AB869)
-            }
+            val color =
+                when {
+                    pct < 20f -> Color(0xFFF75464)
+                    pct < 50f -> Color(0xFFD4A843)
+                    else -> Color(0xFF5AB869)
+                }
             InfoRow("State", battery.state.name)
             InfoRow("Charge", "%.1f%%".format(pct))
             ProgressBar(battery.stateOfCharge, color, Modifier.fillMaxWidth())

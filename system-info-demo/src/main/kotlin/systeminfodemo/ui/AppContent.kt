@@ -245,11 +245,12 @@ fun AppContent() {
                 val battery = state.batteryInfo
                 if (battery != null) {
                     val pct = battery.stateOfCharge * 100f
-                    val color = when {
-                        pct < 20f -> Color(0xFFF75464)
-                        pct < 50f -> Color(0xFFD4A843)
-                        else -> Color(0xFF5AB869)
-                    }
+                    val color =
+                        when {
+                            pct < 20f -> Color(0xFFF75464)
+                            pct < 50f -> Color(0xFFD4A843)
+                            else -> Color(0xFF5AB869)
+                        }
                     Text(
                         "%.0f%% — %s".format(pct, battery.state.name),
                         fontSize = 11.sp,

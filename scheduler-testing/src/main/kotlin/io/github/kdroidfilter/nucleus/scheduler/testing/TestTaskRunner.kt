@@ -19,7 +19,6 @@ import io.github.kdroidfilter.nucleus.scheduler.TaskResult
  * ```
  */
 public object TestTaskRunner {
-
     /**
      * Executes [task]`.doWork()` with a fabricated [TaskContext] and returns the result.
      *
@@ -34,11 +33,12 @@ public object TestTaskRunner {
         inputData: Map<String, String> = emptyMap(),
         runAttemptCount: Int = 1,
     ): TaskResult {
-        val context = TaskContext(
-            taskId = taskId,
-            inputData = inputData,
-            runAttemptCount = runAttemptCount,
-        )
+        val context =
+            TaskContext(
+                taskId = taskId,
+                inputData = inputData,
+                runAttemptCount = runAttemptCount,
+            )
         return task.doWork(context)
     }
 }

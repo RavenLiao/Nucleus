@@ -24,8 +24,9 @@ import java.io.Closeable
  * ```
  */
 @OptIn(InternalSchedulerApi::class)
-public class TestConstraintChecker : ConstraintChecker, Closeable {
-
+public class TestConstraintChecker :
+    ConstraintChecker,
+    Closeable {
     /** Whether any network connection is active. */
     public var networkConnected: Boolean = true
 
@@ -53,11 +54,12 @@ public class TestConstraintChecker : ConstraintChecker, Closeable {
         val unsatisfied = mutableSetOf<String>()
 
         if (constraints.requiredNetworkType != NetworkType.NOT_REQUIRED) {
-            val met = when (constraints.requiredNetworkType) {
-                NetworkType.CONNECTED -> networkConnected
-                NetworkType.UNMETERED -> networkConnected && networkUnmetered
-                NetworkType.NOT_REQUIRED -> true
-            }
+            val met =
+                when (constraints.requiredNetworkType) {
+                    NetworkType.CONNECTED -> networkConnected
+                    NetworkType.UNMETERED -> networkConnected && networkUnmetered
+                    NetworkType.NOT_REQUIRED -> true
+                }
             if (!met) unsatisfied += "network"
         }
 

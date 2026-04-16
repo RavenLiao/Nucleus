@@ -115,10 +115,11 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         LinuxSystemdSchedulerJni.nativeReload()
 
         return if (needsTimer) {
-            val error = LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
-                arrayOf(timerFileName(request.taskId)),
-                startNow = true,
-            )
+            val error =
+                LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
+                    arrayOf(timerFileName(request.taskId)),
+                    startNow = true,
+                )
             if (error != null) {
                 logger.warning("Failed to enable timer '${request.taskId}': $error")
                 false
@@ -127,10 +128,11 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             }
         } else {
             // onBoot: enable the service to start at user login
-            val error = LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
-                arrayOf(serviceFileName(request.taskId)),
-                startNow = false,
-            )
+            val error =
+                LinuxSystemdSchedulerJni.nativeEnableUnitFiles(
+                    arrayOf(serviceFileName(request.taskId)),
+                    startNow = false,
+                )
             if (error != null) {
                 logger.warning("Failed to enable service '${request.taskId}': $error")
                 false

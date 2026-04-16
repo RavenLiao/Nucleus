@@ -1,9 +1,8 @@
 package io.github.kdroidfilter.nucleus.scheduler.internal
 
+import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
-
-import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 
 /**
  * Platform-specific scheduler backend.

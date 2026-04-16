@@ -5,12 +5,12 @@ import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.BatteryState
 import io.github.kdroidfilter.nucleus.systeminfo.model.ComponentInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.ConnectivityInfo
-import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuGlobalInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.CpuInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.DiskInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.GpuInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.MemoryInfo
+import io.github.kdroidfilter.nucleus.systeminfo.model.MeteredStatus
 import io.github.kdroidfilter.nucleus.systeminfo.model.MotherboardInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.NetworkInterfaceInfo
 import io.github.kdroidfilter.nucleus.systeminfo.model.OsInfo
@@ -269,22 +269,25 @@ internal object WindowsSystemInfo : PlatformSystemInfo {
         val isPluggedIn = bridge.nativeBatteryExternalConnected()
         val timeRemaining = bridge.nativeBatteryTimeRemaining()
         val temperature = bridge.nativeBatteryTemperature()
-        val state = when {
-            fullyCharged -> BatteryState.Full
-            isCharging -> BatteryState.Charging
-            !isPluggedIn -> BatteryState.Discharging
-            else -> BatteryState.Unknown
-        }
-        val stateOfCharge = if (maxCapacity > 0) {
-            (currentCapacity.toFloat() / maxCapacity).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-        val health = if (designCapacity > 0) {
-            (maxCapacity.toFloat() / designCapacity).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
+        val state =
+            when {
+                fullyCharged -> BatteryState.Full
+                isCharging -> BatteryState.Charging
+                !isPluggedIn -> BatteryState.Discharging
+                else -> BatteryState.Unknown
+            }
+        val stateOfCharge =
+            if (maxCapacity > 0) {
+                (currentCapacity.toFloat() / maxCapacity).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+        val health =
+            if (designCapacity > 0) {
+                (maxCapacity.toFloat() / designCapacity).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
         return BatteryInfo(
             stateOfCharge = stateOfCharge,
             state = state,
@@ -356,15 +359,16 @@ internal object WindowsSystemInfo : PlatformSystemInfo {
         val connected = bridge.nativeIsNetworkConnected()
         return ConnectivityInfo(
             isConnected = connected,
-            meteredStatus = if (!connected) {
-                MeteredStatus.NOT_AVAILABLE
-            } else {
-                when (bridge.nativeGetMeteredStatus()) {
-                    1 -> MeteredStatus.UNMETERED
-                    2 -> MeteredStatus.METERED
-                    else -> MeteredStatus.UNKNOWN
-                }
-            },
+            meteredStatus =
+                if (!connected) {
+                    MeteredStatus.NOT_AVAILABLE
+                } else {
+                    when (bridge.nativeGetMeteredStatus()) {
+                        1 -> MeteredStatus.UNMETERED
+                        2 -> MeteredStatus.METERED
+                        else -> MeteredStatus.UNKNOWN
+                    }
+                },
         )
     }
 }
