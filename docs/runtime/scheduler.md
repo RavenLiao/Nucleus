@@ -22,7 +22,12 @@ The `scheduler` module registers background tasks with the OS so they run even w
 Users uninstall apps without thinking about background scheduled tasks. Without explicit cleanup, the OS would keep firing schedules pointing to a missing executable forever. Nucleus handles this differently per platform:
 
 - **Linux** and **Windows** — the scheduler does *not* register the application binary directly. It writes a tiny wrapper script (`<taskId>.sh` in `nucleus/scheduler/<appId>/scripts/` on Linux, `<taskId>.vbs` in `%LOCALAPPDATA%\nucleus\scheduler\<appId>\scripts\` on Windows) and registers *that* with systemd / Task Scheduler. The wrapper checks whether the application binary still exists before invoking it. If it's gone, the wrapper **self-destructs**: it disables and deletes the systemd `.timer` / `.service` units (Linux) or removes the COM tasks under `\Nucleus\<appId>\` (Windows) via the same Schedule.Service API used to create them, deletes the persisted metadata, and finally removes itself. Net result: the next time the OS triggers a task whose app has been uninstalled, the schedule cleans itself up and stops firing.
-- **macOS** — handled by launchd itself: when an agent's `ProgramArguments` points to a binary that no longer exists, launchd fails the load, logs the error and stops trying. The orphaned `.plist` in `~/Library/LaunchAgents/` is harmless and gets reclaimed when the user removes the app's Application Support directory; if you ship an uninstaller, have it call `launchctl bootout`.
+- **macOS** — **not** auto-cleaned. launchd does not give up on a missing binary: it enters its "penalty box" state, throttles respawn attempts to `ThrottleInterval` (10 s by default) and keeps trying forever, spamming `cannot spawn` lines into `system.log` on every attempt. The orphaned `.plist` in `~/Library/LaunchAgents/` is **never** reclaimed by macOS. If you ship an uninstaller, it should explicitly tear down each agent it created:
+  ```bash
+  launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/io.github.kdroidfilter.nucleus.<appId>.<taskId>.plist
+  rm ~/Library/LaunchAgents/io.github.kdroidfilter.nucleus.<appId>.<taskId>.plist
+  ```
+  (`bootout` is the modern replacement for the deprecated `launchctl unload`; the explicit `gui/<uid>` domain avoids the root-vs-user ambiguity.)
 
 ## Installation
 
