@@ -8,7 +8,7 @@ package io.github.kdroidfilter.nucleus.scheduler
  * @property lastRunMs epoch millis of the last execution, or `null` if never run
  * @property nextRunMs epoch millis of the next scheduled execution, or `null` if unknown
  * @property runCount total number of completed executions
- * @property lastResult description of the last result (e.g. "Success", "Retry: network error")
+ * @property lastResult typed outcome of the last run (or `null` if the task has never run)
  */
 public data class TaskInfo(
     val taskId: TaskId,
@@ -16,7 +16,7 @@ public data class TaskInfo(
     val lastRunMs: Long? = null,
     val nextRunMs: Long? = null,
     val runCount: Int = 0,
-    val lastResult: String? = null,
+    val lastResult: LastTaskResult? = null,
 )
 
 /**

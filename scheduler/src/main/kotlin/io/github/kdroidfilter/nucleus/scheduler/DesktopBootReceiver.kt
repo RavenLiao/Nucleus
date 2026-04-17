@@ -120,7 +120,7 @@ public object DesktopBootReceiver {
                     @Suppress("TooGenericExceptionCaught") e: Exception,
                 ) {
                     logger.log(Level.SEVERE, "Task '$taskId' threw an exception", e)
-                    TaskResult.Failure("Exception: ${e.message}")
+                    TaskResult.Failure("Exception: ${e.message ?: e::class.simpleName ?: "unknown"}")
                 }
             }
 
@@ -172,7 +172,7 @@ public object DesktopBootReceiver {
             logger.info("Periodic task '$taskId' skipped, will re-check next trigger")
         } else {
             // Calendar / on-boot: schedule retry with backoff
-            TaskMetadataStore.recordRetry(appId, taskId, "Constraints not met: $unsatisfied")
+            TaskMetadataStore.recordConstraintSkip(appId, taskId, unsatisfied, incrementAttempt = true)
             when (Platform.Current) {
                 Platform.Linux -> LinuxSystemdScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)
                 Platform.Windows -> WindowsTaskScheduler.scheduleRetry(taskId, DEFAULT_RETRY_DELAY_SECONDS)

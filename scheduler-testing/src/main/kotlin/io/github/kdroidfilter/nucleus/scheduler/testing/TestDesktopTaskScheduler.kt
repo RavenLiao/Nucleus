@@ -4,6 +4,7 @@ import io.github.kdroidfilter.nucleus.scheduler.Constraints
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
+import io.github.kdroidfilter.nucleus.scheduler.LastTaskResult
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
@@ -66,7 +67,7 @@ public class TestDesktopTaskScheduler :
         var runCount: Int = 0,
         var runAttemptCount: Int = 1,
         var lastRunMs: Long? = null,
-        var lastResult: String? = null,
+        var lastResult: LastTaskResult? = null,
     )
 
     /**
@@ -180,7 +181,7 @@ public class TestDesktopTaskScheduler :
                 val isPeriodic = request.type == TaskRequest.Type.PERIODIC
                 if (isPeriodic) {
                     meta.lastRunMs = virtualTimeMs
-                    meta.lastResult = "ConstraintsNotMet: ${checkResult.unsatisfied}"
+                    meta.lastResult = LastTaskResult.ConstraintsNotMet(checkResult.unsatisfied)
                     return null
                 } else {
                     val retryResult = TaskResult.Retry("Constraints not met: ${checkResult.unsatisfied}")
@@ -194,7 +195,7 @@ public class TestDesktopTaskScheduler :
                     executionHistories.getOrPut(taskId) { mutableListOf() }.add(record)
                     meta.runAttemptCount++
                     meta.lastRunMs = virtualTimeMs
-                    meta.lastResult = "Retry: Constraints not met: ${checkResult.unsatisfied}"
+                    meta.lastResult = LastTaskResult.ConstraintsNotMet(checkResult.unsatisfied)
                     return retryResult
                 }
             }
@@ -224,17 +225,17 @@ public class TestDesktopTaskScheduler :
                 meta.runCount++
                 meta.runAttemptCount = 1
                 meta.lastRunMs = virtualTimeMs
-                meta.lastResult = "Success"
+                meta.lastResult = LastTaskResult.Success
             }
             is TaskResult.Retry -> {
                 meta.runAttemptCount++
                 meta.lastRunMs = virtualTimeMs
-                meta.lastResult = "Retry: ${result.message}"
+                meta.lastResult = LastTaskResult.Retry(result.message)
             }
             is TaskResult.Failure -> {
                 meta.runAttemptCount = 1
                 meta.lastRunMs = virtualTimeMs
-                meta.lastResult = "Failure: ${result.message}"
+                meta.lastResult = LastTaskResult.Failure(result.message)
             }
         }
 

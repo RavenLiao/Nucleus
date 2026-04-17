@@ -454,8 +454,19 @@ Opaque container for a `@Serializable` payload — wraps a JSON `String?`.
 | Variant | Description |
 |---------|-------------|
 | `Success` | Task completed successfully. |
-| `Failure(message?)` | Permanent failure — will not be retried. |
-| `Retry(message?)` | Temporary failure — retried per `RetryPolicy`. |
+| `Failure(message)` | Permanent failure — will not be retried. `message` is required (pass `""` if you really have nothing to say). |
+| `Retry(message)` | Temporary failure — retried per `RetryPolicy`. `message` is required. |
+
+### `LastTaskResult`
+
+Typed outcome of the last run, exposed by [`TaskInfo.lastResult`](#taskinfo). Distinct from `TaskResult` because it carries a `ConstraintsNotMet` state for runs that were skipped before `doWork()` was invoked.
+
+| Variant | Description |
+|---------|-------------|
+| `Success` | The last run returned `TaskResult.Success`. |
+| `Failure(message)` | The last run returned `TaskResult.Failure`. |
+| `Retry(message)` | The last run returned `TaskResult.Retry`. |
+| `ConstraintsNotMet(unsatisfied)` | The task was skipped because the listed constraints were not satisfied. |
 
 ### `TaskInfo`
 
@@ -466,7 +477,7 @@ Opaque container for a `@Serializable` payload — wraps a JSON `String?`.
 | `lastRunMs` | `Long?` | Epoch millis of the last execution. |
 | `nextRunMs` | `Long?` | Epoch millis of the next execution (if known). |
 | `runCount` | `Int` | Total number of completed executions. |
-| `lastResult` | `String?` | Description of the last result. |
+| `lastResult` | `LastTaskResult?` | Typed outcome of the last run, or `null` if the task has never run. |
 
 ### `RetryPolicy`
 
@@ -520,7 +531,7 @@ Task input data and run history are persisted per-platform:
 | Linux | `~/.local/share/nucleus/scheduler/<appId>/` (or `$XDG_DATA_HOME`) |
 | Windows | `%LOCALAPPDATA%\nucleus\scheduler\<appId>\` |
 
-Each task gets a single `<taskId>.properties` file. The serialized input payload is stored as a JSON string under the reserved `_inputDataJson` key alongside run-count, last-result and other internal bookkeeping keys (all prefixed with `_`).
+Each task gets a single `<taskId>.properties` file. The serialized input payload is stored as a JSON string under the reserved `_inputDataJson` key, the typed `LastTaskResult` is stored as JSON under `_lastResult`, alongside run-count, attempt count, timestamps and other internal bookkeeping keys (all prefixed with `_`).
 
 ### Platform details
 

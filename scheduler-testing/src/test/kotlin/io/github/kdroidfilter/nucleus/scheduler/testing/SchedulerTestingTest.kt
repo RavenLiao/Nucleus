@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.testing
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTask
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
+import io.github.kdroidfilter.nucleus.scheduler.LastTaskResult
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskData
 import io.github.kdroidfilter.nucleus.scheduler.TaskId
@@ -196,7 +197,7 @@ class TestDesktopTaskSchedulerTest {
                 val info = DesktopTaskScheduler.getTaskInfo(SuccessId)
                 assertNotNull(info)
                 assertEquals(1, info.runCount)
-                assertEquals("Success", info.lastResult)
+                assertEquals(LastTaskResult.Success, info.lastResult)
                 assertEquals(TaskState.SCHEDULED, info.state)
             } finally {
                 scheduler.uninstall()

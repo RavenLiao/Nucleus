@@ -2,10 +2,12 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.scheduler.Constraints
+import io.github.kdroidfilter.nucleus.scheduler.LastTaskResult
 import io.github.kdroidfilter.nucleus.scheduler.NetworkType
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskData
 import io.github.kdroidfilter.nucleus.scheduler.TaskId
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.Properties
 
@@ -15,6 +17,8 @@ import java.util.Properties
  */
 @Suppress("TooManyFunctions")
 internal object TaskMetadataStore {
+    private val JSON: Json = Json { ignoreUnknownKeys = true }
+
     private const val KEY_INPUT_DATA = "_inputDataJson"
     private const val KEY_RUN_COUNT = "_runCount"
     private const val KEY_RUN_ATTEMPT = "_runAttemptCount"
@@ -81,6 +85,14 @@ internal object TaskMetadataStore {
         )
     }
 
+    private fun writeLastResult(
+        props: Properties,
+        result: LastTaskResult,
+    ) {
+        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
+        props.setProperty(KEY_LAST_RESULT, JSON.encodeToString(LastTaskResult.serializer(), result))
+    }
+
     fun recordSuccess(
         appId: String,
         taskId: TaskId,
@@ -90,8 +102,7 @@ internal object TaskMetadataStore {
         val runCount = (props.getProperty(KEY_RUN_COUNT)?.toIntOrNull() ?: 0) + 1
         props.setProperty(KEY_RUN_COUNT, runCount.toString())
         props.setProperty(KEY_RUN_ATTEMPT, "1")
-        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
-        props.setProperty(KEY_LAST_RESULT, "Success")
+        writeLastResult(props, LastTaskResult.Success)
         file.parentFile.mkdirs()
         file.outputStream().use { props.store(it, null) }
     }
@@ -99,13 +110,12 @@ internal object TaskMetadataStore {
     fun recordFailure(
         appId: String,
         taskId: TaskId,
-        message: String?,
+        message: String,
     ) {
         val file = taskFile(appId, taskId)
         val props = load(file)
-        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
-        props.setProperty(KEY_LAST_RESULT, "Failure: ${message ?: "unknown"}")
         props.setProperty(KEY_RUN_ATTEMPT, "1")
+        writeLastResult(props, LastTaskResult.Failure(message))
         file.parentFile.mkdirs()
         file.outputStream().use { props.store(it, null) }
     }
@@ -113,14 +123,13 @@ internal object TaskMetadataStore {
     fun recordRetry(
         appId: String,
         taskId: TaskId,
-        message: String?,
+        message: String,
     ) {
         val file = taskFile(appId, taskId)
         val props = load(file)
         val attempt = (props.getProperty(KEY_RUN_ATTEMPT)?.toIntOrNull() ?: 1) + 1
         props.setProperty(KEY_RUN_ATTEMPT, attempt.toString())
-        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
-        props.setProperty(KEY_LAST_RESULT, "Retry: ${message ?: "unknown"}")
+        writeLastResult(props, LastTaskResult.Retry(message))
         file.parentFile.mkdirs()
         file.outputStream().use { props.store(it, null) }
     }
@@ -144,9 +153,9 @@ internal object TaskMetadataStore {
     fun getLastResult(
         appId: String,
         taskId: TaskId,
-    ): String? {
-        val props = load(taskFile(appId, taskId))
-        return props.getProperty(KEY_LAST_RESULT)
+    ): LastTaskResult? {
+        val raw = load(taskFile(appId, taskId)).getProperty(KEY_LAST_RESULT) ?: return null
+        return runCatching { JSON.decodeFromString(LastTaskResult.serializer(), raw) }.getOrNull()
     }
 
     fun getRunAttemptCount(
@@ -309,11 +318,15 @@ internal object TaskMetadataStore {
         appId: String,
         taskId: TaskId,
         unsatisfied: Set<String>,
+        incrementAttempt: Boolean = false,
     ) {
         val file = taskFile(appId, taskId)
         val props = load(file)
-        props.setProperty(KEY_LAST_RUN_MS, System.currentTimeMillis().toString())
-        props.setProperty(KEY_LAST_RESULT, "ConstraintsNotMet: $unsatisfied")
+        if (incrementAttempt) {
+            val attempt = (props.getProperty(KEY_RUN_ATTEMPT)?.toIntOrNull() ?: 1) + 1
+            props.setProperty(KEY_RUN_ATTEMPT, attempt.toString())
+        }
+        writeLastResult(props, LastTaskResult.ConstraintsNotMet(unsatisfied))
         file.parentFile.mkdirs()
         file.outputStream().use { props.store(it, null) }
     }
