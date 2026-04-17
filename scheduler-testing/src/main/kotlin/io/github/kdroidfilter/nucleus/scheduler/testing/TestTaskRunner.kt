@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.testing
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTask
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskData
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskResult
 
 /**
@@ -30,7 +31,7 @@ public object TestTaskRunner {
      */
     public suspend fun runTask(
         task: DesktopTask,
-        taskId: String = "test-task",
+        taskId: TaskId = TaskId("test-task"),
         inputData: TaskData = TaskData.EMPTY,
         runAttemptCount: Int = 1,
     ): TaskResult {

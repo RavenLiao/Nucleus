@@ -68,11 +68,18 @@ public object DesktopBootReceiver {
         registry: TaskRegistry,
     ) {
         val argIndex = args.indexOf(SCHEDULER_ARG)
-        val taskId = args.getOrNull(argIndex + 1)
-        if (taskId == null) {
+        val rawTaskId = args.getOrNull(argIndex + 1)
+        if (rawTaskId == null) {
             logger.warning("$SCHEDULER_ARG flag present but no task ID provided")
             return
         }
+        val taskId =
+            try {
+                TaskId(rawTaskId)
+            } catch (e: IllegalArgumentException) {
+                logger.warning("$SCHEDULER_ARG received invalid task ID '$rawTaskId': ${e.message}")
+                return
+            }
 
         val appId = NucleusApp.appId
 
@@ -134,7 +141,7 @@ public object DesktopBootReceiver {
 
     private fun handleRetry(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         @Suppress("UnusedParameter") context: TaskContext,
         result: TaskResult.Retry,
     ) {
@@ -155,7 +162,7 @@ public object DesktopBootReceiver {
 
     private fun handleConstraintsNotMet(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         unsatisfied: Set<String>,
     ) {
         val taskType = TaskMetadataStore.loadTaskType(appId, taskId)

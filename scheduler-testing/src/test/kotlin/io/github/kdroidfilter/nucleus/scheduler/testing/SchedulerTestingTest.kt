@@ -5,11 +5,15 @@ import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskData
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskRegistry
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskResult
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
+import io.github.kdroidfilter.nucleus.scheduler.decode
+import io.github.kdroidfilter.nucleus.scheduler.inputData
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -18,6 +22,33 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+
+// -- Task IDs ----------------------------------------------------------------
+
+private val SuccessId = TaskId("success")
+private val FailingId = TaskId("failing")
+private val RetryId = TaskId("retry")
+private val EchoId = TaskId("echo")
+private val CounterId = TaskId("counter")
+private val FastId = TaskId("fast")
+private val SlowId = TaskId("slow")
+private val TaskAId = TaskId("a")
+private val TaskBId = TaskId("b")
+private val GenericTaskId = TaskId("task")
+private val BootId = TaskId("boot")
+private val FlakyId = TaskId("flaky")
+private val UnknownId = TaskId("unknown")
+
+// -- Serializable payloads for testing ---------------------------------------
+
+@Serializable
+private data class KeyValue(val key: String)
+
+@Serializable
+private data class Versioned(val version: String)
+
+@Serializable
+private data class Endpoint(val endpoint: String, val token: String)
 
 // -- Sample tasks for testing -------------------------------------------------
 
@@ -80,9 +111,9 @@ class TestTaskRunnerTest {
             val task = InputEchoTask()
             TestTaskRunner.runTask(
                 task = task,
-                inputData = TaskData.Builder().putString("key", "value").build(),
+                inputData = TaskData.of(KeyValue(key = "value")),
             )
-            assertEquals("value", task.receivedData.getString("key"))
+            assertEquals("value", task.receivedData.decode<KeyValue>()?.key)
         }
 
     @Test
@@ -102,9 +133,9 @@ class TestDesktopTaskSchedulerTest {
     private val registry =
         TaskRegistry
             .Builder()
-            .register("success") { SuccessTask() }
-            .register("failing") { FailingTask() }
-            .register("retry") { RetryTask() }
+            .register(SuccessId) { SuccessTask() }
+            .register(FailingId) { FailingTask() }
+            .register(RetryId) { RetryTask() }
             .build()
 
     @Test
@@ -112,9 +143,9 @@ class TestDesktopTaskSchedulerTest {
         TestDesktopTaskScheduler().use { scheduler ->
             scheduler.install()
 
-            DesktopTaskScheduler.enqueue(TaskRequest.periodic("success", 1.hours))
-            assertTrue(DesktopTaskScheduler.isScheduled("success"))
-            assertFalse(DesktopTaskScheduler.isScheduled("unknown"))
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic(SuccessId, 1.hours))
+            assertTrue(DesktopTaskScheduler.isScheduled(SuccessId))
+            assertFalse(DesktopTaskScheduler.isScheduled(UnknownId))
         }
     }
 
@@ -123,10 +154,10 @@ class TestDesktopTaskSchedulerTest {
         TestDesktopTaskScheduler().use { scheduler ->
             scheduler.install()
 
-            DesktopTaskScheduler.enqueue(TaskRequest.periodic("success", 1.hours))
-            assertTrue(DesktopTaskScheduler.cancel("success"))
-            assertFalse(DesktopTaskScheduler.isScheduled("success"))
-            assertFalse(DesktopTaskScheduler.cancel("success"))
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic(SuccessId, 1.hours))
+            assertTrue(DesktopTaskScheduler.cancel(SuccessId))
+            assertFalse(DesktopTaskScheduler.isScheduled(SuccessId))
+            assertFalse(DesktopTaskScheduler.cancel(SuccessId))
         }
     }
 
@@ -135,8 +166,8 @@ class TestDesktopTaskSchedulerTest {
         TestDesktopTaskScheduler().use { scheduler ->
             scheduler.install()
 
-            DesktopTaskScheduler.enqueue(TaskRequest.periodic("success", 1.hours))
-            DesktopTaskScheduler.enqueue(TaskRequest.onBoot("retry"))
+            DesktopTaskScheduler.enqueue(TaskRequest.periodic(SuccessId, 1.hours))
+            DesktopTaskScheduler.enqueue(TaskRequest.onBoot(RetryId))
             assertEquals(2, DesktopTaskScheduler.getAllTasks().size)
 
             DesktopTaskScheduler.cancelAll()
@@ -150,12 +181,12 @@ class TestDesktopTaskSchedulerTest {
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("success", 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(SuccessId, 1.hours))
 
-                val result = scheduler.runTask("success", registry)
+                val result = scheduler.runTask(SuccessId, registry)
                 assertEquals(TaskResult.Success, result)
 
-                val info = DesktopTaskScheduler.getTaskInfo("success")
+                val info = DesktopTaskScheduler.getTaskInfo(SuccessId)
                 assertNotNull(info)
                 assertEquals(1, info.runCount)
                 assertEquals("Success", info.lastResult)
@@ -171,28 +202,28 @@ class TestDesktopTaskSchedulerTest {
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("retry", 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(RetryId, 1.hours))
 
                 // First attempt — retry (runAttemptCount = 1)
-                val r1 = scheduler.runTask("retry", registry)
+                val r1 = scheduler.runTask(RetryId, registry)
                 assertTrue(r1 is TaskResult.Retry)
 
                 // Second attempt — retry (runAttemptCount auto-incremented to 2)
-                val r2 = scheduler.runTask("retry", registry)
+                val r2 = scheduler.runTask(RetryId, registry)
                 assertTrue(r2 is TaskResult.Retry)
 
                 // Third attempt — success (runAttemptCount auto-incremented to 3)
-                val r3 = scheduler.runTask("retry", registry)
+                val r3 = scheduler.runTask(RetryId, registry)
                 assertEquals(TaskResult.Success, r3)
 
                 // Verify via execution history
-                val history = scheduler.getExecutionHistory("retry")
+                val history = scheduler.getExecutionHistory(RetryId)
                 assertEquals(3, history.size)
                 assertEquals(1, history[0].runAttemptCount)
                 assertEquals(2, history[1].runAttemptCount)
                 assertEquals(3, history[2].runAttemptCount)
 
-                val info = DesktopTaskScheduler.getTaskInfo("retry")
+                val info = DesktopTaskScheduler.getTaskInfo(RetryId)
                 assertNotNull(info)
                 assertEquals(1, info.runCount)
             } finally {
@@ -206,15 +237,15 @@ class TestDesktopTaskSchedulerTest {
             scheduler.install()
 
             val request =
-                TaskRequest.periodic("success", 1.hours) {
-                    inputData { putString("key", "value") }
+                TaskRequest.periodic(SuccessId, 1.hours) {
+                    inputData(KeyValue(key = "value"))
                 }
             DesktopTaskScheduler.enqueue(request)
 
-            val stored = scheduler.getEnqueuedRequest("success")
+            val stored = scheduler.getEnqueuedRequest(SuccessId)
             assertNotNull(stored)
-            assertEquals("value", stored.inputData["key"])
-            assertNull(scheduler.getEnqueuedRequest("unknown"))
+            assertEquals("value", stored.inputData.decode<KeyValue>()?.key)
+            assertNull(scheduler.getEnqueuedRequest(UnknownId))
         }
     }
 
@@ -224,19 +255,19 @@ class TestDesktopTaskSchedulerTest {
             scheduler.install()
 
             DesktopTaskScheduler.enqueue(
-                TaskRequest.periodic("success", 1.hours) {
-                    inputData { putString("version", "1") }
+                TaskRequest.periodic(SuccessId, 1.hours) {
+                    inputData(Versioned(version = "1"))
                 },
             )
             DesktopTaskScheduler.enqueue(
-                TaskRequest.periodic("success", 2.hours) {
-                    inputData { putString("version", "2") }
+                TaskRequest.periodic(SuccessId, 2.hours) {
+                    inputData(Versioned(version = "2"))
                 },
             )
 
-            val stored = scheduler.getEnqueuedRequest("success")
+            val stored = scheduler.getEnqueuedRequest(SuccessId)
             assertNotNull(stored)
-            assertEquals("1", stored.inputData["version"])
+            assertEquals("1", stored.inputData.decode<Versioned>()?.version)
         }
     }
 
@@ -246,20 +277,20 @@ class TestDesktopTaskSchedulerTest {
             scheduler.install()
 
             DesktopTaskScheduler.enqueue(
-                TaskRequest.periodic("success", 1.hours) {
-                    inputData { putString("version", "1") }
+                TaskRequest.periodic(SuccessId, 1.hours) {
+                    inputData(Versioned(version = "1"))
                 },
             )
             DesktopTaskScheduler.enqueue(
-                TaskRequest.periodic("success", 2.hours) {
-                    inputData { putString("version", "2") }
+                TaskRequest.periodic(SuccessId, 2.hours) {
+                    inputData(Versioned(version = "2"))
                     existingTaskPolicy(ExistingTaskPolicy.REPLACE)
                 },
             )
 
-            val stored = scheduler.getEnqueuedRequest("success")
+            val stored = scheduler.getEnqueuedRequest(SuccessId)
             assertNotNull(stored)
-            assertEquals("2", stored.inputData["version"])
+            assertEquals("2", stored.inputData.decode<Versioned>()?.version)
         }
     }
 
@@ -273,21 +304,19 @@ class TestDesktopTaskSchedulerTest {
                 val customRegistry =
                     TaskRegistry
                         .Builder()
-                        .register("echo") { task }
+                        .register(EchoId) { task }
                         .build()
 
                 DesktopTaskScheduler.enqueue(
-                    TaskRequest.periodic("echo", 1.hours) {
-                        inputData {
-                            putString("endpoint", "https://test.api")
-                            putString("token", "abc123")
-                        }
+                    TaskRequest.periodic(EchoId, 1.hours) {
+                        inputData(Endpoint(endpoint = "https://test.api", token = "abc123"))
                     },
                 )
 
-                scheduler.runTask("echo", customRegistry)
-                assertEquals("https://test.api", task.receivedData.getString("endpoint"))
-                assertEquals("abc123", task.receivedData.getString("token"))
+                scheduler.runTask(EchoId, customRegistry)
+                val decoded = task.receivedData.decode<Endpoint>()
+                assertEquals("https://test.api", decoded?.endpoint)
+                assertEquals("abc123", decoded?.token)
             } finally {
                 scheduler.uninstall()
             }
@@ -304,13 +333,13 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("counter") { task }
+                    .register(CounterId) { task }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 2.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(CounterId, 2.hours))
 
                 val results = scheduler.advanceTimeBy(6.hours, registry)
                 assertEquals(3, results.size)
@@ -327,13 +356,13 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("counter") { task }
+                    .register(CounterId) { task }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 2.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(CounterId, 2.hours))
 
                 val results = scheduler.advanceTimeBy(90.minutes, registry)
                 assertEquals(0, results.size)
@@ -350,13 +379,13 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("counter") { task }
+                    .register(CounterId) { task }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("counter", 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(CounterId, 1.hours))
 
                 // Exactly 1 hour = exactly 1 fire
                 val results = scheduler.advanceTimeBy(1.hours, registry)
@@ -374,15 +403,15 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("fast") { fastTask }
-                    .register("slow") { slowTask }
+                    .register(FastId) { fastTask }
+                    .register(SlowId) { slowTask }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("fast", 1.hours))
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("slow", 3.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(FastId, 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(SlowId, 3.hours))
 
                 val results = scheduler.advanceTimeBy(6.hours, registry)
                 // fast: 1h, 2h, 3h, 4h, 5h, 6h = 6 fires
@@ -401,17 +430,17 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("task") { SuccessTask() }
+                    .register(GenericTaskId) { SuccessTask() }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("task", 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(GenericTaskId, 1.hours))
 
                 scheduler.advanceTimeBy(3.hours, registry)
 
-                val history = scheduler.getExecutionHistory("task")
+                val history = scheduler.getExecutionHistory(GenericTaskId)
                 assertEquals(3, history.size)
                 assertEquals(1.hours.inWholeMilliseconds, history[0].virtualTimeMs)
                 assertEquals(2.hours.inWholeMilliseconds, history[1].virtualTimeMs)
@@ -427,13 +456,13 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("boot") { SuccessTask() }
+                    .register(BootId) { SuccessTask() }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.onBoot("boot"))
+                DesktopTaskScheduler.enqueue(TaskRequest.onBoot(BootId))
 
                 val results = scheduler.advanceTimeBy(5.hours, registry)
                 assertEquals(0, results.size)
@@ -449,31 +478,31 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("flaky") { RetryTask() }
+                    .register(FlakyId) { RetryTask() }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("flaky", 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(FlakyId, 1.hours))
 
                 // First fire at 1h — retry (attempt 1)
                 scheduler.advanceTimeBy(1.hours, registry)
-                var history = scheduler.getExecutionHistory("flaky")
+                var history = scheduler.getExecutionHistory(FlakyId)
                 assertEquals(1, history.size)
                 assertTrue(history[0].result is TaskResult.Retry)
                 assertEquals(1, history[0].runAttemptCount)
 
                 // Second fire at 2h — retry (attempt 2, auto-incremented)
                 scheduler.advanceTimeBy(1.hours, registry)
-                history = scheduler.getExecutionHistory("flaky")
+                history = scheduler.getExecutionHistory(FlakyId)
                 assertEquals(2, history.size)
                 assertTrue(history[1].result is TaskResult.Retry)
                 assertEquals(2, history[1].runAttemptCount)
 
                 // Third fire at 3h — success (attempt 3, auto-incremented)
                 scheduler.advanceTimeBy(1.hours, registry)
-                history = scheduler.getExecutionHistory("flaky")
+                history = scheduler.getExecutionHistory(FlakyId)
                 assertEquals(3, history.size)
                 assertEquals(TaskResult.Success, history[2].result)
                 assertEquals(3, history[2].runAttemptCount)
@@ -488,15 +517,15 @@ class AdvanceTimeTest {
             val registry =
                 TaskRegistry
                     .Builder()
-                    .register("a") { SuccessTask() }
-                    .register("b") { SuccessTask() }
+                    .register(TaskAId) { SuccessTask() }
+                    .register(TaskBId) { SuccessTask() }
                     .build()
 
             val scheduler = TestDesktopTaskScheduler()
             scheduler.install()
             try {
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("a", 1.hours))
-                DesktopTaskScheduler.enqueue(TaskRequest.periodic("b", 2.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(TaskAId, 1.hours))
+                DesktopTaskScheduler.enqueue(TaskRequest.periodic(TaskBId, 2.hours))
 
                 scheduler.advanceTimeBy(4.hours, registry)
 

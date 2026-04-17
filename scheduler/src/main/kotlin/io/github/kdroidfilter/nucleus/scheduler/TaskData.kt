@@ -1,119 +1,69 @@
 package io.github.kdroidfilter.nucleus.scheduler
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+
 /**
- * Typed key-value container for task input data.
+ * Opaque container for a `@Serializable` payload attached to a [TaskRequest].
  *
- * Values are stored internally as strings (backed by a `.properties` file) but
- * retrieved via typed accessors, eliminating manual parsing and silent `null`s.
+ * The payload is encoded as JSON when persisted by the scheduler so it can be
+ * re-read later by a fresh process when the OS triggers the task. Decode it
+ * inside [DesktopTask.doWork] with [TaskContext.inputData].
  *
- * Build instances with [Builder]:
  * ```kotlin
- * TaskRequest.periodic("sync", 1.hours) {
- *     inputData {
- *         putString("endpoint", "https://api.example.com")
- *         putInt("retries", 3)
- *         putBoolean("verbose", true)
- *     }
+ * @Serializable
+ * data class SyncInput(val endpoint: String, val retries: Int)
+ *
+ * TaskRequest.periodic(SyncId, 1.hours) {
+ *     inputData(SyncInput(endpoint = "https://api.example.com", retries = 3))
  * }
- * ```
  *
- * Read values in [DesktopTask.doWork]:
- * ```kotlin
- * val endpoint = context.inputData.getString("endpoint") ?: return TaskResult.Failure("missing endpoint")
- * val retries  = context.inputData.getInt("retries", default = 3)
+ * // In SyncTask.doWork:
+ * val input = context.inputData<SyncInput>() ?: return TaskResult.Failure("no input")
  * ```
  */
-public class TaskData internal constructor(
-    internal val map: Map<String, String> = emptyMap(),
+public class TaskData @PublishedApi internal constructor(
+    @PublishedApi internal val json: String?,
 ) {
-    // -- Typed accessors ------------------------------------------------------
+    /** Returns `true` when no payload was attached. */
+    public fun isEmpty(): Boolean = json == null
 
-    /** Returns the string value for [key], or `null` if absent. */
-    public fun getString(key: String): String? = map[key]
+    /** Returns `true` when a payload was attached. */
+    public fun isNotEmpty(): Boolean = json != null
 
-    /** Returns the int value for [key], or [default] if absent or not parseable. */
-    public fun getInt(
-        key: String,
-        default: Int = 0,
-    ): Int = map[key]?.toIntOrNull() ?: default
+    /**
+     * Decodes the payload as [T] using the supplied [serializer].
+     *
+     * Returns `null` when no payload was attached.
+     */
+    public fun <T> decode(serializer: KSerializer<T>): T? = json?.let { JSON.decodeFromString(serializer, it) }
 
-    /** Returns the long value for [key], or [default] if absent or not parseable. */
-    public fun getLong(
-        key: String,
-        default: Long = 0L,
-    ): Long = map[key]?.toLongOrNull() ?: default
+    override fun equals(other: Any?): Boolean = other is TaskData && json == other.json
 
-    /** Returns the boolean value for [key], or [default] if absent or not parseable. */
-    public fun getBoolean(
-        key: String,
-        default: Boolean = false,
-    ): Boolean = map[key]?.toBooleanStrictOrNull() ?: default
+    override fun hashCode(): Int = json?.hashCode() ?: 0
 
-    /** Returns the double value for [key], or [default] if absent or not parseable. */
-    public fun getDouble(
-        key: String,
-        default: Double = 0.0,
-    ): Double = map[key]?.toDoubleOrNull() ?: default
-
-    // -- Convenience ----------------------------------------------------------
-
-    /** Returns the string value for [key], or `null` if absent. Shorthand for [getString]. */
-    public operator fun get(key: String): String? = map[key]
-
-    /** Returns `true` if no key-value pairs are present. */
-    public fun isEmpty(): Boolean = map.isEmpty()
-
-    /** Returns `true` if at least one key-value pair is present. */
-    public fun isNotEmpty(): Boolean = map.isNotEmpty()
-
-    // -- Builder --------------------------------------------------------------
-
-    /** Builds a [TaskData] instance by accumulating typed key-value pairs. */
-    public class Builder {
-        private val map = mutableMapOf<String, String>()
-
-        public fun putString(
-            key: String,
-            value: String,
-        ): Builder = apply { map[key] = value }
-
-        public fun putInt(
-            key: String,
-            value: Int,
-        ): Builder = apply { map[key] = value.toString() }
-
-        public fun putLong(
-            key: String,
-            value: Long,
-        ): Builder = apply { map[key] = value.toString() }
-
-        public fun putBoolean(
-            key: String,
-            value: Boolean,
-        ): Builder = apply { map[key] = value.toString() }
-
-        public fun putDouble(
-            key: String,
-            value: Double,
-        ): Builder = apply { map[key] = value.toString() }
-
-        public fun build(): TaskData = TaskData(map.toMap())
-    }
-
-    // -- Equality & companion -------------------------------------------------
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is TaskData) return false
-        return map == other.map
-    }
-
-    override fun hashCode(): Int = map.hashCode()
-
-    override fun toString(): String = "TaskData($map)"
+    override fun toString(): String = "TaskData(${json ?: "<empty>"})"
 
     public companion object {
-        /** Empty [TaskData] with no key-value pairs. */
-        public val EMPTY: TaskData = TaskData()
+        /** A [TaskData] with no payload. */
+        public val EMPTY: TaskData = TaskData(null)
+
+        @PublishedApi
+        internal val JSON: Json = Json { ignoreUnknownKeys = true }
+
+        /** Encodes [value] using the supplied [serializer]. */
+        public fun <T> of(
+            value: T,
+            serializer: KSerializer<T>,
+        ): TaskData = TaskData(JSON.encodeToString(serializer, value))
+
+        /** Encodes [value] using the contextually-resolved serializer for [T]. */
+        public inline fun <reified T> of(value: T): TaskData = TaskData(JSON.encodeToString(serializer<T>(), value))
     }
 }
+
+/**
+ * Decodes the [TaskData] payload as [T] using the contextually-resolved serializer.
+ */
+public inline fun <reified T> TaskData.decode(): T? = decode(serializer<T>())

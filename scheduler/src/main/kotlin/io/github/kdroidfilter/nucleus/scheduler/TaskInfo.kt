@@ -11,7 +11,7 @@ package io.github.kdroidfilter.nucleus.scheduler
  * @property lastResult description of the last result (e.g. "Success", "Retry: network error")
  */
 public data class TaskInfo(
-    val taskId: String,
+    val taskId: TaskId,
     val state: TaskState,
     val lastRunMs: Long? = null,
     val nextRunMs: Long? = null,

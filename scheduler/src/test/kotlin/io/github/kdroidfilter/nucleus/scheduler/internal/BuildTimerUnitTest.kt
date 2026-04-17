@@ -1,17 +1,19 @@
 package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.scheduler.CronExpression
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import java.time.LocalTime
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 class BuildTimerUnitTest {
     @Test
     fun `periodic timer has OnUnitInactiveSec`() {
-        val request = TaskRequest.periodic("test-task", 1.hours)
+        val request = TaskRequest.periodic(TaskId("test-task"), 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("OnUnitInactiveSec=3600s"), "Expected OnUnitInactiveSec=3600s")
@@ -19,7 +21,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `periodic timer default OnActiveSec equals interval`() {
-        val request = TaskRequest.periodic("test-task", 1.hours)
+        val request = TaskRequest.periodic(TaskId("test-task"), 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("OnActiveSec=3600s"), "Expected OnActiveSec=3600s (full interval)")
@@ -28,7 +30,7 @@ class BuildTimerUnitTest {
     @Test
     fun `periodic timer runImmediately sets OnActiveSec to 0`() {
         val request =
-            TaskRequest.periodic("test-task", 1.hours) {
+            TaskRequest.periodic(TaskId("test-task"), 1.hours) {
                 runImmediately()
             }
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
@@ -39,7 +41,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `periodic timer 15min default OnActiveSec`() {
-        val request = TaskRequest.periodic("test-task", 15.minutes)
+        val request = TaskRequest.periodic(TaskId("test-task"), 15.minutes)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("OnActiveSec=900s"), "Expected OnActiveSec=900s (full interval)")
@@ -47,7 +49,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `calendar timer has OnCalendar`() {
-        val request = TaskRequest.calendar("daily-report", CronExpression.everyDayAt(9))
+        val request = TaskRequest.calendar(TaskId("daily-report"), CronExpression.everyDayAt(LocalTime.of(9, 0)))
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("OnCalendar=*-*-* 09:00:00"), "Expected OnCalendar expression")
@@ -55,7 +57,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `calendar timer weekday expression`() {
-        val request = TaskRequest.calendar("weekday-task", CronExpression.everyWeekdayAt(18))
+        val request = TaskRequest.calendar(TaskId("weekday-task"), CronExpression.everyWeekdayAt(LocalTime.of(18, 0)))
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(
@@ -66,7 +68,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `timer has Persistent=true`() {
-        val request = TaskRequest.periodic("test-task", 1.hours)
+        val request = TaskRequest.periodic(TaskId("test-task"), 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("Persistent=true"))
@@ -74,7 +76,7 @@ class BuildTimerUnitTest {
 
     @Test
     fun `timer has Install section`() {
-        val request = TaskRequest.periodic("test-task", 1.hours)
+        val request = TaskRequest.periodic(TaskId("test-task"), 1.hours)
         val unit = LinuxSystemdScheduler.buildTimerUnit(request)
 
         assertTrue(unit.contains("[Install]"))

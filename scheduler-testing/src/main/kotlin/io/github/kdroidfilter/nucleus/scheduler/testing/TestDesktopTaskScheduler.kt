@@ -5,6 +5,7 @@ import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRegistry
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
@@ -43,11 +44,11 @@ import kotlin.time.Duration
 public class TestDesktopTaskScheduler :
     PlatformScheduler,
     Closeable {
-    private val tasks = mutableMapOf<String, TaskRequest>()
-    private val metadata = mutableMapOf<String, TaskMetadata>()
-    private val executionHistories = mutableMapOf<String, MutableList<ExecutionRecord>>()
+    private val tasks = mutableMapOf<TaskId, TaskRequest>()
+    private val metadata = mutableMapOf<TaskId, TaskMetadata>()
+    private val executionHistories = mutableMapOf<TaskId, MutableList<ExecutionRecord>>()
     private var virtualTimeMs: Long = 0L
-    private val enqueueTimeMs = mutableMapOf<String, Long>()
+    private val enqueueTimeMs = mutableMapOf<TaskId, Long>()
 
     /**
      * Constraint checker used to evaluate task constraints before execution.
@@ -77,7 +78,7 @@ public class TestDesktopTaskScheduler :
      * @property virtualTimeMs the virtual time at which the execution occurred
      */
     public data class ExecutionRecord(
-        public val taskId: String,
+        public val taskId: TaskId,
         public val result: TaskResult,
         public val runAttemptCount: Int,
         public val virtualTimeMs: Long,
@@ -119,7 +120,7 @@ public class TestDesktopTaskScheduler :
         return true
     }
 
-    override fun cancel(taskId: String): Boolean {
+    override fun cancel(taskId: TaskId): Boolean {
         val removed = tasks.remove(taskId) != null
         if (removed) {
             metadata.remove(taskId)
@@ -134,9 +135,9 @@ public class TestDesktopTaskScheduler :
         enqueueTimeMs.clear()
     }
 
-    override fun isScheduled(taskId: String): Boolean = taskId in tasks
+    override fun isScheduled(taskId: TaskId): Boolean = taskId in tasks
 
-    override fun getTaskInfo(taskId: String): TaskInfo? {
+    override fun getTaskInfo(taskId: TaskId): TaskInfo? {
         if (taskId !in tasks) return null
         val meta = metadata[taskId] ?: return null
         return TaskInfo(
@@ -164,7 +165,7 @@ public class TestDesktopTaskScheduler :
      * @throws io.github.kdroidfilter.nucleus.scheduler.TaskNotFoundException if [taskId] is not in [registry]
      */
     public suspend fun runTask(
-        taskId: String,
+        taskId: TaskId,
         registry: TaskRegistry,
     ): TaskResult? {
         val request =
@@ -273,7 +274,7 @@ public class TestDesktopTaskScheduler :
 
         // Collect all periodic tasks and compute their fire times
         data class PendingFire(
-            val taskId: String,
+            val taskId: TaskId,
             val fireAtMs: Long,
         )
 
@@ -330,7 +331,7 @@ public class TestDesktopTaskScheduler :
      * assertEquals(1, history.last().runAttemptCount)
      * ```
      */
-    public fun getExecutionHistory(taskId: String): List<ExecutionRecord> =
+    public fun getExecutionHistory(taskId: TaskId): List<ExecutionRecord> =
         executionHistories[taskId]?.toList() ?: emptyList()
 
     /**
@@ -344,7 +345,7 @@ public class TestDesktopTaskScheduler :
     /**
      * Returns the [TaskRequest] for an enqueued task, or `null` if not found.
      */
-    public fun getEnqueuedRequest(taskId: String): TaskRequest? = tasks[taskId]
+    public fun getEnqueuedRequest(taskId: TaskId): TaskRequest? = tasks[taskId]
 
     /**
      * Returns all currently enqueued [TaskRequest]s.

@@ -1,5 +1,7 @@
 package io.github.kdroidfilter.nucleus.scheduler
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -11,7 +13,7 @@ import kotlin.time.Duration.Companion.minutes
 @OptIn(InternalSchedulerApi::class)
 public class TaskRequest private constructor(
     /** Unique identifier — must match a [TaskRegistry] entry. */
-    public val taskId: String,
+    public val taskId: TaskId,
     @property:InternalSchedulerApi public val type: Type,
     @property:InternalSchedulerApi public val interval: Duration?,
     @property:InternalSchedulerApi public val cronExpression: CronExpression?,
@@ -31,15 +33,29 @@ public class TaskRequest private constructor(
      * DSL builder for configuring a [TaskRequest].
      */
     public class Builder internal constructor() {
-        internal var taskData: TaskData = TaskData.EMPTY
+        @PublishedApi internal var taskData: TaskData = TaskData.EMPTY
         internal var retryPolicy: RetryPolicy? = null
         internal var existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.KEEP
         internal var runImmediately: Boolean = false
         internal var constraints: Constraints = Constraints.NONE
 
-        /** Attach typed key-value pairs to the task, retrievable via [TaskContext.inputData]. */
-        public fun inputData(configure: TaskData.Builder.() -> Unit) {
-            taskData = TaskData.Builder().apply(configure).build()
+        /**
+         * Attach a `@Serializable` [value] as the task's input payload, decoded via
+         * [TaskContext.inputData] inside [DesktopTask.doWork].
+         */
+        public fun <T> inputData(
+            value: T,
+            serializer: KSerializer<T>,
+        ) {
+            taskData = TaskData.of(value, serializer)
+        }
+
+        /**
+         * Attach a `@Serializable` [value] as the task's input payload, using the
+         * contextually-resolved serializer for [T].
+         */
+        public inline fun <reified T> inputData(value: T) {
+            taskData = TaskData.of(value, serializer<T>())
         }
 
         /** Set the retry policy for this task. */
@@ -73,14 +89,6 @@ public class TaskRequest private constructor(
 
     public companion object {
         private val MIN_INTERVAL = 15.minutes
-        private val TASK_ID_PATTERN = Regex("^[a-zA-Z0-9_-]+$")
-
-        private fun validateTaskId(taskId: String) {
-            require(taskId.isNotEmpty()) { "taskId must not be empty" }
-            require(TASK_ID_PATTERN.matches(taskId)) {
-                "taskId must match [a-zA-Z0-9_-]+, got '$taskId'"
-            }
-        }
 
         /**
          * A task that repeats at a fixed interval.
@@ -90,11 +98,10 @@ public class TaskRequest private constructor(
          * @param configure optional DSL block for inputData, retryPolicy, etc.
          */
         public fun periodic(
-            taskId: String,
+            taskId: TaskId,
             interval: Duration,
             configure: Builder.() -> Unit = {},
         ): TaskRequest {
-            validateTaskId(taskId)
             require(interval >= MIN_INTERVAL) {
                 "Interval must be at least $MIN_INTERVAL, got $interval"
             }
@@ -120,11 +127,10 @@ public class TaskRequest private constructor(
          * @param configure optional DSL block
          */
         public fun calendar(
-            taskId: String,
+            taskId: TaskId,
             expression: CronExpression,
             configure: Builder.() -> Unit = {},
         ): TaskRequest {
-            validateTaskId(taskId)
             val builder = Builder().apply(configure)
             return TaskRequest(
                 taskId = taskId,
@@ -146,10 +152,9 @@ public class TaskRequest private constructor(
          * @param configure optional DSL block
          */
         public fun onBoot(
-            taskId: String,
+            taskId: TaskId,
             configure: Builder.() -> Unit = {},
         ): TaskRequest {
-            validateTaskId(taskId)
             val builder = Builder().apply(configure)
             return TaskRequest(
                 taskId = taskId,

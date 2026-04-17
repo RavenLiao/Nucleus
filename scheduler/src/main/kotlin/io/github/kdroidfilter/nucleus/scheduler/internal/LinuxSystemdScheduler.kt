@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
@@ -49,11 +50,11 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
 
     // -- Unit naming ----------------------------------------------------------
 
-    internal fun unitBaseName(taskId: String): String = "$UNIT_PREFIX-$appId-$taskId"
+    internal fun unitBaseName(taskId: TaskId): String = "$UNIT_PREFIX-$appId-${taskId.value}"
 
-    private fun serviceFileName(taskId: String): String = "${unitBaseName(taskId)}.service"
+    private fun serviceFileName(taskId: TaskId): String = "${unitBaseName(taskId)}.service"
 
-    private fun timerFileName(taskId: String): String = "${unitBaseName(taskId)}.timer"
+    private fun timerFileName(taskId: TaskId): String = "${unitBaseName(taskId)}.timer"
 
     // -- PlatformScheduler implementation -------------------------------------
 
@@ -142,7 +143,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         }
     }
 
-    override fun cancel(taskId: String): Boolean {
+    override fun cancel(taskId: TaskId): Boolean {
         if (!isAvailable) return false
 
         val timerFile = File(systemdUserDir, timerFileName(taskId))
@@ -178,7 +179,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         TaskMetadataStore.deleteAll(appId)
     }
 
-    override fun isScheduled(taskId: String): Boolean {
+    override fun isScheduled(taskId: TaskId): Boolean {
         if (!isAvailable) return false
         val timerFile = File(systemdUserDir, timerFileName(taskId))
         val serviceFile = File(systemdUserDir, serviceFileName(taskId))
@@ -187,7 +188,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             LinuxSystemdSchedulerJni.nativeGetUnitFileState(serviceFileName(taskId)) == "enabled"
     }
 
-    override fun getTaskInfo(taskId: String): TaskInfo? {
+    override fun getTaskInfo(taskId: TaskId): TaskInfo? {
         if (!isAvailable || !isScheduled(taskId)) return null
 
         val state = resolveState(taskId)
@@ -211,7 +212,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
      * Schedules a one-shot retry timer that fires after [delaySeconds].
      */
     fun scheduleRetry(
-        taskId: String,
+        taskId: TaskId,
         delaySeconds: Long,
     ): Boolean {
         if (!isAvailable) return false
@@ -239,12 +240,12 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     // -- Unit file generation -------------------------------------------------
 
     private fun buildServiceUnit(
-        taskId: String,
+        taskId: TaskId,
         scriptPath: String,
     ): String =
         buildString {
             appendLine("[Unit]")
-            appendLine("Description=Nucleus scheduled task: $taskId")
+            appendLine("Description=Nucleus scheduled task: ${taskId.value}")
             appendLine()
             appendLine("[Service]")
             appendLine("Type=oneshot")
@@ -257,7 +258,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
     internal fun buildTimerUnit(request: TaskRequest): String =
         buildString {
             appendLine("[Unit]")
-            appendLine("Description=Nucleus timer: ${request.taskId}")
+            appendLine("Description=Nucleus timer: ${request.taskId.value}")
             appendLine()
             appendLine("[Timer]")
 
@@ -287,7 +288,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
 
     // -- Introspection --------------------------------------------------------
 
-    private fun listScheduledTaskIds(): List<String> {
+    private fun listScheduledTaskIds(): List<TaskId> {
         val prefix = "$UNIT_PREFIX-$appId-"
         val dir = systemdUserDir
         if (!dir.isDirectory) return emptyList()
@@ -296,10 +297,11 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
             ?.filter { it.name.startsWith(prefix) && it.name.endsWith(".service") }
             ?.map { it.name.removePrefix(prefix).removeSuffix(".service") }
             ?.filter { !it.endsWith("-retry") }
+            ?.mapNotNull { runCatching { TaskId(it) }.getOrNull() }
             ?: emptyList()
     }
 
-    private fun resolveState(taskId: String): TaskState {
+    private fun resolveState(taskId: TaskId): TaskState {
         val activeState = LinuxSystemdSchedulerJni.nativeGetUnitActiveState(serviceFileName(taskId))
         return when (activeState) {
             "active", "activating" -> TaskState.RUNNING
@@ -307,7 +309,7 @@ internal object LinuxSystemdScheduler : PlatformScheduler {
         }
     }
 
-    private fun parseNextElapse(taskId: String): Long? {
+    private fun parseNextElapse(taskId: TaskId): Long? {
         val usec = LinuxSystemdSchedulerJni.nativeGetTimerNextElapseUSec(timerFileName(taskId))
         return if (usec == 0L) null else usec / USEC_PER_MS
     }

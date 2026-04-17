@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.scheduler.internal
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import java.io.File
 
 /**
@@ -33,16 +34,16 @@ internal object TaskWrapperScript {
 
     fun scriptFile(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): File {
         val dir = scriptsDir(appId)
         val ext = if (Platform.Current == Platform.Windows) "vbs" else "sh"
-        return File(dir, "$taskId.$ext")
+        return File(dir, "${taskId.value}.$ext")
     }
 
     fun deleteScript(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ) {
         scriptFile(appId, taskId).delete()
     }
@@ -70,7 +71,7 @@ internal object TaskWrapperScript {
      */
     fun generateWindowsScript(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         execPath: String,
         taskFolder: String,
         metadataDir: String,
@@ -78,7 +79,7 @@ internal object TaskWrapperScript {
         val file = scriptFile(appId, taskId)
         file.parentFile.mkdirs()
 
-        val metadataFile = "$metadataDir\\$taskId.properties"
+        val metadataFile = "$metadataDir\\${taskId.value}.properties"
 
         val content =
             buildString {
@@ -88,8 +89,8 @@ internal object TaskWrapperScript {
                 appendLine("    Set svc = CreateObject(\"Schedule.Service\")")
                 appendLine("    svc.Connect")
                 appendLine("    Set folder = svc.GetFolder(${vbsQuote(taskFolder)})")
-                appendLine("    folder.DeleteTask ${vbsQuote(taskId)}, 0")
-                appendLine("    folder.DeleteTask ${vbsQuote("$taskId-retry")}, 0")
+                appendLine("    folder.DeleteTask ${vbsQuote(taskId.value)}, 0")
+                appendLine("    folder.DeleteTask ${vbsQuote("${taskId.value}-retry")}, 0")
                 appendLine("    On Error GoTo 0")
                 appendLine(
                     "    If fso.FileExists(${vbsQuote(metadataFile)}) Then fso.DeleteFile ${vbsQuote(metadataFile)}",
@@ -100,7 +101,7 @@ internal object TaskWrapperScript {
                 appendLine("Set shell = CreateObject(\"WScript.Shell\")")
                 // shell.Run expects a command string; inner quotes wrap the exe path for spaces.
                 // VBS string: "..." with doubled quotes inside → literal quotes in the value.
-                appendLine("shell.Run \"\"\"${vbsEscape(execPath)}\"\" --nucleus-scheduler-run $taskId\", 0, True")
+                appendLine("shell.Run \"\"\"${vbsEscape(execPath)}\"\" --nucleus-scheduler-run ${taskId.value}\", 0, True")
             }
         file.writeText(content)
         return file
@@ -116,7 +117,7 @@ internal object TaskWrapperScript {
 
     fun generateLinuxScript(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         execPath: String,
         timerUnit: String,
         serviceUnit: String,
@@ -137,11 +138,11 @@ internal object TaskWrapperScript {
                 appendLine("    rm -f ${quote(timerFilePath)}")
                 appendLine("    rm -f ${quote(serviceFilePath)}")
                 appendLine("    systemctl --user daemon-reload 2>/dev/null")
-                appendLine("    rm -f ${quote(metadataDir + "/" + taskId + ".properties")}")
+                appendLine("    rm -f ${quote(metadataDir + "/" + taskId.value + ".properties")}")
                 appendLine("    rm -f ${quote(file.absolutePath)}")
                 appendLine("    exit 0")
                 appendLine("fi")
-                appendLine("\"${'$'}EXEC\" --nucleus-scheduler-run $taskId")
+                appendLine("\"${'$'}EXEC\" --nucleus-scheduler-run ${taskId.value}")
             }
         file.writeText(content)
         file.setExecutable(true)

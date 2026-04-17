@@ -5,6 +5,7 @@ import io.github.kdroidfilter.nucleus.scheduler.Constraints
 import io.github.kdroidfilter.nucleus.scheduler.NetworkType
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
 import io.github.kdroidfilter.nucleus.scheduler.TaskData
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import java.io.File
 import java.util.Properties
 
@@ -14,6 +15,7 @@ import java.util.Properties
  */
 @Suppress("TooManyFunctions")
 internal object TaskMetadataStore {
+    private const val KEY_INPUT_DATA = "_inputDataJson"
     private const val KEY_RUN_COUNT = "_runCount"
     private const val KEY_RUN_ATTEMPT = "_runAttemptCount"
     private const val KEY_LAST_RUN_MS = "_lastRunMs"
@@ -47,42 +49,41 @@ internal object TaskMetadataStore {
 
     private fun taskFile(
         appId: String,
-        taskId: String,
-    ): File = File(storeDir(appId), "$taskId.properties")
+        taskId: TaskId,
+    ): File = File(storeDir(appId), "${taskId.value}.properties")
 
     fun save(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         inputData: TaskData,
     ) {
         val file = taskFile(appId, taskId)
         file.parentFile.mkdirs()
         val existing = load(file)
-        inputData.map.forEach { (k, v) -> existing.setProperty(k, v) }
+        if (inputData.json != null) {
+            existing.setProperty(KEY_INPUT_DATA, inputData.json)
+        } else {
+            existing.remove(KEY_INPUT_DATA)
+        }
         file.outputStream().use { existing.store(it, null) }
     }
 
     fun loadContext(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): TaskContext {
         val props = load(taskFile(appId, taskId))
-        val dataMap =
-            props
-                .stringPropertyNames()
-                .filter { !it.startsWith("_") }
-                .associateWith { props.getProperty(it) }
         val runAttempt = props.getProperty(KEY_RUN_ATTEMPT)?.toIntOrNull() ?: 1
         return TaskContext(
             taskId = taskId,
-            inputData = TaskData(dataMap),
+            inputData = TaskData(props.getProperty(KEY_INPUT_DATA)),
             runAttemptCount = runAttempt,
         )
     }
 
     fun recordSuccess(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ) {
         val file = taskFile(appId, taskId)
         val props = load(file)
@@ -97,7 +98,7 @@ internal object TaskMetadataStore {
 
     fun recordFailure(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         message: String?,
     ) {
         val file = taskFile(appId, taskId)
@@ -111,7 +112,7 @@ internal object TaskMetadataStore {
 
     fun recordRetry(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         message: String?,
     ) {
         val file = taskFile(appId, taskId)
@@ -126,7 +127,7 @@ internal object TaskMetadataStore {
 
     fun getRunCount(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): Int {
         val props = load(taskFile(appId, taskId))
         return props.getProperty(KEY_RUN_COUNT)?.toIntOrNull() ?: 0
@@ -134,7 +135,7 @@ internal object TaskMetadataStore {
 
     fun getLastRunMs(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): Long? {
         val props = load(taskFile(appId, taskId))
         return props.getProperty(KEY_LAST_RUN_MS)?.toLongOrNull()
@@ -142,7 +143,7 @@ internal object TaskMetadataStore {
 
     fun getLastResult(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): String? {
         val props = load(taskFile(appId, taskId))
         return props.getProperty(KEY_LAST_RESULT)
@@ -150,7 +151,7 @@ internal object TaskMetadataStore {
 
     fun getRunAttemptCount(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): Int {
         val props = load(taskFile(appId, taskId))
         return props.getProperty(KEY_RUN_ATTEMPT)?.toIntOrNull() ?: 1
@@ -158,7 +159,7 @@ internal object TaskMetadataStore {
 
     fun delete(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ) {
         taskFile(appId, taskId).delete()
     }
@@ -176,7 +177,7 @@ internal object TaskMetadataStore {
      */
     fun saveScheduleHint(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         hint: ScheduleHint,
     ) {
         val file = taskFile(appId, taskId)
@@ -196,7 +197,7 @@ internal object TaskMetadataStore {
 
     fun loadScheduleHint(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): ScheduleHint? {
         val props = load(taskFile(appId, taskId))
         val interval = props.getProperty(KEY_SCHED_INTERVAL)?.toIntOrNull() ?: return null
@@ -243,7 +244,7 @@ internal object TaskMetadataStore {
 
     fun saveTaskType(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         type: String,
     ) {
         val file = taskFile(appId, taskId)
@@ -255,7 +256,7 @@ internal object TaskMetadataStore {
 
     fun loadTaskType(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): String? {
         val props = load(taskFile(appId, taskId))
         return props.getProperty(KEY_TASK_TYPE)
@@ -263,7 +264,7 @@ internal object TaskMetadataStore {
 
     fun saveConstraints(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         constraints: Constraints,
     ) {
         val file = taskFile(appId, taskId)
@@ -288,7 +289,7 @@ internal object TaskMetadataStore {
 
     fun loadConstraints(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
     ): Constraints {
         val props = load(taskFile(appId, taskId))
         return Constraints(
@@ -306,7 +307,7 @@ internal object TaskMetadataStore {
 
     fun recordConstraintSkip(
         appId: String,
-        taskId: String,
+        taskId: TaskId,
         unsatisfied: Set<String>,
     ) {
         val file = taskFile(appId, taskId)
@@ -318,13 +319,13 @@ internal object TaskMetadataStore {
     }
 
     /** Lists all task IDs that have metadata stored. */
-    fun listTaskIds(appId: String): List<String> {
+    fun listTaskIds(appId: String): List<TaskId> {
         val dir = storeDir(appId)
         if (!dir.isDirectory) return emptyList()
         return dir
             .listFiles()
             ?.filter { it.extension == "properties" }
-            ?.map { it.nameWithoutExtension }
+            ?.mapNotNull { runCatching { TaskId(it.nameWithoutExtension) }.getOrNull() }
             ?: emptyList()
     }
 

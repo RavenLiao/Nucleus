@@ -27,11 +27,18 @@ import io.github.kdroidfilter.nucleus.scheduler.CronExpression
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTaskScheduler
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
+import schedulerdemo.task.BackupInput
+import schedulerdemo.task.BackupTaskId
+import schedulerdemo.task.NotificationInput
+import schedulerdemo.task.NotificationTaskId
+import schedulerdemo.task.ReportTaskId
+import schedulerdemo.task.SyncTaskId
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.GroupHeader
 import org.jetbrains.jewel.ui.component.OutlinedButton
 import org.jetbrains.jewel.ui.component.Text
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.hours
@@ -87,7 +94,7 @@ fun SchedulerDemoView(openedByScheduler: Boolean = false) {
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DefaultButton(onClick = {
-                val ok = scheduler.enqueue(TaskRequest.periodic("sync", 1.hours))
+                val ok = scheduler.enqueue(TaskRequest.periodic(SyncTaskId, 1.hours))
                 log(if (ok) "Enqueued 'sync' (every 1h)" else "Failed to enqueue 'sync'")
                 refreshTasks()
             }) {
@@ -97,8 +104,8 @@ fun SchedulerDemoView(openedByScheduler: Boolean = false) {
             DefaultButton(onClick = {
                 val ok =
                     scheduler.enqueue(
-                        TaskRequest.periodic("backup", 30.minutes) {
-                            inputData("target", "/tmp/backup")
+                        TaskRequest.periodic(BackupTaskId, 30.minutes) {
+                            inputData(BackupInput(target = "/tmp/backup"))
                         },
                     )
                 log(if (ok) "Enqueued 'backup' (every 30min)" else "Failed to enqueue 'backup'")
@@ -108,7 +115,7 @@ fun SchedulerDemoView(openedByScheduler: Boolean = false) {
             }
 
             DefaultButton(onClick = {
-                val ok = scheduler.enqueue(TaskRequest.calendar("report", CronExpression.everyDayAt(9)))
+                val ok = scheduler.enqueue(TaskRequest.calendar(ReportTaskId, CronExpression.everyDayAt(LocalTime.of(9, 0))))
                 log(if (ok) "Enqueued 'report' (daily at 9h)" else "Failed to enqueue 'report'")
                 refreshTasks()
             }) {
@@ -118,9 +125,13 @@ fun SchedulerDemoView(openedByScheduler: Boolean = false) {
             DefaultButton(onClick = {
                 val ok =
                     scheduler.enqueue(
-                        TaskRequest.periodic("notification", 15.minutes) {
-                            inputData("title", "Scheduled Notification")
-                            inputData("message", "This notification was scheduled 15 minutes ago!")
+                        TaskRequest.periodic(NotificationTaskId, 15.minutes) {
+                            inputData(
+                                NotificationInput(
+                                    title = "Scheduled Notification",
+                                    message = "This notification was scheduled 15 minutes ago!",
+                                ),
+                            )
                         },
                     )
                 log(if (ok) "Enqueued 'notification' (every 15min)" else "Failed to enqueue 'notification'")

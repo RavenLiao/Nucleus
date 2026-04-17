@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm")
     alias(libs.plugins.kotlinComposePlugin)
     alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.kotlinxSerialization)
     id("io.github.kdroidfilter.nucleus")
 }
 

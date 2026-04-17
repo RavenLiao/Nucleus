@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
@@ -46,9 +47,9 @@ internal object WindowsTaskScheduler : PlatformScheduler {
 
     private fun folderPath(): String = "\\$TASK_FOLDER\\$appId"
 
-    private fun retryTaskName(taskId: String): String = "$taskId-retry"
+    private fun retryTaskName(taskId: TaskId): String = "${taskId.value}-retry"
 
-    private fun arguments(taskId: String): String = "$SCHEDULER_ARG $taskId"
+    private fun arguments(taskId: TaskId): String = "$SCHEDULER_ARG ${taskId.value}"
 
     // -- WScript invocation ---------------------------------------------------
 
@@ -80,7 +81,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         }
 
         if (request.existingTaskPolicy == ExistingTaskPolicy.REPLACE && isScheduled(request.taskId)) {
-            deleteTask(request.taskId)
+            deleteTask(request.taskId.value)
         }
 
         val metadataDir = TaskMetadataStore.storeDir(appId).absolutePath
@@ -108,9 +109,9 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         return true
     }
 
-    override fun cancel(taskId: String): Boolean {
+    override fun cancel(taskId: TaskId): Boolean {
         if (!isAvailable || !isScheduled(taskId)) return false
-        val result = deleteTask(taskId)
+        val result = deleteTask(taskId.value)
         deleteTask(retryTaskName(taskId)) // Clean up retry task
         TaskWrapperScript.deleteScript(appId, taskId)
         if (result) TaskMetadataStore.delete(appId, taskId)
@@ -120,7 +121,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
     override fun cancelAll() {
         if (!isAvailable) return
         getAllTaskIds().forEach { taskId ->
-            val deleted = deleteTask(taskId)
+            val deleted = deleteTask(taskId.value)
             deleteTask(retryTaskName(taskId))
             if (deleted) TaskMetadataStore.delete(appId, taskId)
         }
@@ -132,17 +133,17 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         }
     }
 
-    override fun isScheduled(taskId: String): Boolean {
+    override fun isScheduled(taskId: TaskId): Boolean {
         if (!isAvailable) return false
-        return WindowsTaskSchedulerJni.nativeTaskExists(folderPath(), taskId)
+        return WindowsTaskSchedulerJni.nativeTaskExists(folderPath(), taskId.value)
     }
 
-    override fun getTaskInfo(taskId: String): TaskInfo? {
+    override fun getTaskInfo(taskId: TaskId): TaskInfo? {
         if (!isAvailable || !isScheduled(taskId)) return null
 
-        val rawState = WindowsTaskSchedulerJni.nativeGetTaskState(folderPath(), taskId)
+        val rawState = WindowsTaskSchedulerJni.nativeGetTaskState(folderPath(), taskId.value)
         val state = mapTaskState(rawState)
-        val nextRunMs = WindowsTaskSchedulerJni.nativeGetTaskNextRunTime(folderPath(), taskId)
+        val nextRunMs = WindowsTaskSchedulerJni.nativeGetTaskNextRunTime(folderPath(), taskId.value)
 
         return TaskInfo(
             taskId = taskId,
@@ -159,7 +160,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
     // -- Retry support --------------------------------------------------------
 
     fun scheduleRetry(
-        taskId: String,
+        taskId: TaskId,
         delaySeconds: Long,
     ): Boolean {
         if (!isAvailable) return false
@@ -204,7 +205,7 @@ internal object WindowsTaskScheduler : PlatformScheduler {
         args: String,
     ): String? {
         val folder = folderPath()
-        val name = request.taskId
+        val name = request.taskId.value
 
         return when (request.type) {
             TaskRequest.Type.PERIODIC -> {
@@ -381,13 +382,13 @@ internal object WindowsTaskScheduler : PlatformScheduler {
      * the metadata store. The metadata store remains the authority for tasks
      * that belong to *this* app (the folder may contain retry tasks too).
      */
-    private fun getAllTaskIds(): List<String> {
+    private fun getAllTaskIds(): List<TaskId> {
         val comNames =
             WindowsTaskSchedulerJni
                 .nativeGetTaskNames(folderPath())
                 ?.toSet() ?: emptySet()
         // Use metadata store IDs, filtered by actual COM presence
-        return TaskMetadataStore.listTaskIds(appId).filter { it in comNames }
+        return TaskMetadataStore.listTaskIds(appId).filter { it.value in comNames }
     }
 }
 

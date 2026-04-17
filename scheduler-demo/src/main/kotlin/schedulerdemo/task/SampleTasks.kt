@@ -2,10 +2,27 @@ package schedulerdemo.task
 
 import io.github.kdroidfilter.nucleus.scheduler.DesktopTask
 import io.github.kdroidfilter.nucleus.scheduler.TaskContext
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskResult
+import io.github.kdroidfilter.nucleus.scheduler.inputData
+import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.logging.Logger
+
+val SyncTaskId: TaskId = TaskId("sync")
+val BackupTaskId: TaskId = TaskId("backup")
+val NotificationTaskId: TaskId = TaskId("notification")
+val ReportTaskId: TaskId = TaskId("report")
+
+@Serializable
+data class BackupInput(val target: String)
+
+@Serializable
+data class NotificationInput(
+    val title: String,
+    val message: String,
+)
 
 class SyncTask : DesktopTask {
     private val logger = Logger.getLogger(SyncTask::class.java.name)
@@ -21,7 +38,7 @@ class BackupTask : DesktopTask {
     private val logger = Logger.getLogger(BackupTask::class.java.name)
 
     override suspend fun doWork(context: TaskContext): TaskResult {
-        val target = context.inputData["target"] ?: "default"
+        val target = context.inputData<BackupInput>()?.target ?: "default"
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         logger.info("BackupTask to '$target' executed at $timestamp")
         return TaskResult.Success

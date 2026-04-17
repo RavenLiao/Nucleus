@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm")
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.vanniktechMavenPublish)
 }
 
@@ -16,6 +17,7 @@ val publishVersion =
 dependencies {
     compileOnly(project(":core-runtime"))
     api(project(":system-info"))
+    api(libs.kotlinx.serialization.json)
     compileOnly(libs.coroutines.core)
     testImplementation(project(":core-runtime"))
     testImplementation(libs.coroutines.core)

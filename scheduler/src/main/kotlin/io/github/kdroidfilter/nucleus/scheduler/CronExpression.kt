@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.scheduler
 
 import java.time.DayOfWeek
+import java.time.LocalTime
 
 /**
  * A calendar-based schedule expression that maps to systemd `OnCalendar=` syntax.
@@ -19,70 +20,48 @@ public class CronExpression private constructor(
     override fun hashCode(): Int = expression.hashCode()
 
     public companion object {
-        private const val MAX_HOUR = 23
-        private const val MAX_MINUTE = 59
         private const val DAY_ABBREV_LENGTH = 3
 
-        private fun validateTime(
-            hour: Int,
-            minute: Int,
-        ) {
-            require(hour in 0..MAX_HOUR) { "hour must be 0..$MAX_HOUR, got $hour" }
-            require(minute in 0..MAX_MINUTE) { "minute must be 0..$MAX_MINUTE, got $minute" }
-        }
+        private fun LocalTime.toCalendarSuffix(): String =
+            "%02d:%02d:00".format(hour, minute)
 
         /**
-         * Every day at the given hour (and optional minute).
+         * Every day at the given [time].
          *
-         * Example: `everyDayAt(9)` → `*-*-* 09:00:00`
+         * Example: `everyDayAt(LocalTime.of(9, 0))` → `*-*-* 09:00:00`
          */
-        public fun everyDayAt(
-            hour: Int,
-            minute: Int = 0,
-        ): CronExpression {
-            validateTime(hour, minute)
-            return CronExpression("*-*-* %02d:%02d:00".format(hour, minute))
-        }
+        public fun everyDayAt(time: LocalTime): CronExpression =
+            CronExpression("*-*-* ${time.toCalendarSuffix()}")
 
         /**
-         * Every Monday at the given hour.
+         * Every Monday at the given [time].
          *
-         * Example: `everyMondayAt(9)` → `Mon *-*-* 09:00:00`
+         * Example: `everyMondayAt(LocalTime.of(9, 0))` → `Mon *-*-* 09:00:00`
          */
-        public fun everyMondayAt(
-            hour: Int,
-            minute: Int = 0,
-        ): CronExpression = everyWeekdayAt(DayOfWeek.MONDAY, hour, minute)
+        public fun everyMondayAt(time: LocalTime): CronExpression = everyWeekdayAt(DayOfWeek.MONDAY, time)
 
         /**
-         * Every specified day of the week at the given hour.
+         * Every specified day of the week at the given [time].
          */
         public fun everyWeekdayAt(
             day: DayOfWeek,
-            hour: Int,
-            minute: Int = 0,
+            time: LocalTime,
         ): CronExpression {
-            validateTime(hour, minute)
             val dayName =
                 day.name
                     .lowercase()
                     .replaceFirstChar { it.uppercase() }
                     .take(DAY_ABBREV_LENGTH)
-            return CronExpression("$dayName *-*-* %02d:%02d:00".format(hour, minute))
+            return CronExpression("$dayName *-*-* ${time.toCalendarSuffix()}")
         }
 
         /**
-         * Monday through Friday at the given hour.
+         * Monday through Friday at the given [time].
          *
-         * Example: `everyWeekdayAt(18)` → `Mon..Fri *-*-* 18:00:00`
+         * Example: `everyWeekdayAt(LocalTime.of(18, 0))` → `Mon..Fri *-*-* 18:00:00`
          */
-        public fun everyWeekdayAt(
-            hour: Int,
-            minute: Int = 0,
-        ): CronExpression {
-            validateTime(hour, minute)
-            return CronExpression("Mon..Fri *-*-* %02d:%02d:00".format(hour, minute))
-        }
+        public fun everyWeekdayAt(time: LocalTime): CronExpression =
+            CronExpression("Mon..Fri *-*-* ${time.toCalendarSuffix()}")
 
         /**
          * Every hour at minute 0.

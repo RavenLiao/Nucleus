@@ -95,7 +95,7 @@ public object DesktopTaskScheduler {
      * @return `true` if the task was found and removed
      */
     @JvmStatic
-    public fun cancel(taskId: String): Boolean = delegate.cancel(taskId)
+    public fun cancel(taskId: TaskId): Boolean = delegate.cancel(taskId)
 
     /**
      * Cancels all tasks belonging to this application.
@@ -107,13 +107,13 @@ public object DesktopTaskScheduler {
      * Returns `true` if the given task is currently scheduled.
      */
     @JvmStatic
-    public fun isScheduled(taskId: String): Boolean = delegate.isScheduled(taskId)
+    public fun isScheduled(taskId: TaskId): Boolean = delegate.isScheduled(taskId)
 
     /**
      * Returns detailed runtime info about a task, or `null` if not found.
      */
     @JvmStatic
-    public fun getTaskInfo(taskId: String): TaskInfo? = delegate.getTaskInfo(taskId)
+    public fun getTaskInfo(taskId: TaskId): TaskInfo? = delegate.getTaskInfo(taskId)
 
     /**
      * Returns info for all tasks registered by this application.

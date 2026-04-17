@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.scheduler.internal
 import io.github.kdroidfilter.nucleus.core.runtime.NucleusApp
 import io.github.kdroidfilter.nucleus.scheduler.ExistingTaskPolicy
 import io.github.kdroidfilter.nucleus.scheduler.InternalSchedulerApi
+import io.github.kdroidfilter.nucleus.scheduler.TaskId
 import io.github.kdroidfilter.nucleus.scheduler.TaskInfo
 import io.github.kdroidfilter.nucleus.scheduler.TaskRequest
 import io.github.kdroidfilter.nucleus.scheduler.TaskState
@@ -48,17 +49,17 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 
     // -- Naming ---------------------------------------------------------------
 
-    internal fun label(taskId: String): String = "$LABEL_PREFIX.$appId.$taskId"
+    internal fun label(taskId: TaskId): String = "$LABEL_PREFIX.$appId.${taskId.value}"
 
-    private fun retryLabel(taskId: String): String = "$LABEL_PREFIX.$appId.$taskId-retry"
+    private fun retryLabel(taskId: TaskId): String = "$LABEL_PREFIX.$appId.${taskId.value}-retry"
 
-    private fun plistFileName(taskId: String): String = "${label(taskId)}.plist"
+    private fun plistFileName(taskId: TaskId): String = "${label(taskId)}.plist"
 
-    private fun retryPlistFileName(taskId: String): String = "${retryLabel(taskId)}.plist"
+    private fun retryPlistFileName(taskId: TaskId): String = "${retryLabel(taskId)}.plist"
 
-    private fun plistFile(taskId: String): File = File(launchAgentsDir, plistFileName(taskId))
+    private fun plistFile(taskId: TaskId): File = File(launchAgentsDir, plistFileName(taskId))
 
-    private fun retryPlistFile(taskId: String): File = File(launchAgentsDir, retryPlistFileName(taskId))
+    private fun retryPlistFile(taskId: TaskId): File = File(launchAgentsDir, retryPlistFileName(taskId))
 
     // -- Calendar config extraction -------------------------------------------
 
@@ -188,7 +189,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         execPath: String,
     ): Boolean {
         val plistPath = plistFile(request.taskId).absolutePath
-        val programArgs = arrayOf(execPath, SCHEDULER_ARG, request.taskId)
+        val programArgs = arrayOf(execPath, SCHEDULER_ARG, request.taskId.value)
 
         var intervalSeconds = 0
         var calDay = CAL_NOT_SET
@@ -271,7 +272,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         return launchctl("load", "-w", file.absolutePath)
     }
 
-    override fun cancel(taskId: String): Boolean {
+    override fun cancel(taskId: TaskId): Boolean {
         val file = plistFile(taskId)
         if (!file.exists()) return false
 
@@ -297,9 +298,9 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
         TaskMetadataStore.deleteAll(appId)
     }
 
-    override fun isScheduled(taskId: String): Boolean = plistFile(taskId).exists()
+    override fun isScheduled(taskId: TaskId): Boolean = plistFile(taskId).exists()
 
-    override fun getTaskInfo(taskId: String): TaskInfo? {
+    override fun getTaskInfo(taskId: TaskId): TaskInfo? {
         if (!plistFile(taskId).exists()) return null
 
         val state = if (isLoaded(label(taskId))) TaskState.SCHEDULED else TaskState.INACTIVE
@@ -322,7 +323,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
      * Computes the next fire time for a task by re-reading its schedule config.
      * Returns null when the native library is unavailable or the config cannot be parsed.
      */
-    private fun computeNextRunMs(taskId: String): Long? {
+    private fun computeNextRunMs(taskId: TaskId): Long? {
         if (!useNative) return null
 
         val metadata = TaskMetadataStore.loadScheduleHint(appId, taskId) ?: return null
@@ -350,7 +351,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
      * The retry plist is cleaned up after execution by [cleanupRetryPlist].
      */
     fun scheduleRetry(
-        taskId: String,
+        taskId: TaskId,
         delaySeconds: Long,
     ): Boolean {
         val execPath = executablePath ?: return false
@@ -366,12 +367,12 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
     }
 
     private fun scheduleRetryNative(
-        taskId: String,
+        taskId: TaskId,
         execPath: String,
         delaySeconds: Long,
     ): Boolean {
         val retryPath = retryPlistFile(taskId).absolutePath
-        val programArgs = arrayOf(execPath, SCHEDULER_ARG, taskId)
+        val programArgs = arrayOf(execPath, SCHEDULER_ARG, taskId.value)
 
         val error =
             MacOSLaunchdSchedulerJni.nativeScheduleRetry(
@@ -389,7 +390,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 
     @Suppress("TooGenericExceptionCaught")
     private fun scheduleRetryShell(
-        taskId: String,
+        taskId: TaskId,
         execPath: String,
         delaySeconds: Long,
     ): Boolean {
@@ -399,7 +400,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             buildString {
                 appendLine("    <string>$execPath</string>")
                 appendLine("    <string>$SCHEDULER_ARG</string>")
-                appendLine("    <string>$taskId</string>")
+                appendLine("    <string>${taskId.value}</string>")
             }.trimEnd()
 
         val plist =
@@ -444,7 +445,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
      * Removes the retry plist for a task after it has executed.
      * Called by [DesktopBootReceiver] after a retry run completes.
      */
-    fun cleanupRetryPlist(taskId: String) {
+    fun cleanupRetryPlist(taskId: TaskId) {
         val retryFile = retryPlistFile(taskId)
         if (retryFile.exists()) {
             if (useNative) {
@@ -479,7 +480,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             appendLine("  <array>")
             appendLine("    <string>$execPath</string>")
             appendLine("    <string>$SCHEDULER_ARG</string>")
-            appendLine("    <string>${request.taskId}</string>")
+            appendLine("    <string>${request.taskId.value}</string>")
             appendLine("  </array>")
 
             when (request.type) {
@@ -637,7 +638,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             false
         }
 
-    private fun unloadAndDelete(taskId: String) {
+    private fun unloadAndDelete(taskId: TaskId) {
         val file = plistFile(taskId)
         if (file.exists()) {
             if (useNative) {
@@ -652,7 +653,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
 
     // -- Introspection --------------------------------------------------------
 
-    private fun listScheduledTaskIds(): List<String> {
+    private fun listScheduledTaskIds(): List<TaskId> {
         val prefix = "$LABEL_PREFIX.$appId."
         val dir = launchAgentsDir
         if (!dir.isDirectory) return emptyList()
@@ -661,6 +662,7 @@ internal object MacOSLaunchdScheduler : PlatformScheduler {
             ?.filter { it.name.startsWith(prefix) && it.name.endsWith(".plist") }
             ?.map { it.name.removePrefix(prefix).removeSuffix(".plist") }
             ?.filter { !it.endsWith("-retry") }
+            ?.mapNotNull { runCatching { TaskId(it) }.getOrNull() }
             ?: emptyList()
     }
 }
