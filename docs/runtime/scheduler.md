@@ -574,6 +574,13 @@ Task input data and run history are persisted per-platform:
 
 Each task gets a single `<taskId>.properties` file. The serialized input payload is stored as a JSON string under the reserved `_inputDataJson` key, the typed `LastTaskResult` is stored as JSON under `_lastResult`, alongside run-count, attempt count, timestamps and other internal bookkeeping keys (all prefixed with `_`).
 
+### Orphan cleanup after uninstall
+
+Users uninstall apps without thinking about background scheduled tasks. Without explicit cleanup, the OS will keep firing schedules that point to a missing executable forever. Nucleus handles this differently per platform:
+
+- **Linux** and **Windows** — the scheduler does *not* register the application binary directly. It writes a tiny wrapper script (`<taskId>.sh` in `nucleus/scheduler/<appId>/scripts/` on Linux, `<taskId>.vbs` in `%LOCALAPPDATA%\nucleus\scheduler\<appId>\scripts\` on Windows) and registers *that* with systemd / Task Scheduler. The wrapper checks whether the application binary still exists before invoking it. If it's gone, the wrapper **self-destructs**: it disables and deletes the systemd `.timer` / `.service` units (Linux) or removes the COM tasks under `\Nucleus\<appId>\` (Windows) via the same Schedule.Service API used to create them, deletes the persisted metadata, and finally removes itself. Net result: the next time the OS triggers a task whose app has been uninstalled, the schedule cleans itself up and stops firing.
+- **macOS** — handled by launchd itself: when an agent's `ProgramArguments` points to a binary that no longer exists, launchd fails the load, logs the error and stops trying. The orphaned `.plist` in `~/Library/LaunchAgents/` is harmless and gets reclaimed when the user removes the app's Application Support directory; if you ship an uninstaller, have it call `launchctl bootout`.
+
 ### Platform details
 
 #### macOS (launchd)
@@ -582,11 +589,11 @@ Generates plist files in `~/Library/LaunchAgents/` with label `io.github.kdroidf
 
 #### Linux (systemd)
 
-Creates systemd user service and timer units in `~/.config/systemd/user/` (respects `$XDG_CONFIG_HOME`). Managed via a JNI D-Bus bridge (`LinuxSystemdSchedulerJni`) that talks directly to `org.freedesktop.systemd1.Manager` through GLib/GIO — no subprocess invocation. Calendar tasks map directly to `OnCalendar=` expressions. Unit names follow the pattern `nucleus-<appId>-<taskId>.service` / `.timer`.
+Creates systemd user service and timer units in `~/.config/systemd/user/` (respects `$XDG_CONFIG_HOME`). Managed via a JNI D-Bus bridge (`LinuxSystemdSchedulerJni`) that talks directly to `org.freedesktop.systemd1.Manager` through GLib/GIO — no subprocess invocation. Calendar tasks map directly to `OnCalendar=` expressions. Unit names follow the pattern `nucleus-<appId>-<taskId>.service` / `.timer`. The `.service`'s `ExecStart=` points to the [self-destructing wrapper script](#orphan-cleanup-after-uninstall), not the application binary directly.
 
 #### Windows (Task Scheduler)
 
-Registers tasks under `\Nucleus\<appId>\` via a JNI bridge (`WindowsTaskSchedulerJni`) that calls the Task Scheduler 2.0 COM API (`ITaskService`, `ITaskFolder`, `ITaskDefinition`) — no `schtasks.exe` subprocess. Supports periodic, daily, weekly, logon, and one-shot triggers natively.
+Registers tasks under `\Nucleus\<appId>\` via a JNI bridge (`WindowsTaskSchedulerJni`) that calls the Task Scheduler 2.0 COM API (`ITaskService`, `ITaskFolder`, `ITaskDefinition`) — no `schtasks.exe` subprocess. Supports periodic, daily, weekly, logon, and one-shot triggers natively. The task action runs the [self-destructing wrapper script](#orphan-cleanup-after-uninstall) via `wscript.exe` (Windows-subsystem host — no console window flashes when the task fires) instead of invoking the application binary directly.
 
 ## Testing
 
