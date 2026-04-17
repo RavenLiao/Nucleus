@@ -80,7 +80,7 @@ internal object TaskMetadataStore {
         val runAttempt = props.getProperty(KEY_RUN_ATTEMPT)?.toIntOrNull() ?: 1
         return TaskContext(
             taskId = taskId,
-            inputData = TaskData(props.getProperty(KEY_INPUT_DATA)),
+            rawInputData = TaskData(props.getProperty(KEY_INPUT_DATA)),
             runAttemptCount = runAttempt,
         )
     }

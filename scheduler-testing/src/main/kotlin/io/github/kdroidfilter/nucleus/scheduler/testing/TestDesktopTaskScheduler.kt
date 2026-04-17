@@ -204,7 +204,7 @@ public class TestDesktopTaskScheduler :
         val context =
             TaskContext(
                 taskId = taskId,
-                inputData = request.inputData,
+                rawInputData = request.inputData,
                 runAttemptCount = meta.runAttemptCount,
             )
 

@@ -81,7 +81,7 @@ class InputEchoTask : DesktopTask {
     var receivedData: TaskData = TaskData.EMPTY
 
     override suspend fun doWork(context: TaskContext): TaskResult {
-        receivedData = context.inputData
+        receivedData = context.rawInputData
         return TaskResult.Success
     }
 }

@@ -431,7 +431,7 @@ All factory methods take a `java.time.LocalTime` for the time-of-day component.
 | Property / Method | Type | Description |
 |-------------------|------|-------------|
 | `taskId` | `TaskId` | The unique task identifier. |
-| `inputData` | `TaskData` | Opaque container holding the serialized payload. |
+| `rawInputData` | `TaskData` | Opaque container holding the serialized payload. Prefer the typed `inputData<T>()` extension below; access this directly only when you need the raw [`TaskData`](#taskdata). |
 | `runAttemptCount` | `Int` | 1-based attempt counter (increments on retry). |
 | `inputData<T>()` (extension) | `T?` | Decodes the payload using the contextually-resolved serializer. Returns `null` when no payload was attached. |
 | `inputData(serializer)` (extension) | `T?` | Decodes the payload using an explicit `KSerializer<T>`. |
@@ -494,7 +494,7 @@ Typed outcome of the last run, exposed by [`TaskInfo.lastResult`](#taskinfo). Di
 | `requiresBatteryNotLow` | `Boolean` | `false` | Battery above 15 % (no battery = satisfied). |
 | `requiresCharging` | `Boolean` | `false` | Device must be plugged in. |
 | `requiresDeviceIdle` | `Boolean` | `false` | User idle ≥ 5 minutes. |
-| `requiresStorageNotLow` | `Boolean` | `false` | Disk space ≥ 256 MB on app partition. |
+| `minimumStorageBytes` | `Long?` | `null` | Minimum free disk space (in bytes) on the app partition, or `null` for no requirement. |
 
 | Constant / Method | Description |
 |--------------------|-------------|
