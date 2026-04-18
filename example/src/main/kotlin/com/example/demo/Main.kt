@@ -95,6 +95,7 @@ import kotlin.system.exitProcess
 private const val AOT_TRAINING_DURATION_MS = 45_000L
 
 private val deepLinkUri = mutableStateOf<URI?>(null)
+
 // macOS resolves the AppleEvent only after NSApp.run starts (i.e. after AWT
 // init), so the early call from main() returns false. We stash args here and
 // re-query from Compose to pick up the late signal.
@@ -622,4 +623,3 @@ private fun io.github.kdroidfilter.nucleus.window.TitleBarScope.TitleBarIconButt
         }
     }
 }
-

@@ -24,9 +24,16 @@ object MacLaunchDiagnostic {
 
         val ts = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
         val pid = ProcessHandle.current().pid()
-        val ppid = ProcessHandle.current().parent().map { it.pid() }.orElse(-1L)
+        val ppid =
+            ProcessHandle
+                .current()
+                .parent()
+                .map { it.pid() }
+                .orElse(-1L)
         val gppid =
-            ProcessHandle.current().parent()
+            ProcessHandle
+                .current()
+                .parent()
                 .flatMap { it.parent() }
                 .map { it.pid() }
                 .orElse(-1L)

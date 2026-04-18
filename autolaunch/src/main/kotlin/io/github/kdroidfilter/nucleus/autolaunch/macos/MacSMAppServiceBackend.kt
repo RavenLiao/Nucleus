@@ -88,8 +88,7 @@ internal object MacSMAppServiceBackend : AutoLaunchBackend {
      * (Finder, Dock, Spotlight, `open(1)`) go through LaunchServices and do
      * not carry this variable.
      */
-    override fun wasStartedAtLogin(args: Array<String>): Boolean =
-        System.getenv(LAUNCHD_INSTANCE_ENV) != null
+    override fun wasStartedAtLogin(args: Array<String>): Boolean = System.getenv(LAUNCHD_INSTANCE_ENV) != null
 
     override fun diagnosticSummary(): String =
         buildString {

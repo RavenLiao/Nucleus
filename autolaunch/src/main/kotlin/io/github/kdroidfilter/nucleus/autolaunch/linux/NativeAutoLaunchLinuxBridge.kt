@@ -17,6 +17,7 @@ private const val LIBRARY_NAME = "nucleus_autolaunch_linux"
  * to [io.github.kdroidfilter.nucleus.autolaunch.AutoLaunchState] /
  * [io.github.kdroidfilter.nucleus.autolaunch.AutoLaunchResult].
  */
+@Suppress("TooManyFunctions")
 internal object NativeAutoLaunchLinuxBridge {
     private val loaded = NativeLibraryLoader.load(LIBRARY_NAME, NativeAutoLaunchLinuxBridge::class.java)
 

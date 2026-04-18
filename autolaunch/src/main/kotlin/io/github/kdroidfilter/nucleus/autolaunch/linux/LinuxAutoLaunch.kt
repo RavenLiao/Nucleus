@@ -15,7 +15,8 @@ import io.github.kdroidfilter.nucleus.core.runtime.ExecutableRuntime
  *
  * **Flatpak** — [FlatpakPortalBackend]
  *  - the sandbox cannot reach the host's systemd; portal is the only option
- *  - detects login launch via the CLI marker ([io.github.kdroidfilter.nucleus.autolaunch.AutoLaunchConfig.autostartArgument])
+ *  - detects login launch via the CLI marker
+ *    ([io.github.kdroidfilter.nucleus.autolaunch.AutoLaunchConfig.autostartArgument])
  *    injected into the portal's `commandline` (safe: `flatpak run <id>` has no spaces,
  *    so the portal's quoting bug on `Exec=` does not strike)
  */

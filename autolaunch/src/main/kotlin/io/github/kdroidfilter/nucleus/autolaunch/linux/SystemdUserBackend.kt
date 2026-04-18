@@ -24,9 +24,11 @@ internal object SystemdUserBackend : AutoLaunchBackend {
     override fun state(): AutoLaunchState =
         when (NativeAutoLaunchLinuxBridge.getUnitFileState(unitName())) {
             NativeAutoLaunchLinuxBridge.RC_STATE_ENABLED,
-            NativeAutoLaunchLinuxBridge.RC_STATE_ENABLED_RUNTIME -> AutoLaunchState.ENABLED
+            NativeAutoLaunchLinuxBridge.RC_STATE_ENABLED_RUNTIME,
+            -> AutoLaunchState.ENABLED
             NativeAutoLaunchLinuxBridge.RC_STATE_DISABLED,
-            NativeAutoLaunchLinuxBridge.RC_STATE_NOT_INSTALLED -> AutoLaunchState.DISABLED
+            NativeAutoLaunchLinuxBridge.RC_STATE_NOT_INSTALLED,
+            -> AutoLaunchState.DISABLED
             else -> AutoLaunchState.UNSUPPORTED
         }
 
@@ -62,11 +64,12 @@ internal object SystemdUserBackend : AutoLaunchBackend {
     }
 
     override fun openSystemSettings(): Boolean {
-        val candidates = listOf(
-            arrayOf("gnome-control-center", "applications"),
-            arrayOf("systemadm", "--user"),
-            arrayOf("xdg-open", System.getProperty("user.home") + "/.config/systemd/user"),
-        )
+        val candidates =
+            listOf(
+                arrayOf("gnome-control-center", "applications"),
+                arrayOf("systemadm", "--user"),
+                arrayOf("xdg-open", System.getProperty("user.home") + "/.config/systemd/user"),
+            )
         for (cmd in candidates) {
             try {
                 ProcessBuilder(*cmd).inheritIO().start()
@@ -90,11 +93,12 @@ internal object SystemdUserBackend : AutoLaunchBackend {
      */
     override fun wasStartedAtLogin(args: Array<String>): Boolean {
         val unit = unitName()
-        val cgroup = try {
-            Files.readString(Path.of("/proc/self/cgroup"))
-        } catch (_: Exception) {
-            return false
-        }
+        val cgroup =
+            try {
+                Files.readString(Path.of("/proc/self/cgroup"))
+            } catch (_: Exception) {
+                return false
+            }
         return cgroup.lineSequence().any { line ->
             // cgroup v2: "0::/user.slice/.../nucleusdemo.service"
             // cgroup v1: "N:name=systemd:/.../nucleusdemo.service"
@@ -104,11 +108,12 @@ internal object SystemdUserBackend : AutoLaunchBackend {
     }
 
     override fun diagnosticSummary(): String {
-        val cgroup = try {
-            Files.readString(Path.of("/proc/self/cgroup")).trim()
-        } catch (_: Exception) {
-            "(unreadable)"
-        }
+        val cgroup =
+            try {
+                Files.readString(Path.of("/proc/self/cgroup")).trim()
+            } catch (_: Exception) {
+                "(unreadable)"
+            }
         return "linuxBackend: systemd-user\n" +
             "unitName: ${unitName()}\n" +
             "invocationId: ${System.getenv("INVOCATION_ID") ?: "(unset)"}\n" +
@@ -129,7 +134,11 @@ internal object SystemdUserBackend : AutoLaunchBackend {
     private fun resolveExecutablePath(): String? =
         AutoLaunchConfig.executablePath?.takeIf { it.isNotBlank() }
             ?: try {
-                ProcessHandle.current().info().command().orElse(null)
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElse(null)
             } catch (_: Exception) {
                 null
             }
@@ -157,6 +166,6 @@ internal object SystemdUserBackend : AutoLaunchBackend {
             |[Install]
             |WantedBy=graphical-session.target
             |
-        """.trimMargin()
+            """.trimMargin()
     }
 }

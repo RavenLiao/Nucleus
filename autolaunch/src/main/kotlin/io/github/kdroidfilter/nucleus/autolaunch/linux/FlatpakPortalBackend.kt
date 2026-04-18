@@ -28,6 +28,7 @@ import kotlin.io.path.writeText
  *
  * State is tracked via a local marker file because the portal has no getter.
  */
+@Suppress("TooManyFunctions")
 internal object FlatpakPortalBackend : AutoLaunchBackend {
     override fun state(): AutoLaunchState {
         if (!NativeAutoLaunchLinuxBridge.isPortalAvailable()) return AutoLaunchState.UNSUPPORTED
@@ -39,11 +40,12 @@ internal object FlatpakPortalBackend : AutoLaunchBackend {
         if (state() == AutoLaunchState.ENABLED) return AutoLaunchResult.UNCHANGED
 
         val reason = AutoLaunchConfig.backgroundReason ?: defaultReason()
-        val rc = NativeAutoLaunchLinuxBridge.requestBackground(
-            enable = true,
-            commandline = buildCommandline(),
-            reason = reason,
-        )
+        val rc =
+            NativeAutoLaunchLinuxBridge.requestBackground(
+                enable = true,
+                commandline = buildCommandline(),
+                reason = reason,
+            )
         return when (rc) {
             NativeAutoLaunchLinuxBridge.RC_OK -> {
                 writeMarker()
@@ -60,11 +62,12 @@ internal object FlatpakPortalBackend : AutoLaunchBackend {
         if (state() == AutoLaunchState.DISABLED) return AutoLaunchResult.UNCHANGED
 
         val reason = AutoLaunchConfig.backgroundReason ?: defaultReason()
-        val rc = NativeAutoLaunchLinuxBridge.requestBackground(
-            enable = false,
-            commandline = buildCommandline(),
-            reason = reason,
-        )
+        val rc =
+            NativeAutoLaunchLinuxBridge.requestBackground(
+                enable = false,
+                commandline = buildCommandline(),
+                reason = reason,
+            )
         return when (rc) {
             NativeAutoLaunchLinuxBridge.RC_OK -> {
                 deleteMarker()
@@ -76,10 +79,11 @@ internal object FlatpakPortalBackend : AutoLaunchBackend {
     }
 
     override fun openSystemSettings(): Boolean {
-        val candidates = listOf(
-            arrayOf("gnome-control-center", "applications"),
-            arrayOf("xdg-open", System.getProperty("user.home") + "/.config/autostart"),
-        )
+        val candidates =
+            listOf(
+                arrayOf("gnome-control-center", "applications"),
+                arrayOf("xdg-open", System.getProperty("user.home") + "/.config/autostart"),
+            )
         for (cmd in candidates) {
             try {
                 ProcessBuilder(*cmd).inheritIO().start()
@@ -119,7 +123,12 @@ internal object FlatpakPortalBackend : AutoLaunchBackend {
     private fun resolveInnerCommand(): String? =
         AutoLaunchConfig.executablePath?.takeIf { it.isNotBlank() }?.substringAfterLast('/')
             ?: try {
-                ProcessHandle.current().info().command().orElse(null)?.substringAfterLast('/')
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElse(null)
+                    ?.substringAfterLast('/')
             } catch (_: Exception) {
                 null
             }
