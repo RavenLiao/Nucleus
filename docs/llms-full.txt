@@ -8,13 +8,13 @@
 - Maven Central: https://central.sonatype.com/search?q=io.github.kdroidfilter.nucleus
 - License: MIT
 
-**Nucleus is the native desktop platform for the JVM.** Combined with Compose Multiplatform, it forms the most complete, most performant, and most deeply integrated desktop application stack ever built — on any language, any runtime, any platform.
+**Nucleus is the Kotlin framework for native desktop apps.** Combined with Compose Multiplatform, it forms the most complete, most performant, and most deeply integrated desktop application stack ever built — on any language, any runtime, any platform.
 
-Every technology eventually finds its mature form. Java evolved into **Kotlin**. JavaScript evolved into **TypeScript**. Desktop development is going through the same shift: Electron was the pioneer — it proved that cross-platform desktop apps could work. **Nucleus + Compose** is what comes next.
+Every technology eventually finds its mature form. Java evolved into **Kotlin**. JavaScript evolved into **TypeScript**. Desktop development is going through the same shift: Electron was the pioneer — it proved that cross-platform desktop apps could work. **Kotlin + Compose + Nucleus** is what comes next.
 
 Not an alternative. An evolution.
 
-Electron gave developers reach but asked them to accept a browser as a runtime, a DOM as a UI layer, and hundreds of megabytes as a baseline. Nucleus builds on the **JVM** and on **Compose Multiplatform** to deliver desktop applications that are natively integrated, natively fast, and natively lightweight.
+Electron gave developers reach but asked them to accept a browser as a runtime, a DOM as a UI layer, and hundreds of megabytes as a baseline. Nucleus builds on **Kotlin** and **Compose Multiplatform** — running on the battle-tested JVM — to deliver desktop applications that are natively integrated, natively fast, and natively lightweight.
 
 ## Why Nucleus
 
