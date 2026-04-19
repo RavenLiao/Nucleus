@@ -159,7 +159,7 @@ internal object SystemdUserBackend : AutoLaunchBackend {
             |PartOf=graphical-session.target
             |
             |[Service]
-            |Type=simple
+            |Type=exec
             |ExecStart=$quotedExec
             |Restart=no
             |
