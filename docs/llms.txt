@@ -760,6 +760,7 @@ Everything from the official plugin works unchanged:
 - [File Dialog](https://nucleus.kdroidfilter.com/ecosystem/file-dialog/)
 - [Spell Check](https://nucleus.kdroidfilter.com/ecosystem/spell-check/)
 - [Migration from org.jetbrains.compose](https://nucleus.kdroidfilter.com/migration/)
+- [Roadmap](https://nucleus.kdroidfilter.com/roadmap/)
 
 ## Full LLM Documentation
 
