@@ -199,7 +199,7 @@ nucleus {
 - Only effective on macOS; ignored on other platforms.
 
 !!! note "How it works"
-    `vtool` modifies the `LC_BUILD_VERSION` load command in the Mach-O binary, setting the SDK version to 26.0. This is the same header that the linker writes when you compile with `-sdk_version 26.0`. The modification only affects metadata — no code is changed. For distributable builds, the launcher is patched before signing, so the code signature covers the patched binary. For the `run` task, a patched copy of the JVM is cached at `~/Library/Caches/nucleus/patched-jvm/` and invalidated when the source JDK changes.
+    `vtool` modifies the `LC_BUILD_VERSION` load command in the Mach-O binary, setting the SDK version to 26.0. This is the same header that the linker writes when you compile with `-sdk_version 26.0`. The modification only affects metadata — no code is changed. For distributable builds, the launcher is patched before signing, so the code signature covers the patched binary. For the `run` task, a patched copy of the JVM is produced by the `nucleusPatchMacJvm` task into `build/nucleus/patched-jvm/` and reused across runs. JavaExec forks the patched binary directly, so IntelliJ's debugger attaches normally (breakpoints, stop button) with Liquid Glass active.
 
 ### GraalVM Native Image
 
