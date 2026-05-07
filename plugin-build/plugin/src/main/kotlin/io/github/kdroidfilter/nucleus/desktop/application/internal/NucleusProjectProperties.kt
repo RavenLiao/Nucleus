@@ -22,6 +22,8 @@ internal object NucleusProperties {
     internal const val MAC_NOTARIZATION_APPLE_ID = "compose.desktop.mac.notarization.appleID"
     internal const val MAC_NOTARIZATION_PASSWORD = "compose.desktop.mac.notarization.password"
     internal const val MAC_NOTARIZATION_TEAM_ID_PROVIDER = "compose.desktop.mac.notarization.teamID"
+    internal const val MAC_NOTARIZATION_KEYCHAIN_PROFILE = "compose.desktop.mac.notarization.keychainProfile"
+    internal const val MAC_NOTARIZATION_KEYCHAIN_PATH = "compose.desktop.mac.notarization.keychainPath"
     internal const val CHECK_JDK_VENDOR = "compose.desktop.packaging.checkJdkVendor"
     internal const val DISABLE_MULTIMODULE_RESOURCES = "org.jetbrains.compose.resources.multimodule.disable"
     internal const val SYNC_RESOURCES_PROPERTY = "compose.ios.resources.sync"
@@ -49,6 +51,12 @@ internal object NucleusProperties {
 
     @Suppress("MaxLineLength")
     fun macNotarizationTeamID(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_TEAM_ID_PROVIDER)
+
+    @Suppress("MaxLineLength")
+    fun macNotarizationKeychainProfile(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_KEYCHAIN_PROFILE)
+
+    @Suppress("MaxLineLength")
+    fun macNotarizationKeychainPath(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_KEYCHAIN_PATH)
 
     fun checkJdkVendor(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(CHECK_JDK_VENDOR).toBooleanProvider(true)
 

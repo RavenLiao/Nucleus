@@ -12,6 +12,7 @@ import io.github.kdroidfilter.nucleus.desktop.application.internal.NotarizationR
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.checkExistingFile
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.findOutputFileOrDir
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.ValidatedMacOSNotarizationSettings
+import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.toNotaryToolArgs
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.validate
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractNucleusTask
 import io.github.kdroidfilter.nucleus.internal.utils.MacUtils
@@ -64,17 +65,15 @@ abstract class AbstractNotarizationTask
             packageFile: File,
         ) {
             logger.lifecycle("Uploading '${packageFile.name}' for notarization")
+            val (authArgs, stdin) = notarization.auth.toNotaryToolArgs()
             val args =
-                listOfNotNull(
-                    "notarytool",
-                    "submit",
-                    "--wait",
-                    "--apple-id",
-                    notarization.appleID,
-                    "--team-id",
-                    notarization.teamID,
-                    packageFile.absolutePath,
-                )
+                buildList {
+                    add("notarytool")
+                    add("submit")
+                    add("--wait")
+                    addAll(authArgs)
+                    add(packageFile.absolutePath)
+                }
 
             var submissionId: String? = null
             var stdout = ""
@@ -83,7 +82,7 @@ abstract class AbstractNotarizationTask
                 runExternalTool(
                     tool = MacUtils.xcrun,
                     args = args,
-                    stdinStr = notarization.password,
+                    stdinStr = stdin,
                     checkExitCodeIsNormal = false,
                     processStdout = { output ->
                         stdout = output
@@ -110,11 +109,7 @@ abstract class AbstractNotarizationTask
                             appendLine(appleLog)
                         } else if (submissionId != null) {
                             appendLine("To fetch the log manually run:")
-                            appendLine(
-                                "  xcrun notarytool log $submissionId" +
-                                    " --apple-id ${notarization.appleID}" +
-                                    " --team-id ${notarization.teamID}",
-                            )
+                            appendLine("  xcrun notarytool log $submissionId ${authArgs.joinToString(" ")}")
                         }
                     }
                 error(errMsg)
@@ -138,21 +133,19 @@ abstract class AbstractNotarizationTask
         ): String? {
             if (submissionId == null) return null
 
+            val (authArgs, stdin) = notarization.auth.toNotaryToolArgs()
             return try {
                 var logContent = ""
                 runExternalTool(
                     tool = MacUtils.xcrun,
                     args =
-                        listOf(
-                            "notarytool",
-                            "log",
-                            submissionId,
-                            "--apple-id",
-                            notarization.appleID,
-                            "--team-id",
-                            notarization.teamID,
-                        ),
-                    stdinStr = notarization.password,
+                        buildList {
+                            add("notarytool")
+                            add("log")
+                            add(submissionId)
+                            addAll(authArgs)
+                        },
+                    stdinStr = stdin,
                     processStdout = { logContent = it },
                 )
                 logContent.ifEmpty { null }

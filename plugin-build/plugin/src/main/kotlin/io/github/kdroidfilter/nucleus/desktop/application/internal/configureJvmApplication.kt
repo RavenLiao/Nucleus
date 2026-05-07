@@ -872,10 +872,12 @@ internal fun JvmApplicationContext.configureCommonNotarizationSettings(notarizat
     val notarization = app.nativeDistributions.macOS.notarization
     notarizationTask.nonValidatedNotarizationSettings = notarization
     notarizationTask.onlyIf {
-        val configured =
+        val hasAppleId =
             !notarization.appleID.orNull.isNullOrEmpty() &&
                 !notarization.password.orNull.isNullOrEmpty() &&
                 !notarization.teamID.orNull.isNullOrEmpty()
+        val hasKeychainProfile = !notarization.keychainProfile.orNull.isNullOrEmpty()
+        val configured = hasAppleId || hasKeychainProfile
         if (!configured) {
             it.logger.info("Notarization skipped: macOS notarization settings are not configured")
         }

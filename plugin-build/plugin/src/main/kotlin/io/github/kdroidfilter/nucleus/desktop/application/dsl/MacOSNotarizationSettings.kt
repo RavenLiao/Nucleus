@@ -43,6 +43,29 @@ abstract class MacOSNotarizationSettings {
             set(NucleusProperties.macNotarizationTeamID(providers))
         }
 
+    /**
+     * Name of a `notarytool` keychain profile created via `xcrun notarytool store-credentials`.
+     * When set, notarization uses `--keychain-profile <name>` instead of `--apple-id`/`--team-id`/password.
+     * Mutually exclusive with the `appleID`/`password`/`teamID` mode.
+     */
+    @get:Input
+    @get:Optional
+    val keychainProfile: Property<String> =
+        objects.nullableProperty<String>().apply {
+            set(NucleusProperties.macNotarizationKeychainProfile(providers))
+        }
+
+    /**
+     * Optional path to the keychain that stores the `keychainProfile` credentials.
+     * Forwarded to `notarytool` as `--keychain <path>`. Only used when [keychainProfile] is set.
+     */
+    @get:Input
+    @get:Optional
+    val keychainPath: Property<String> =
+        objects.nullableProperty<String>().apply {
+            set(NucleusProperties.macNotarizationKeychainPath(providers))
+        }
+
     @Deprecated("This option is no longer supported and got replaced by teamID", level = DeprecationLevel.ERROR)
     @get:Internal
     val ascProvider: Property<String> =

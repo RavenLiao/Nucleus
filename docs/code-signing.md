@@ -122,7 +122,9 @@ macOS {
 
 ### Notarization
 
-Apple notarization is required for distributing outside the Mac App Store on macOS 10.15+:
+Apple notarization is required for distributing outside the Mac App Store on macOS 10.15+. Two authentication modes are supported (mutually exclusive — App Store Connect API key support is planned):
+
+#### Mode 1 — Apple ID + app-specific password
 
 ```kotlin
 macOS {
@@ -134,13 +136,43 @@ macOS {
 }
 ```
 
-> **Tip:** Use `xcrun notarytool store-credentials` to save credentials in the keychain:
-> ```bash
-> xcrun notarytool store-credentials "AC_PASSWORD" \
->   --apple-id "dev@example.com" \
->   --team-id "TEAMID" \
->   --password "app-specific-password"
-> ```
+Equivalent Gradle properties:
+
+| Gradle property | Description |
+|-----------------|-------------|
+| `compose.desktop.mac.notarization.appleID` | Apple ID email |
+| `compose.desktop.mac.notarization.password` | App-specific password (or `@keychain:` reference) |
+| `compose.desktop.mac.notarization.teamID` | Apple Team ID |
+
+#### Mode 2 — `notarytool` keychain profile
+
+Store credentials once with `xcrun notarytool store-credentials`, then reference the profile by name:
+
+```bash
+xcrun notarytool store-credentials "AC_PASSWORD" \
+  --apple-id "dev@example.com" \
+  --team-id "TEAMID" \
+  --password "app-specific-password"
+```
+
+```kotlin
+macOS {
+    notarization {
+        keychainProfile.set("AC_PASSWORD")
+        // Optional — defaults to the user's login keychain:
+        // keychainPath.set("/Users/me/Library/Keychains/login.keychain-db")
+    }
+}
+```
+
+Equivalent Gradle properties:
+
+| Gradle property | Description |
+|-----------------|-------------|
+| `compose.desktop.mac.notarization.keychainProfile` | Profile name created via `store-credentials` |
+| `compose.desktop.mac.notarization.keychainPath` | Optional path to the keychain holding the profile |
+
+> Configuring both modes in the same build is rejected at validation time. Pick one.
 
 ### CI/CD: macOS Signing
 
