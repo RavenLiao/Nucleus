@@ -1,12 +1,12 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalInspectionMode
-import io.github.kdroidfilter.nucleus.core.runtime.Platform
-import io.github.kdroidfilter.nucleus.darkmodedetector.linux.isLinuxInDarkMode
-import io.github.kdroidfilter.nucleus.darkmodedetector.mac.isMacOsInDarkMode
-import io.github.kdroidfilter.nucleus.darkmodedetector.windows.isWindowsInDarkMode
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import java.util.function.Consumer
 
 /**
  * Composable function that returns whether the system is in dark mode.
@@ -18,11 +18,26 @@ fun isSystemInDarkMode(): Boolean {
     if (isInPreview) {
         return isSystemInDarkTheme()
     }
+    val darkModeDetector = remember { getPlatformDarkModeDetector() }
+    val darkModeState = remember { mutableStateOf(darkModeDetector.isDark()) }
 
-    return when (Platform.Current) {
-        Platform.MacOS -> isMacOsInDarkMode()
-        Platform.Windows -> isWindowsInDarkMode()
-        Platform.Linux -> isLinuxInDarkMode()
-        else -> false
+    DisposableEffect(Unit) {
+        debugln(TAG) { "Registering OS dark mode listener in Compose" }
+        val listener =
+            Consumer<Boolean> { newValue ->
+                debugln(TAG) { "OS dark mode updated: $newValue" }
+                darkModeState.value = newValue
+            }
+
+        darkModeDetector.registerListener(listener)
+
+        onDispose {
+            debugln(TAG) { "Removing OS dark mode listener in Compose" }
+            darkModeDetector.removeListener(listener)
+        }
     }
+
+    return darkModeState.value
 }
+
+private const val TAG = "PlatformThemeDetectorCompose"

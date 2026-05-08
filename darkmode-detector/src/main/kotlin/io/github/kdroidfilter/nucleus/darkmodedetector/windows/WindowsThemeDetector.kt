@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
+import io.github.kdroidfilter.nucleus.darkmodedetector.IDarkModeDetector
 import java.util.function.Consumer
 
 private const val TAG = "WindowsThemeDetector"
@@ -18,45 +19,19 @@ private const val TAG = "WindowsThemeDetector"
  * The detector monitors the registry for changes in real-time via a native
  * background thread using RegNotifyChangeKeyValue in async mode.
  */
-internal object WindowsThemeDetector {
+internal object WindowsThemeDetector: IDarkModeDetector {
     init {
         debugln(TAG) { "Initializing Windows theme observer via JNI" }
         NativeWindowsBridge.nativeStartObserving()
     }
 
-    fun isDark(): Boolean = NativeWindowsBridge.nativeIsDark()
+    override fun isDark(): Boolean = NativeWindowsBridge.nativeIsDark()
 
-    fun registerListener(listener: Consumer<Boolean>) {
+    override fun registerListener(listener: Consumer<Boolean>) {
         NativeWindowsBridge.registerListener(listener)
     }
 
-    fun removeListener(listener: Consumer<Boolean>) {
+    override fun removeListener(listener: Consumer<Boolean>) {
         NativeWindowsBridge.removeListener(listener)
     }
-}
-
-/**
- * Composable function that returns whether Windows is currently in dark mode.
- */
-@Composable
-internal fun isWindowsInDarkMode(): Boolean {
-    val darkModeState = remember { mutableStateOf(WindowsThemeDetector.isDark()) }
-
-    DisposableEffect(Unit) {
-        debugln(TAG) { "Registering Windows dark mode listener in Compose" }
-        val listener =
-            Consumer<Boolean> { newValue ->
-                debugln(TAG) { "Windows dark mode updated: $newValue" }
-                darkModeState.value = newValue
-            }
-
-        WindowsThemeDetector.registerListener(listener)
-
-        onDispose {
-            debugln(TAG) { "Removing Windows dark mode listener in Compose" }
-            WindowsThemeDetector.removeListener(listener)
-        }
-    }
-
-    return darkModeState.value
 }
