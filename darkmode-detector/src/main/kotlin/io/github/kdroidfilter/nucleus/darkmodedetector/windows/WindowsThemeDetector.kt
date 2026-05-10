@@ -1,11 +1,7 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector.windows
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import io.github.kdroidfilter.nucleus.darkmodedetector.IDarkModeDetector
+import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import java.util.function.Consumer
 
 private const val TAG = "WindowsThemeDetector"
@@ -19,7 +15,7 @@ private const val TAG = "WindowsThemeDetector"
  * The detector monitors the registry for changes in real-time via a native
  * background thread using RegNotifyChangeKeyValue in async mode.
  */
-internal object WindowsThemeDetector: IDarkModeDetector {
+internal object WindowsThemeDetector : IDarkModeDetector {
     init {
         debugln(TAG) { "Initializing Windows theme observer via JNI" }
         NativeWindowsBridge.nativeStartObserving()

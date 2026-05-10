@@ -1,11 +1,7 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector.linux
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import io.github.kdroidfilter.nucleus.darkmodedetector.IDarkModeDetector
+import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import java.util.function.Consumer
 
 private const val TAG = "LinuxPortalThemeDetector"
@@ -19,7 +15,7 @@ private const val TAG = "LinuxPortalThemeDetector"
  * The detector also monitors for SettingChanged signals in real-time via a background
  * D-Bus dispatch thread.
  */
-internal object LinuxPortalThemeDetector: IDarkModeDetector {
+internal object LinuxPortalThemeDetector : IDarkModeDetector {
     init {
         debugln(TAG) { "Initializing Linux portal theme observer via JNI" }
         NativeLinuxBridge.nativeStartObserving()

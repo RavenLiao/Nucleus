@@ -1,11 +1,11 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalInspectionMode
 import java.util.function.Consumer
 
 /**

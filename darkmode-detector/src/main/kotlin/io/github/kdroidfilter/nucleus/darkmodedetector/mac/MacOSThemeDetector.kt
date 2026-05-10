@@ -1,11 +1,7 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector.mac
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import io.github.kdroidfilter.nucleus.darkmodedetector.IDarkModeDetector
+import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import java.util.function.Consumer
 
 private const val TAG = "MacOSThemeDetector"
@@ -15,7 +11,7 @@ private const val TAG = "MacOSThemeDetector"
  * to detect theme changes in macOS. It reads the system preference "AppleInterfaceStyle"
  * (which is "Dark" when in dark mode) from NSUserDefaults.
  */
-internal object MacOSThemeDetector: IDarkModeDetector {
+internal object MacOSThemeDetector : IDarkModeDetector {
     init {
         debugln(TAG) { "Initializing macOS theme observer via JNI" }
         NativeDarkModeBridge.nativeStartObserving()
